@@ -14,9 +14,13 @@ import {
   getRoomDefinition,
   getTourDefinition,
 } from "./content.js";
+import {
+  DEFAULT_HERO_ID,
+  createHeroCombatProfile,
+  getHeroDefinition,
+} from "./heroes.js";
 
 const TAU = Math.PI * 2;
-const PLAYER_COLOR = "#e7bc70";
 const ENEMY_COLOR = "#bc4b2f";
 const ARENA = VIEWPORT.arena;
 
@@ -42,28 +46,6 @@ function distanceSquared(a, b) {
   return dx * dx + dy * dy;
 }
 
-function createPlayer() {
-  return {
-    x: RUN_CONFIG.playerStartX,
-    y: RUN_CONFIG.playerStartY,
-    radius: 24,
-    hp: 100,
-    maxHp: 100,
-    speed: 285,
-    damage: 27,
-    projectileSpeed: 735,
-    projectileCount: 1,
-    pierce: 0,
-    wallBounces: 0,
-    critChance: 0.08,
-    attackInterval: 0.52,
-    attackTimer: 0,
-    invulnerability: 0,
-    facing: -Math.PI / 2,
-    moving: false,
-  };
-}
-
 export class DoffaGame {
   constructor({ canvas, profileStore, onHud, onProfile, onAbilityChoice, onRunEnd }) {
     if (!(canvas instanceof HTMLCanvasElement)) {
@@ -80,11 +62,12 @@ export class DoffaGame {
 
     this.mode = "idle";
     this.tour = getTourDefinition(DEFAULT_TOUR_ID);
+    this.hero = getHeroDefinition(profileStore.profile?.selectedHeroId) ?? getHeroDefinition(DEFAULT_HERO_ID);
     this.roomDefinition = null;
     this.room = 0;
     this.clearedRooms = 0;
     this.score = 0;
-    this.player = createPlayer();
+    this.player = createHeroCombatProfile(this.hero.id);
     this.enemies = [];
     this.projectiles = [];
     this.particles = [];
@@ -208,10 +191,15 @@ export class DoffaGame {
     this.frameRequest = requestAnimationFrame(frame);
   }
 
-  beginRun(tourId = DEFAULT_TOUR_ID) {
+  beginRun(tourId = DEFAULT_TOUR_ID, heroId = this.profileStore.profile.selectedHeroId) {
     const tour = getTourDefinition(tourId);
     if (!tour?.unlocked) {
       return { ok: false, reason: "tour-unavailable" };
+    }
+
+    const hero = getHeroDefinition(heroId);
+    if (!hero?.unlocked) {
+      return { ok: false, reason: "hero-unavailable" };
     }
 
     const profile = this.profileStore.profile;
@@ -227,11 +215,12 @@ export class DoffaGame {
 
     this.mode = "running";
     this.tour = tour;
+    this.hero = hero;
     this.roomDefinition = null;
     this.room = 1;
     this.clearedRooms = 0;
     this.score = 0;
-    this.player = createPlayer();
+    this.player = createHeroCombatProfile(hero.id);
     this.enemies = [];
     this.projectiles = [];
     this.particles = [];
@@ -243,7 +232,7 @@ export class DoffaGame {
     this.rng = new SeededRng(Date.now() ^ (this.profileStore.profile.runsStarted * 2_654_435_761));
     this.spawnRoom(this.room);
     this.emitHud();
-    return { ok: true };
+    return { ok: true, hero };
   }
 
   abortRun() {
@@ -380,8 +369,8 @@ export class DoffaGame {
     } else {
       this.player.attackTimer -= delta;
       if (this.player.attackTimer <= 0 && this.enemies.length > 0) {
-        this.fireAtNearestEnemy();
-        this.player.attackTimer = this.player.attackInterval;
+        const fired = this.fireAtNearestEnemy();
+        this.player.attackTimer = fired ? this.player.attackInterval : 0.08;
       }
     }
 
@@ -421,8 +410,8 @@ export class DoffaGame {
       }
     }
 
-    if (!target) {
-      return;
+    if (!target || nearestDistance > this.player.attackRange * this.player.attackRange) {
+      return false;
     }
 
     const baseAngle = Math.atan2(target.y - this.player.y, target.x - this.player.x);
@@ -439,10 +428,15 @@ export class DoffaGame {
         y: this.player.y + Math.sin(angle) * 30,
         vx: Math.cos(angle) * this.player.projectileSpeed,
         vy: Math.sin(angle) * this.player.projectileSpeed,
-        radius: critical ? 8 : 6,
+        radius: this.player.projectileRadius * (critical ? 1.2 : 1),
         damage: this.player.damage * (critical ? 2 : 1),
         friendly: true,
         critical,
+        color: this.player.accent,
+        secondary: this.player.secondary,
+        visual: this.player.weaponVisual,
+        maxAge: this.player.projectileLifetime,
+        splashRadius: this.player.splashRadius,
         hitsLeft: this.player.pierce + 1,
         wallBounces: this.player.wallBounces,
         hitIds: new Set(),
@@ -451,7 +445,8 @@ export class DoffaGame {
       });
     }
 
-    this.spawnParticles(this.player.x, this.player.y, PLAYER_COLOR, 4, 90);
+    this.spawnParticles(this.player.x, this.player.y, this.player.accent, 4, 90);
+    return true;
   }
 
   updateEnemies(delta) {
@@ -644,7 +639,7 @@ export class DoffaGame {
         this.handleEnemyProjectile(projectile);
       }
 
-      if (projectile.age > 6) {
+      if (projectile.age > (projectile.maxAge ?? 6)) {
         projectile.alive = false;
       }
     }
@@ -664,7 +659,7 @@ export class DoffaGame {
       projectile.x = clamp(projectile.x, ARENA.left, ARENA.right);
       projectile.y = clamp(projectile.y, ARENA.top, ARENA.bottom);
       projectile.wallBounces -= 1;
-      this.spawnParticles(projectile.x, projectile.y, PLAYER_COLOR, 3, 65);
+      this.spawnParticles(projectile.x, projectile.y, projectile.color ?? this.player.accent, 3, 65);
     } else {
       projectile.alive = false;
     }
@@ -687,20 +682,56 @@ export class DoffaGame {
 
       projectile.hitIds.add(enemy.id);
       projectile.hitsLeft -= 1;
-      enemy.hp -= projectile.damage;
-      enemy.hitFlash = 0.09;
-      this.spawnParticles(projectile.x, projectile.y, projectile.critical ? "#fff0b0" : PLAYER_COLOR, 6, 130);
+      const impactColor = projectile.critical ? "#fff0b0" : projectile.color;
+      this.damageEnemy(enemy, projectile.damage, projectile.x, projectile.y, impactColor);
 
-      if (enemy.hp <= 0) {
-        enemy.alive = false;
-        this.score += enemy.score;
-        this.spawnParticles(enemy.x, enemy.y, ENEMY_COLOR, enemy.isBoss ? 46 : 18, 230);
+      if (projectile.splashRadius > 0) {
+        this.damageEnemiesAround(projectile, enemy);
       }
 
       if (projectile.hitsLeft <= 0) {
         projectile.alive = false;
         break;
       }
+    }
+  }
+
+  damageEnemiesAround(projectile, impactEnemy) {
+    const radiusSquared = projectile.splashRadius * projectile.splashRadius;
+    this.spawnParticles(impactEnemy.x, impactEnemy.y, projectile.secondary, 14, 185);
+
+    for (const enemy of this.enemies) {
+      if (!enemy.alive || enemy.id === impactEnemy.id || projectile.hitIds.has(enemy.id)) {
+        continue;
+      }
+      if (distanceSquared(impactEnemy, enemy) > radiusSquared) {
+        continue;
+      }
+
+      projectile.hitIds.add(enemy.id);
+      this.damageEnemy(
+        enemy,
+        Math.round(projectile.damage * 0.45),
+        enemy.x,
+        enemy.y,
+        projectile.secondary,
+      );
+    }
+  }
+
+  damageEnemy(enemy, amount, impactX, impactY, color) {
+    if (!enemy.alive) {
+      return;
+    }
+
+    enemy.hp -= amount;
+    enemy.hitFlash = 0.09;
+    this.spawnParticles(impactX, impactY, color, 6, 130);
+
+    if (enemy.hp <= 0) {
+      enemy.alive = false;
+      this.score += enemy.score;
+      this.spawnParticles(enemy.x, enemy.y, ENEMY_COLOR, enemy.isBoss ? 46 : 18, 230);
     }
   }
 
@@ -792,6 +823,7 @@ export class DoffaGame {
     const beanReward = calculateRunBeanReward({ roomsCleared, bossDefeated });
     const receipt = createLocalRunReceipt({
       tourId: this.tour.id,
+      heroId: this.hero.id,
       roomsCleared,
       bossDefeated,
       score: this.score,
@@ -824,6 +856,7 @@ export class DoffaGame {
     this.onRunEnd({
       bossDefeated,
       tour: this.tour,
+      hero: this.hero,
       roomsCleared,
       beanReward,
       score: this.score,
@@ -837,6 +870,8 @@ export class DoffaGame {
       totalRooms: this.tour.rooms.length,
       tourCode: this.tour.code,
       roomName: this.roomDefinition?.name ?? "SEALED CHAMBER",
+      heroName: this.hero.name,
+      weaponName: this.hero.weapon,
       hp: Math.ceil(this.player.hp),
       maxHp: Math.ceil(this.player.maxHp),
     });
@@ -932,13 +967,43 @@ export class DoffaGame {
   drawProjectile(context, projectile) {
     context.save();
     context.shadowBlur = projectile.friendly ? 18 : 14;
-    context.shadowColor = projectile.friendly ? "#ffc76e" : "#e34e2c";
+    context.shadowColor = projectile.friendly ? projectile.color : "#e34e2c";
     context.fillStyle = projectile.friendly
-      ? projectile.critical ? "#fff2b4" : PLAYER_COLOR
+      ? projectile.critical ? "#fff2b4" : projectile.color
       : "#d84b2e";
-    context.beginPath();
-    context.arc(projectile.x, projectile.y, projectile.radius, 0, TAU);
-    context.fill();
+
+    if (!projectile.friendly) {
+      context.beginPath();
+      context.arc(projectile.x, projectile.y, projectile.radius, 0, TAU);
+      context.fill();
+      context.restore();
+      return;
+    }
+
+    context.translate(projectile.x, projectile.y);
+    context.rotate(Math.atan2(projectile.vy, projectile.vx));
+    context.strokeStyle = projectile.critical ? "#fff2b4" : projectile.secondary;
+    context.lineWidth = Math.max(3, projectile.radius * 0.42);
+
+    if (projectile.visual === "impact") {
+      context.beginPath();
+      context.arc(0, 0, projectile.radius * 1.15, -0.8, 0.8);
+      context.stroke();
+      context.fillRect(-projectile.radius * 0.2, -projectile.radius * 0.55, projectile.radius * 1.4, projectile.radius * 1.1);
+    } else if (projectile.visual === "hammer") {
+      context.rotate(Math.PI / 4);
+      context.fillRect(-projectile.radius * 0.78, -projectile.radius * 0.78, projectile.radius * 1.56, projectile.radius * 1.56);
+      context.strokeRect(-projectile.radius, -projectile.radius, projectile.radius * 2, projectile.radius * 2);
+    } else if (projectile.visual === "shears") {
+      context.fillRect(-projectile.radius * 1.5, -2, projectile.radius * 3, 4);
+      context.rotate(Math.PI / 3);
+      context.fillRect(-projectile.radius * 1.5, -2, projectile.radius * 3, 4);
+    } else if (projectile.visual === "razor") {
+      context.rotate(Math.PI / 4 + projectile.age * 13);
+      context.fillRect(-projectile.radius * 0.8, -projectile.radius * 0.8, projectile.radius * 1.6, projectile.radius * 1.6);
+    } else {
+      context.fillRect(-projectile.radius * 2.6, -projectile.radius * 0.5, projectile.radius * 5.2, projectile.radius);
+    }
     context.restore();
   }
 
@@ -952,10 +1017,11 @@ export class DoffaGame {
     }
 
     context.shadowBlur = player.moving ? 8 : 20;
-    context.shadowColor = PLAYER_COLOR;
+    context.shadowColor = player.accent;
     context.fillStyle = "#120e0b";
-    context.strokeStyle = PLAYER_COLOR;
+    context.strokeStyle = player.accent;
     context.lineWidth = 4;
+    this.drawPlayerWeapon(context, player);
     context.beginPath();
     context.moveTo(0, -31);
     context.lineTo(23, 22);
@@ -965,12 +1031,60 @@ export class DoffaGame {
     context.fill();
     context.stroke();
 
-    context.fillStyle = "#d6843e";
+    context.fillStyle = player.secondary;
     context.fillRect(-4, -40, 8, 24);
     context.fillStyle = "#f2d194";
     context.beginPath();
     context.arc(0, -13, 8, 0, TAU);
     context.fill();
+    context.fillStyle = player.accent;
+    context.font = "800 9px Arial Narrow, sans-serif";
+    context.textAlign = "center";
+    context.fillText(this.hero.monogram, 0, 13);
+    context.restore();
+  }
+
+  drawPlayerWeapon(context, player) {
+    context.save();
+    context.strokeStyle = player.secondary;
+    context.fillStyle = player.accent;
+    context.lineWidth = 6;
+    context.lineCap = "round";
+
+    if (player.weaponVisual === "impact") {
+      context.beginPath();
+      context.moveTo(19, 20);
+      context.lineTo(34, -34);
+      context.stroke();
+      context.lineWidth = 10;
+      context.beginPath();
+      context.moveTo(33, -32);
+      context.lineTo(38, -50);
+      context.stroke();
+    } else if (player.weaponVisual === "hammer") {
+      context.beginPath();
+      context.moveTo(21, 23);
+      context.lineTo(31, -34);
+      context.stroke();
+      context.fillRect(17, -48, 31, 17);
+    } else if (player.weaponVisual === "shears" || player.weaponVisual === "razor") {
+      context.lineWidth = 4;
+      context.beginPath();
+      context.moveTo(-28, 12);
+      context.lineTo(-9, -39);
+      context.moveTo(28, 12);
+      context.lineTo(9, -39);
+      context.stroke();
+      context.beginPath();
+      context.arc(-24, 17, 7, 0, TAU);
+      context.arc(24, 17, 7, 0, TAU);
+      context.stroke();
+    } else {
+      context.fillRect(15, -39, 10, 62);
+      context.fillRect(9, -42, 22, 11);
+      context.fillRect(17, 18, 17, 7);
+    }
+
     context.restore();
   }
 
@@ -1107,7 +1221,7 @@ export class DoffaGame {
   }
 
   drawEnemyHealth(context, enemy) {
-    const isBoss = enemy.type === "hollow_roaster";
+    const isBoss = enemy.isBoss;
     const width = isBoss ? 430 : enemy.radius * 2.2;
     const y = isBoss ? 145 : enemy.y - enemy.radius - 18;
     const x = isBoss ? (VIEWPORT.width - width) / 2 : enemy.x - width / 2;
@@ -1137,12 +1251,12 @@ export class DoffaGame {
     const distance = Math.min(74, length(dx, dy));
     context.save();
     context.globalAlpha = 0.42;
-    context.strokeStyle = PLAYER_COLOR;
+    context.strokeStyle = this.player.accent;
     context.lineWidth = 3;
     context.beginPath();
     context.arc(this.pointer.startX, this.pointer.startY, 74, 0, TAU);
     context.stroke();
-    context.fillStyle = "rgba(230, 180, 97, 0.24)";
+    context.fillStyle = this.player.secondary;
     context.beginPath();
     context.arc(
       this.pointer.startX + direction.x * distance,

@@ -16,9 +16,11 @@ This project may use genre conventions as references, but it does not copy anoth
 6. Generate a reward-eligibility receipt after a verified victory.
 7. In production, a server validates the receipt before any token claim exists.
 
-## Milestone 0.2.0
+## Milestone 0.3.0
 
-- One playable hero placeholder.
+- Five selectable hero placeholders: Honey Badger, Hadida, Boya, Mr. Kroo, and Pata.
+- Distinct health, speed, damage, range, fire rate, projectile count, ricochet, and splash profiles.
+- Persistent local hero selection and hero identity in the run HUD, results, and local receipt.
 - Six rooms and one boss.
 - Four enemy archetypes with distinct movement or attack behavior.
 - Eight abilities and random three-card choices.
@@ -28,7 +30,7 @@ This project may use genre conventions as references, but it does not copy anoth
 - Local test receipt explicitly marked non-claimable and non-chain.
 - Data-driven definitions for the tour, six named rooms, its enemy family, and its boss.
 - Per-tour local progress with migration from the original aggregate profile.
-- Tour-bound local receipts so future server validation has an explicit content identity.
+- Tour- and hero-bound local receipts so future server validation has explicit content identities.
 
 ## Economy boundary
 

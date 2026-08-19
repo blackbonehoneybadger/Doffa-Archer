@@ -4,14 +4,16 @@ The first flagship game in the DOFFA Games universe: a portrait action-roguelite
 
 ## Current milestone
 
-Version `0.2.0` is the first playable, data-driven vertical slice:
+Version `0.3.0` adds the first playable hero roster to the data-driven vertical slice:
 
 - tap the Roaster Core to collect entry beans;
 - spend beans to enter a six-room run;
 - move to evade and stop to auto-attack;
 - choose one of three abilities after each cleared room;
 - defeat the Hollow Roaster boss;
-- receive a local, non-claimable test receipt.
+- select Honey Badger, Hadida, Boya, Mr. Kroo, or Pata;
+- test five different weapon profiles, ranges, health pools, and attack rhythms;
+- receive a local, non-claimable test receipt;
 - load the complete run from a validated tour/room/enemy content catalog;
 - preserve separate progress for each future tour.
 

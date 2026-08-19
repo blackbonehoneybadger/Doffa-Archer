@@ -9,11 +9,14 @@ function defaultIdFactory() {
 }
 
 export function createLocalRunReceipt(
-  { tourId, roomsCleared, bossDefeated, score },
+  { tourId, heroId, roomsCleared, bossDefeated, score },
   { idFactory = defaultIdFactory, now = () => new Date().toISOString() } = {},
 ) {
   if (typeof tourId !== "string" || !/^[a-z0-9][a-z0-9-]{0,63}$/.test(tourId)) {
     throw new TypeError("tourId must be a safe content identifier");
+  }
+  if (typeof heroId !== "string" || !/^[a-z0-9][a-z0-9-]{0,63}$/.test(heroId)) {
+    throw new TypeError("heroId must be a safe content identifier");
   }
   if (!Number.isInteger(roomsCleared) || roomsCleared < 0) {
     throw new TypeError("roomsCleared must be a non-negative integer");
@@ -30,6 +33,7 @@ export function createLocalRunReceipt(
     createdAt: now(),
     buildVersion: GAME_VERSION,
     tourId,
+    heroId,
     roomsCleared,
     bossDefeated,
     score,

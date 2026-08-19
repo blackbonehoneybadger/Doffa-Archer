@@ -358,6 +358,157 @@ h1 span {
   font-size: 0.92rem;
 }
 
+.hero-contract {
+  --hero-accent: var(--gold);
+  width: min(100%, 440px);
+  display: grid;
+  grid-template-columns: 78px 1fr auto;
+  gap: 13px;
+  align-items: center;
+  margin: 0 0 10px;
+  padding: 10px 11px;
+  border: 1px solid color-mix(in srgb, var(--hero-accent) 52%, transparent);
+  background:
+    linear-gradient(105deg, color-mix(in srgb, var(--hero-accent) 14%, transparent), transparent 58%),
+    rgba(255, 255, 255, 0.018);
+  text-align: left;
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--hero-accent) 80%, transparent);
+}
+
+.hero-portrait {
+  --hero-accent: var(--gold);
+  position: relative;
+  width: 78px;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--hero-accent) 62%, #21140f);
+  background:
+    radial-gradient(circle at 50% 28%, color-mix(in srgb, var(--hero-accent) 28%, transparent), transparent 22%),
+    linear-gradient(145deg, color-mix(in srgb, var(--hero-accent) 20%, #160e0b), #090706 70%);
+  clip-path: polygon(0 0, calc(100% - 9px) 0, 100% 9px, 100% 100%, 0 100%);
+}
+
+.hero-portrait::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 15px;
+  width: 25px;
+  height: 25px;
+  transform: translateX(-50%);
+  border: 2px solid var(--hero-accent);
+  border-radius: 50%;
+  background: #100a08;
+  box-shadow: 0 27px 0 9px #100a08, 0 27px 0 11px var(--hero-accent);
+}
+
+.hero-portrait::after {
+  content: "";
+  position: absolute;
+  right: 12px;
+  top: 24px;
+  width: 4px;
+  height: 50px;
+  transform: rotate(24deg);
+  background: var(--hero-accent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--hero-accent) 70%, transparent);
+}
+
+.hero-portrait span,
+.hero-portrait small {
+  position: absolute;
+  z-index: 2;
+  left: 7px;
+}
+
+.hero-portrait span {
+  bottom: 15px;
+  color: var(--hero-accent);
+  font-size: 0.88rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.hero-portrait small {
+  bottom: 5px;
+  color: rgba(243, 223, 189, 0.42);
+  font-size: 0.3rem;
+  letter-spacing: 0.06em;
+}
+
+.hero-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.hero-copy > span,
+.hero-copy > small {
+  color: var(--muted);
+  font-size: 0.49rem;
+  letter-spacing: 0.13em;
+}
+
+.hero-copy strong {
+  margin: 4px 0;
+  overflow: hidden;
+  color: var(--cream);
+  font-size: 0.86rem;
+  letter-spacing: 0.06em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hero-ratings {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+  margin-top: 8px;
+}
+
+.hero-ratings span {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px;
+  align-items: center;
+  color: rgba(243, 223, 189, 0.48);
+  font-size: 0.4rem;
+}
+
+.hero-ratings i {
+  position: relative;
+  height: 3px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.hero-ratings i::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: calc(var(--rating, 1) * 20%);
+  background: var(--hero-accent);
+}
+
+.hero-change {
+  align-self: stretch;
+  padding: 0 9px;
+  border: 1px solid color-mix(in srgb, var(--hero-accent) 42%, transparent);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--hero-accent);
+  cursor: pointer;
+  font-size: 0.48rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  writing-mode: vertical-rl;
+}
+
+.hero-change:hover,
+.hero-change:focus-visible {
+  border-color: var(--hero-accent);
+  outline: none;
+}
+
 .tour-contract {
   width: min(100%, 440px);
   display: grid;
@@ -617,6 +768,110 @@ h1 span {
   font-size: 0.78rem;
 }
 
+.hero-modal {
+  width: min(100%, 690px);
+}
+
+.hero-modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  text-align: left;
+}
+
+.hero-modal-head h2 {
+  margin-bottom: 0;
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.hero-option {
+  --hero-accent: var(--gold);
+  position: relative;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 12px;
+  align-items: center;
+  min-height: 116px;
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--hero-accent) 28%, #21140f);
+  background:
+    linear-gradient(130deg, color-mix(in srgb, var(--hero-accent) 10%, transparent), transparent 58%),
+    rgba(255, 255, 255, 0.012);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.hero-option:hover,
+.hero-option:focus-visible,
+.hero-option.is-selected {
+  border-color: var(--hero-accent);
+  background:
+    linear-gradient(130deg, color-mix(in srgb, var(--hero-accent) 21%, transparent), transparent 60%),
+    rgba(255, 255, 255, 0.025);
+  outline: none;
+}
+
+.hero-option.is-selected::after {
+  content: "ACTIVE";
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  padding: 3px 5px;
+  border: 1px solid var(--hero-accent);
+  color: var(--hero-accent);
+  font-size: 0.38rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.hero-option .hero-portrait {
+  width: 72px;
+}
+
+.hero-option-copy {
+  min-width: 0;
+}
+
+.hero-option-copy span,
+.hero-option-copy small {
+  display: block;
+  color: var(--muted);
+  font-size: 0.45rem;
+  letter-spacing: 0.09em;
+}
+
+.hero-option-copy strong {
+  display: block;
+  margin: 4px 0;
+  color: var(--cream);
+  font-size: 0.76rem;
+  letter-spacing: 0.05em;
+}
+
+.hero-option-copy p {
+  margin: 8px 0 0;
+  color: rgba(243, 223, 189, 0.58);
+  font-size: 0.55rem;
+  line-height: 1.35;
+}
+
+.art-warning {
+  display: block;
+  margin-top: 17px;
+  color: rgba(157, 136, 116, 0.55);
+  font-size: 0.43rem;
+  letter-spacing: 0.1em;
+}
+
 .ability-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -828,6 +1083,18 @@ h1 span {
 
   .ability-grid {
     grid-template-columns: 1fr;
+  }
+
+  .hero-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-contract {
+    grid-template-columns: 68px 1fr auto;
+  }
+
+  .hero-contract .hero-portrait {
+    width: 68px;
   }
 
   .ability-card {

@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { DEFAULT_PROFILE, ProfileStore, normalizeProfile } from "../src/core/profile-store.js";
-import { DEFAULT_TOUR_ID } from "../src/config/game-config.js";
+import { DEFAULT_HERO_ID, DEFAULT_TOUR_ID } from "../src/config/game-config.js";
 
 class MemoryStorage {
   constructor() {
@@ -32,18 +32,25 @@ test("profile normalization rejects negative, fractional, and oversized progress
   assert.equal(profile.bossesDefeated, DEFAULT_PROFILE.bossesDefeated);
 });
 
-test("legacy aggregate progress migrates into the first tour record", () => {
+test("legacy aggregate progress migrates into the first tour record and default hero", () => {
   const profile = normalizeProfile({
     version: 1,
     bestRoom: 4,
     bossesDefeated: 2,
   });
 
-  assert.equal(profile.version, 2);
+  assert.equal(profile.version, 3);
+  assert.equal(profile.selectedHeroId, DEFAULT_HERO_ID);
   assert.deepEqual(profile.tourProgress[DEFAULT_TOUR_ID], {
     bestRoom: 4,
     bossesDefeated: 2,
   });
+});
+
+test("profile keeps only known hero identifiers", () => {
+  assert.equal(normalizeProfile({ selectedHeroId: "pata" }).selectedHeroId, "pata");
+  assert.equal(normalizeProfile({ selectedHeroId: "../unknown" }).selectedHeroId, DEFAULT_HERO_ID);
+  assert.equal(normalizeProfile({ selectedHeroId: "not-in-roster" }).selectedHeroId, DEFAULT_HERO_ID);
 });
 
 test("profile store recovers from malformed local data", () => {

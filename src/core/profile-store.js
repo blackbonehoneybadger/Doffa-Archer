@@ -1,4 +1,8 @@
-import { DEFAULT_TOUR_ID } from "../config/game-config.js";
+import {
+  DEFAULT_HERO_ID,
+  DEFAULT_TOUR_ID,
+  HERO_IDS,
+} from "../config/game-config.js";
 
 const STORAGE_KEY = "doffa-heroes-profile-v1";
 const MAX_SAFE_STAT = 1_000_000_000;
@@ -11,7 +15,8 @@ const DEFAULT_TOUR_PROGRESS = Object.freeze({
 });
 
 export const DEFAULT_PROFILE = Object.freeze({
-  version: 2,
+  version: 3,
+  selectedHeroId: DEFAULT_HERO_ID,
   beans: 30,
   lifetimeBeans: 30,
   bestRoom: 0,
@@ -28,6 +33,12 @@ function safeInteger(value, fallback, maximum = MAX_SAFE_STAT) {
   }
 
   return Math.min(maximum, Math.max(0, Math.floor(value)));
+}
+
+function normalizeHeroId(value) {
+  return typeof value === "string" && HERO_IDS.includes(value)
+    ? value
+    : DEFAULT_HERO_ID;
 }
 
 function normalizeTourProgress(input, legacyBestRoom, legacyBossesDefeated) {
@@ -65,6 +76,7 @@ export function normalizeProfile(input = {}) {
   const bossesDefeated = safeInteger(candidate.bossesDefeated, DEFAULT_PROFILE.bossesDefeated);
   return {
     version: DEFAULT_PROFILE.version,
+    selectedHeroId: normalizeHeroId(candidate.selectedHeroId),
     beans: safeInteger(candidate.beans, DEFAULT_PROFILE.beans),
     lifetimeBeans: safeInteger(candidate.lifetimeBeans, DEFAULT_PROFILE.lifetimeBeans),
     bestRoom,

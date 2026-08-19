@@ -33,10 +33,11 @@ test("browser shell has no external runtime scripts or styles", () => {
   assert.equal(/<(?:script|link)[^>]+(?:src|href)="https?:\/\//i.test(html), false);
 });
 
-test("offline shell includes the data-driven tour catalog", () => {
+test("offline shell includes the data-driven tour and hero catalogs", () => {
   const worker = readFileSync(join(root, "service-worker.js"), "utf8");
   assert.equal(worker.includes('"/src/game/content.js"'), true);
-  assert.equal(worker.includes("doffa-heroes-v0.2.0"), true);
+  assert.equal(worker.includes('"/src/game/heroes.js"'), true);
+  assert.equal(worker.includes("doffa-heroes-v0.3.0"), true);
 });
 
 test("every required UI element exists in the HTML shell", () => {

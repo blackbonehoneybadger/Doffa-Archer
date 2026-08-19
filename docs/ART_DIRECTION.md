@@ -8,6 +8,8 @@ Avoid cute food mascots, smiling beans, toy proportions, and generic children's-
 
 ## Character pipeline
 
+The 0.3.0 roster uses abstract procedural silhouettes only. Names, roles, and weapon behavior can be tested now; faces and likenesses remain deliberately absent until approved photographs arrive.
+
 1. Receive photographs and written likeness approval from the person represented.
 2. Produce several original silhouettes and costume directions.
 3. Approve a front/side/back character sheet and facial-expression sheet.
