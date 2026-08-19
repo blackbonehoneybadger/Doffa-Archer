@@ -16,7 +16,7 @@ This project may use genre conventions as references, but it does not copy anoth
 6. Generate a reward-eligibility receipt after a verified victory.
 7. In production, a server validates the receipt before any token claim exists.
 
-## Milestone 0.1.1
+## Milestone 0.2.0
 
 - One playable hero placeholder.
 - Six rooms and one boss.
@@ -26,6 +26,9 @@ This project may use genre conventions as references, but it does not copy anoth
 - Local beans, entry cost, run reward, best-room progress, and boss wins.
 - Installable PWA shell and update detection.
 - Local test receipt explicitly marked non-claimable and non-chain.
+- Data-driven definitions for the tour, six named rooms, its enemy family, and its boss.
+- Per-tour local progress with migration from the original aggregate profile.
+- Tour-bound local receipts so future server validation has an explicit content identity.
 
 ## Economy boundary
 

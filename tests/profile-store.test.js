@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { DEFAULT_PROFILE, ProfileStore, normalizeProfile } from "../src/core/profile-store.js";
+import { DEFAULT_TOUR_ID } from "../src/config/game-config.js";
 
 class MemoryStorage {
   constructor() {
@@ -21,14 +22,28 @@ test("profile normalization rejects negative, fractional, and oversized progress
   const profile = normalizeProfile({
     beans: -12,
     lifetimeBeans: 18.9,
-    bestRoom: 99,
+    bestRoom: 999,
     bossesDefeated: Number.POSITIVE_INFINITY,
   });
 
   assert.equal(profile.beans, 0);
   assert.equal(profile.lifetimeBeans, 18);
-  assert.equal(profile.bestRoom, 6);
+  assert.equal(profile.bestRoom, 100);
   assert.equal(profile.bossesDefeated, DEFAULT_PROFILE.bossesDefeated);
+});
+
+test("legacy aggregate progress migrates into the first tour record", () => {
+  const profile = normalizeProfile({
+    version: 1,
+    bestRoom: 4,
+    bossesDefeated: 2,
+  });
+
+  assert.equal(profile.version, 2);
+  assert.deepEqual(profile.tourProgress[DEFAULT_TOUR_ID], {
+    bestRoom: 4,
+    bossesDefeated: 2,
+  });
 });
 
 test("profile store recovers from malformed local data", () => {

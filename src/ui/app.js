@@ -1,5 +1,6 @@
 import { calculateTapReward, getRunEntryCost } from "../core/economy.js";
 import { ProfileStore } from "../core/profile-store.js";
+import { DEFAULT_TOUR_ID, getTourDefinition } from "../game/content.js";
 import { DoffaGame } from "../game/game.js";
 
 function requiredElement(id) {
@@ -19,13 +20,20 @@ export function bootstrapApp() {
     bestRoom: requiredElement("best-room"),
     bossWins: requiredElement("boss-wins"),
     lifetimeBeans: requiredElement("lifetime-beans"),
+    selectedTourCode: requiredElement("selected-tour-code"),
+    selectedTourName: requiredElement("selected-tour-name"),
+    selectedTourDistrict: requiredElement("selected-tour-district"),
+    selectedTourRoute: requiredElement("selected-tour-route"),
     tapButton: requiredElement("tap-button"),
     tapBurst: requiredElement("tap-burst"),
     startRun: requiredElement("start-run"),
+    startRunLabel: requiredElement("start-run-label"),
     entryCost: requiredElement("entry-cost"),
     homeNotice: requiredElement("home-notice"),
     abortRun: requiredElement("abort-run"),
     hudRoom: requiredElement("hud-room"),
+    hudTour: requiredElement("hud-tour"),
+    hudRoomName: requiredElement("hud-room-name"),
     hudHealth: requiredElement("hud-health"),
     hudHealthText: requiredElement("hud-health-text"),
     abilityOverlay: requiredElement("ability-overlay"),
@@ -34,6 +42,7 @@ export function bootstrapApp() {
     resultKicker: requiredElement("result-kicker"),
     resultTitle: requiredElement("result-title"),
     resultRoom: requiredElement("result-room"),
+    resultTour: requiredElement("result-tour"),
     resultBeans: requiredElement("result-beans"),
     resultReceipt: requiredElement("result-receipt"),
     returnHome: requiredElement("return-home"),
@@ -46,14 +55,30 @@ export function bootstrapApp() {
   };
 
   const profileStore = new ProfileStore();
+  const selectedTour = getTourDefinition(DEFAULT_TOUR_ID);
+  if (!selectedTour) {
+    throw new Error(`Missing default tour ${DEFAULT_TOUR_ID}`);
+  }
   let deferredInstallPrompt = null;
   let burstTimer = 0;
 
   const renderProfile = (profile) => {
+    const tourProgress = profile.tourProgress[selectedTour.id] ?? {
+      bestRoom: 0,
+      bossesDefeated: 0,
+    };
     elements.beans.textContent = profile.beans.toLocaleString("en-US");
-    elements.bestRoom.textContent = `${profile.bestRoom} / 6`;
-    elements.bossWins.textContent = profile.bossesDefeated.toLocaleString("en-US");
+    elements.bestRoom.textContent = `${Math.min(tourProgress.bestRoom, selectedTour.rooms.length)} / ${selectedTour.rooms.length}`;
+    elements.bossWins.textContent = tourProgress.bossesDefeated.toLocaleString("en-US");
     elements.lifetimeBeans.textContent = profile.lifetimeBeans.toLocaleString("en-US");
+  };
+
+  const renderSelectedTour = () => {
+    elements.selectedTourCode.textContent = selectedTour.code;
+    elements.selectedTourName.textContent = selectedTour.name;
+    elements.selectedTourDistrict.textContent = selectedTour.district;
+    elements.selectedTourRoute.textContent = `${selectedTour.rooms.length} CHAMBERS // 1 BOSS`;
+    elements.startRunLabel.textContent = `ENTER ${selectedTour.code}`;
   };
 
   const showHome = () => {
@@ -70,8 +95,10 @@ export function bootstrapApp() {
     canvas: elements.canvas,
     profileStore,
     onProfile: renderProfile,
-    onHud({ room, totalRooms, hp, maxHp }) {
+    onHud({ room, totalRooms, tourCode, roomName, hp, maxHp }) {
+      elements.hudTour.textContent = tourCode;
       elements.hudRoom.textContent = `${room} / ${totalRooms}`;
+      elements.hudRoomName.textContent = roomName;
       elements.hudHealthText.textContent = `${hp} / ${maxHp}`;
       elements.hudHealth.style.width = `${Math.max(0, (hp / maxHp) * 100)}%`;
     },
@@ -110,6 +137,7 @@ export function bootstrapApp() {
         ? "THE ROASTER FELL."
         : "THE CHAMBER WON.";
       elements.resultRoom.textContent = String(result.roomsCleared);
+      elements.resultTour.textContent = result.tour.code;
       elements.resultBeans.textContent = `+${result.beanReward}`;
       elements.resultReceipt.textContent = result.receipt.id.slice(0, 12).toUpperCase();
       elements.resultOverlay.hidden = false;
@@ -117,6 +145,7 @@ export function bootstrapApp() {
   });
 
   elements.entryCost.textContent = String(getRunEntryCost());
+  renderSelectedTour();
   renderProfile(profileStore.profile);
   game.startLoop();
 
@@ -137,8 +166,12 @@ export function bootstrapApp() {
   });
 
   elements.startRun.addEventListener("click", () => {
-    const result = game.beginRun();
+    const result = game.beginRun(selectedTour.id);
     if (!result.ok) {
+      if (result.reason === "tour-unavailable") {
+        elements.homeNotice.textContent = "THIS TOUR IS NOT AVAILABLE IN THIS BUILD.";
+        return;
+      }
       elements.homeNotice.textContent = `CHARGE ${result.missingBeans} MORE BEANS.`;
       return;
     }

@@ -4,7 +4,7 @@ The first flagship game in the DOFFA Games universe: a portrait action-roguelite
 
 ## Current milestone
 
-Version `0.1.1` is the first playable vertical slice:
+Version `0.2.0` is the first playable, data-driven vertical slice:
 
 - tap the Roaster Core to collect entry beans;
 - spend beans to enter a six-room run;
@@ -12,6 +12,8 @@ Version `0.1.1` is the first playable vertical slice:
 - choose one of three abilities after each cleared room;
 - defeat the Hollow Roaster boss;
 - receive a local, non-claimable test receipt.
+- load the complete run from a validated tour/room/enemy content catalog;
+- preserve separate progress for each future tour.
 
 All visuals in this milestone are original procedural placeholders. The production character and monster pipeline begins after the combat loop is approved.
 

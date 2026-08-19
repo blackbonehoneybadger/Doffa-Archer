@@ -8,49 +8,17 @@ import { SeededRng } from "../core/rng.js";
 import { createLocalRunReceipt } from "../core/run-receipt.js";
 import { consumeFixedSteps } from "../core/fixed-timestep.js";
 import { applyAbility, chooseAbilityCards } from "./abilities.js";
+import {
+  DEFAULT_TOUR_ID,
+  getEnemyDefinition,
+  getRoomDefinition,
+  getTourDefinition,
+} from "./content.js";
 
 const TAU = Math.PI * 2;
 const PLAYER_COLOR = "#e7bc70";
 const ENEMY_COLOR = "#bc4b2f";
 const ARENA = VIEWPORT.arena;
-
-const ENEMY_TYPES = Object.freeze({
-  ash_hound: Object.freeze({
-    hp: 46,
-    speed: 102,
-    radius: 25,
-    contactDamage: 10,
-    score: 100,
-  }),
-  ember_oracle: Object.freeze({
-    hp: 58,
-    speed: 68,
-    radius: 27,
-    contactDamage: 8,
-    score: 140,
-  }),
-  brass_colossus: Object.freeze({
-    hp: 118,
-    speed: 52,
-    radius: 34,
-    contactDamage: 16,
-    score: 200,
-  }),
-  smoke_revenant: Object.freeze({
-    hp: 76,
-    speed: 76,
-    radius: 29,
-    contactDamage: 11,
-    score: 180,
-  }),
-  hollow_roaster: Object.freeze({
-    hp: 1_050,
-    speed: 45,
-    radius: 72,
-    contactDamage: 22,
-    score: 2_500,
-  }),
-});
 
 function clamp(value, minimum, maximum) {
   return Math.min(maximum, Math.max(minimum, value));
@@ -111,6 +79,8 @@ export class DoffaGame {
     this.onRunEnd = onRunEnd;
 
     this.mode = "idle";
+    this.tour = getTourDefinition(DEFAULT_TOUR_ID);
+    this.roomDefinition = null;
     this.room = 0;
     this.clearedRooms = 0;
     this.score = 0;
@@ -238,7 +208,12 @@ export class DoffaGame {
     this.frameRequest = requestAnimationFrame(frame);
   }
 
-  beginRun() {
+  beginRun(tourId = DEFAULT_TOUR_ID) {
+    const tour = getTourDefinition(tourId);
+    if (!tour?.unlocked) {
+      return { ok: false, reason: "tour-unavailable" };
+    }
+
     const profile = this.profileStore.profile;
     if (!canEnterRun(profile.beans)) {
       return { ok: false, missingBeans: getRunEntryCost() - profile.beans };
@@ -251,6 +226,8 @@ export class DoffaGame {
     this.onProfile(this.profileStore.profile);
 
     this.mode = "running";
+    this.tour = tour;
+    this.roomDefinition = null;
     this.room = 1;
     this.clearedRooms = 0;
     this.score = 0;
@@ -260,6 +237,7 @@ export class DoffaGame {
     this.particles = [];
     this.ownedAbilities = [];
     this.clearDelay = 0;
+    this.nextEnemyId = 1;
     this.accumulator = 0;
     this.paused = false;
     this.rng = new SeededRng(Date.now() ^ (this.profileStore.profile.runsStarted * 2_654_435_761));
@@ -303,16 +281,13 @@ export class DoffaGame {
     this.player.y = RUN_CONFIG.playerStartY;
     this.player.invulnerability = 0.7;
 
-    const layouts = {
-      1: ["ash_hound", "ash_hound", "ash_hound", "ash_hound"],
-      2: ["ember_oracle", "ember_oracle", "ember_oracle", "ember_oracle"],
-      3: ["brass_colossus", "brass_colossus", "brass_colossus"],
-      4: ["smoke_revenant", "smoke_revenant", "smoke_revenant", "smoke_revenant"],
-      5: ["ash_hound", "ember_oracle", "brass_colossus", "smoke_revenant", "smoke_revenant"],
-      6: ["hollow_roaster"],
-    };
+    const roomDefinition = getRoomDefinition(this.tour.id, roomNumber);
+    if (!roomDefinition) {
+      throw new RangeError(`Unknown room ${roomNumber} for tour ${this.tour.id}`);
+    }
 
-    const types = layouts[roomNumber] ?? layouts[1];
+    this.roomDefinition = roomDefinition;
+    const types = roomDefinition.enemies;
     const columns = Math.min(3, types.length);
     types.forEach((type, index) => {
       const column = index % columns;
@@ -326,13 +301,19 @@ export class DoffaGame {
   }
 
   createEnemy(type, x, y, roomNumber) {
-    const base = ENEMY_TYPES[type];
-    const isBoss = type === "hollow_roaster";
+    const base = getEnemyDefinition(type);
+    if (!base) {
+      throw new RangeError(`Unknown enemy type: ${type}`);
+    }
+
+    const isBoss = base.boss;
     const scale = isBoss ? 1 : 1 + (roomNumber - 1) * 0.085;
     const hp = Math.round(base.hp * scale);
     return {
       id: this.nextEnemyId++,
       type,
+      behavior: base.behavior,
+      isBoss,
       x,
       y,
       radius: base.radius,
@@ -481,15 +462,15 @@ export class DoffaGame {
       enemy.phaseTimer += delta;
       enemy.hitFlash = Math.max(0, enemy.hitFlash - delta);
 
-      if (enemy.type === "ash_hound") {
+      if (enemy.behavior === "ash_hound") {
         this.updateAshHound(enemy, delta);
-      } else if (enemy.type === "ember_oracle") {
+      } else if (enemy.behavior === "ember_oracle") {
         this.updateEmberOracle(enemy, delta);
-      } else if (enemy.type === "brass_colossus") {
+      } else if (enemy.behavior === "brass_colossus") {
         this.updateBrassColossus(enemy, delta);
-      } else if (enemy.type === "smoke_revenant") {
+      } else if (enemy.behavior === "smoke_revenant") {
         this.updateSmokeRevenant(enemy, delta);
-      } else if (enemy.type === "hollow_roaster") {
+      } else if (enemy.behavior === "hollow_roaster") {
         this.updateBoss(enemy, delta);
       }
 
@@ -713,7 +694,7 @@ export class DoffaGame {
       if (enemy.hp <= 0) {
         enemy.alive = false;
         this.score += enemy.score;
-        this.spawnParticles(enemy.x, enemy.y, ENEMY_COLOR, enemy.type === "hollow_roaster" ? 46 : 18, 230);
+        this.spawnParticles(enemy.x, enemy.y, ENEMY_COLOR, enemy.isBoss ? 46 : 18, 230);
       }
 
       if (projectile.hitsLeft <= 0) {
@@ -788,7 +769,7 @@ export class DoffaGame {
     }
 
     this.clearedRooms = Math.max(this.clearedRooms, this.room);
-    if (this.room >= RUN_CONFIG.totalRooms) {
+    if (this.room >= this.tour.rooms.length) {
       this.finishRun(true);
       return;
     }
@@ -806,10 +787,11 @@ export class DoffaGame {
     }
 
     const roomsCleared = bossDefeated
-      ? RUN_CONFIG.totalRooms
+      ? this.tour.rooms.length
       : Math.max(this.clearedRooms, Math.max(0, this.room - 1));
     const beanReward = calculateRunBeanReward({ roomsCleared, bossDefeated });
     const receipt = createLocalRunReceipt({
+      tourId: this.tour.id,
       roomsCleared,
       bossDefeated,
       score: this.score,
@@ -819,6 +801,14 @@ export class DoffaGame {
       draft.beans += beanReward;
       draft.lifetimeBeans += beanReward;
       draft.bestRoom = Math.max(draft.bestRoom, roomsCleared);
+      const tourProgress = draft.tourProgress[this.tour.id] ?? {
+        bestRoom: 0,
+        bossesDefeated: 0,
+      };
+      draft.tourProgress[this.tour.id] = {
+        bestRoom: Math.max(tourProgress.bestRoom, roomsCleared),
+        bossesDefeated: tourProgress.bossesDefeated + (bossDefeated ? 1 : 0),
+      };
       if (bossDefeated) {
         draft.bossesDefeated += 1;
       }
@@ -833,6 +823,7 @@ export class DoffaGame {
     this.onProfile(this.profileStore.profile);
     this.onRunEnd({
       bossDefeated,
+      tour: this.tour,
       roomsCleared,
       beanReward,
       score: this.score,
@@ -843,7 +834,9 @@ export class DoffaGame {
   emitHud() {
     this.onHud({
       room: this.room,
-      totalRooms: RUN_CONFIG.totalRooms,
+      totalRooms: this.tour.rooms.length,
+      tourCode: this.tour.code,
+      roomName: this.roomDefinition?.name ?? "SEALED CHAMBER",
       hp: Math.ceil(this.player.hp),
       maxHp: Math.ceil(this.player.maxHp),
     });
@@ -918,7 +911,7 @@ export class DoffaGame {
     context.fillText(String(Math.max(1, this.room)).padStart(2, "0"), VIEWPORT.width / 2, 92);
     context.font = "700 15px Arial Narrow, sans-serif";
     context.letterSpacing = "4px";
-    context.fillText("SEALED CHAMBER", VIEWPORT.width / 2, 118);
+    context.fillText(this.roomDefinition?.name ?? "SEALED CHAMBER", VIEWPORT.width / 2, 118);
     context.restore();
   }
 
@@ -986,11 +979,11 @@ export class DoffaGame {
     context.translate(enemy.x, enemy.y);
     const facing = Math.atan2(this.player.y - enemy.y, this.player.x - enemy.x);
     context.rotate(facing + Math.PI / 2);
-    context.shadowBlur = enemy.type === "hollow_roaster" ? 24 : 11;
+    context.shadowBlur = enemy.isBoss ? 24 : 11;
     context.shadowColor = enemy.hitFlash > 0 ? "#fff4d0" : "#a53d25";
     context.strokeStyle = enemy.hitFlash > 0 ? "#fff4d0" : "#d56b3c";
     context.fillStyle = enemy.hitFlash > 0 ? "#e9c695" : "#27110d";
-    context.lineWidth = enemy.type === "hollow_roaster" ? 6 : 4;
+    context.lineWidth = enemy.isBoss ? 6 : 4;
 
     if (enemy.type === "ash_hound") {
       context.beginPath();

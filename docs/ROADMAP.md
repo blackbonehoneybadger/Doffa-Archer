@@ -6,12 +6,13 @@
 - Approve portrait layout and tap-to-enter loop.
 - Tune six rooms, eight abilities, four enemies, and the first boss.
 - Replace obvious placeholder roughness while keeping assets original.
+- Completed foundation: validated data definitions for tours, rooms, enemies, and bosses.
 
 ## Phase 2 — Production foundation
 
 - Add account service, server-created run sessions, event validation, and anti-replay storage.
 - Add deterministic combat telemetry suitable for cheat analysis.
-- Introduce content definitions for tours, rooms, enemies, bosses, heroes, equipment, and abilities.
+- Extend the content catalog with heroes, equipment, room modifiers, and versioned balance tables.
 - Build Android wrapper, signed release pipeline, crash reporting, and staged rollout.
 
 ## Phase 3 — Art and content

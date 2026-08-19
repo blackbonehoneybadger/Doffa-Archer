@@ -358,6 +358,60 @@ h1 span {
   font-size: 0.92rem;
 }
 
+.tour-contract {
+  width: min(100%, 440px);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 18px;
+  align-items: center;
+  margin: 0 0 12px;
+  padding: 13px 15px;
+  border: 1px solid rgba(230, 180, 97, 0.22);
+  background:
+    linear-gradient(110deg, rgba(182, 107, 50, 0.16), transparent 58%),
+    rgba(255, 255, 255, 0.018);
+  text-align: left;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+}
+
+.tour-copy,
+.tour-route {
+  display: flex;
+  flex-direction: column;
+}
+
+.tour-copy span,
+.tour-copy small,
+.tour-route span {
+  color: var(--muted);
+  font-size: 0.5rem;
+  letter-spacing: 0.13em;
+}
+
+.tour-copy strong {
+  margin: 4px 0;
+  color: var(--cream);
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+}
+
+.tour-route {
+  align-items: flex-end;
+  gap: 7px;
+}
+
+.tour-route b {
+  padding: 3px 6px;
+  border: 1px solid rgba(230, 180, 97, 0.45);
+  color: var(--gold);
+  font-size: 0.48rem;
+  letter-spacing: 0.12em;
+}
+
+.tour-route span {
+  white-space: nowrap;
+}
+
 .primary-action {
   position: relative;
   width: min(100%, 440px);
@@ -442,6 +496,18 @@ h1 span {
   display: block;
   margin-top: 5px;
   color: var(--gold);
+}
+
+.hud-block small {
+  display: block;
+  max-width: 110px;
+  margin-top: 3px;
+  overflow: hidden;
+  color: rgba(157, 136, 116, 0.72);
+  font-size: 0.42rem;
+  letter-spacing: 0.08em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .health-wrap {

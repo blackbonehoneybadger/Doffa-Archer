@@ -22,7 +22,7 @@
           <img src="/assets/icon.svg" alt="" width="42" height="42">
           <span>
             <strong>DOFFA</strong>
-            <small>HEROES // PROTOTYPE 0.1.1</small>
+            <small>HEROES // PROTOTYPE 0.2.0</small>
           </span>
         </a>
         <div class="currency" aria-label="Entry beans">
@@ -54,8 +54,20 @@
           <div><span>LIFETIME BEANS</span><strong id="lifetime-beans">0</strong></div>
         </div>
 
+        <article class="tour-contract" aria-label="Selected tour">
+          <div class="tour-copy">
+            <span id="selected-tour-code">TOUR 01</span>
+            <strong id="selected-tour-name">THE HOLLOW ROASTERY</strong>
+            <small id="selected-tour-district">FURNACE DISTRICT</small>
+          </div>
+          <div class="tour-route">
+            <b>ACTIVE</b>
+            <span id="selected-tour-route">6 CHAMBERS // 1 BOSS</span>
+          </div>
+        </article>
+
         <button id="start-run" class="primary-action" type="button">
-          <span>ENTER THE ROAST</span>
+          <span id="start-run-label">ENTER TOUR 01</span>
           <small><b id="entry-cost">25</b> BEANS</small>
         </button>
         <p id="home-notice" class="notice" role="status" aria-live="polite"></p>
@@ -69,8 +81,9 @@
       <section id="game-screen" class="screen game-screen" hidden aria-label="Combat arena">
         <div class="game-hud">
           <div class="hud-block">
-            <span>CHAMBER</span>
+            <span id="hud-tour">TOUR 01</span>
             <strong id="hud-room">1 / 6</strong>
+            <small id="hud-room-name">ASH INTAKE</small>
           </div>
           <div class="health-wrap" aria-label="Hero health">
             <div class="health-label"><span>HONEY BADGER // TEST RIG</span><b id="hud-health-text">100 / 100</b></div>
@@ -99,6 +112,7 @@
           <h2 id="result-title">THE CHAMBER WON.</h2>
           <div class="result-seal" aria-hidden="true"><span id="result-room">0</span><small>ROOMS</small></div>
           <dl class="result-list">
+            <div><dt>Tour</dt><dd id="result-tour">—</dd></div>
             <div><dt>Beans recovered</dt><dd id="result-beans">0</dd></div>
             <div><dt>Test receipt</dt><dd id="result-receipt">—</dd></div>
             <div><dt>Token claim</dt><dd>DISABLED</dd></div>

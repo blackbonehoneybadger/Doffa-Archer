@@ -4,6 +4,8 @@
 
 The vertical slice is offline-first and stores only local gameplay progress. Everything in browser storage is editable by the player and therefore has zero authority over future token rewards.
 
+Local run receipts now include a validated tour identifier and build version. This improves auditability, but the receipt remains explicitly non-claimable and never becomes reward authority.
+
 ## Production trust boundary
 
 | Component | Trusted for rewards | Holds private keys |
