@@ -1,0 +1,15 @@
+{
+  "name": "doffa-heroes",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "DOFFA Games flagship action-roguelite vertical slice",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "serve": "python3 -m http.server 4173",
+    "check": "node scripts/check-source.mjs && node scripts/secret-scan.mjs && node --test",
+    "test": "npm run check"
+  }
+}

@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+    <meta name="theme-color" content="#100b08">
+    <meta name="description" content="DOFFA Heroes — the first action-roguelite in the DOFFA Games universe.">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>DOFFA Heroes</title>
+    <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="stylesheet" href="/styles/main.css">
+    <script type="module" src="/src/main.js"></script>
+  </head>
+  <body>
+    <div class="noise" aria-hidden="true"></div>
+    <main id="app" class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="#" aria-label="DOFFA Heroes home">
+          <img src="/assets/icon.svg" alt="" width="42" height="42">
+          <span>
+            <strong>DOFFA</strong>
+            <small>HEROES // PROTOTYPE 0.1</small>
+          </span>
+        </a>
+        <div class="currency" aria-label="Entry beans">
+          <span class="currency-mark" aria-hidden="true"></span>
+          <strong id="top-beans">0</strong>
+          <small>BEANS</small>
+        </div>
+      </header>
+
+      <section id="home-screen" class="screen home-screen" aria-labelledby="home-title">
+        <div class="eyebrow">DOFFA GAMES // FIRST TITLE</div>
+        <h1 id="home-title">THE ROAST<br><span>DOES NOT FORGIVE.</span></h1>
+        <p class="lead">Charge the Core. Enter the sealed chambers. Stop moving to fire. Survive the Hollow Roaster.</p>
+
+        <div class="core-panel">
+          <div class="core-rings" aria-hidden="true">
+            <span></span><span></span><span></span>
+          </div>
+          <button id="tap-button" class="roaster-core" type="button" aria-label="Tap the Roaster Core to collect one bean">
+            <span class="core-glyph">D</span>
+            <span class="core-label">TAP CORE</span>
+          </button>
+          <div id="tap-burst" class="tap-burst" aria-hidden="true">+1</div>
+        </div>
+
+        <div class="home-stats" aria-label="Prototype progress">
+          <div><span>BEST ROOM</span><strong id="best-room">0 / 6</strong></div>
+          <div><span>BOSSES ENDED</span><strong id="boss-wins">0</strong></div>
+          <div><span>LIFETIME BEANS</span><strong id="lifetime-beans">0</strong></div>
+        </div>
+
+        <button id="start-run" class="primary-action" type="button">
+          <span>ENTER THE ROAST</span>
+          <small><b id="entry-cost">25</b> BEANS</small>
+        </button>
+        <p id="home-notice" class="notice" role="status" aria-live="polite"></p>
+
+        <div class="prototype-note">
+          <strong>NO TOKEN CONNECTED</strong>
+          <span>Local gameplay prototype. No wallet, mint, transfer, or real reward.</span>
+        </div>
+      </section>
+
+      <section id="game-screen" class="screen game-screen" hidden aria-label="Combat arena">
+        <div class="game-hud">
+          <div class="hud-block">
+            <span>CHAMBER</span>
+            <strong id="hud-room">1 / 6</strong>
+          </div>
+          <div class="health-wrap" aria-label="Hero health">
+            <div class="health-label"><span>HONEY BADGER // TEST RIG</span><b id="hud-health-text">100 / 100</b></div>
+            <div class="health-track"><div id="hud-health" class="health-fill"></div></div>
+          </div>
+          <button id="abort-run" class="icon-button" type="button" aria-label="End run">×</button>
+        </div>
+        <div class="arena-shell">
+          <canvas id="game-canvas" width="720" height="1280" aria-label="DOFFA Heroes combat arena"></canvas>
+          <div class="control-hint">DRAG TO MOVE · RELEASE TO FIRE</div>
+        </div>
+      </section>
+
+      <section id="ability-overlay" class="modal-layer" hidden aria-labelledby="ability-title">
+        <div class="modal-card ability-modal">
+          <div class="eyebrow">CHAMBER CLEARED</div>
+          <h2 id="ability-title">CHOOSE YOUR PRESSURE</h2>
+          <p>One upgrade. No undo.</p>
+          <div id="ability-choices" class="ability-grid"></div>
+        </div>
+      </section>
+
+      <section id="result-overlay" class="modal-layer" hidden aria-labelledby="result-title">
+        <div class="modal-card result-modal">
+          <div id="result-kicker" class="eyebrow">RUN CLOSED</div>
+          <h2 id="result-title">THE CHAMBER WON.</h2>
+          <div class="result-seal" aria-hidden="true"><span id="result-room">0</span><small>ROOMS</small></div>
+          <dl class="result-list">
+            <div><dt>Beans recovered</dt><dd id="result-beans">0</dd></div>
+            <div><dt>Test receipt</dt><dd id="result-receipt">—</dd></div>
+            <div><dt>Token claim</dt><dd>DISABLED</dd></div>
+          </dl>
+          <button id="return-home" class="primary-action" type="button"><span>RETURN TO CORE</span></button>
+        </div>
+      </section>
+
+      <aside id="update-banner" class="update-banner" hidden aria-live="polite">
+        <span>A new build is ready.</span>
+        <button id="apply-update" type="button">UPDATE NOW</button>
+      </aside>
+
+      <footer class="footer">
+        <span>ORIGINAL DOFFA VERTICAL SLICE</span>
+        <button id="install-app" type="button" hidden>INSTALL APP</button>
+      </footer>
+    </main>
+    <noscript>DOFFA Heroes requires JavaScript.</noscript>
+  </body>
+</html>
