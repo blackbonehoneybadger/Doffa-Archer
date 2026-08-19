@@ -15,10 +15,16 @@ import {
   getTourDefinition,
 } from "./content.js";
 import {
+  MAX_INVENTORY_ITEMS,
+  getLoadoutModifiers,
+  rollEquipmentDrop,
+} from "./equipment.js";
+import {
   DEFAULT_HERO_ID,
   createHeroCombatProfile,
   getHeroDefinition,
 } from "./heroes.js";
+import { calculateRunHeroXp, grantHeroXp } from "./progression.js";
 
 const TAU = Math.PI * 2;
 const ENEMY_COLOR = "#bc4b2f";
@@ -63,11 +69,18 @@ export class DoffaGame {
     this.mode = "idle";
     this.tour = getTourDefinition(DEFAULT_TOUR_ID);
     this.hero = getHeroDefinition(profileStore.profile?.selectedHeroId) ?? getHeroDefinition(DEFAULT_HERO_ID);
+    this.heroLevel = profileStore.profile?.heroProgress?.[this.hero.id]?.level ?? 1;
     this.roomDefinition = null;
     this.room = 0;
     this.clearedRooms = 0;
     this.score = 0;
-    this.player = createHeroCombatProfile(this.hero.id);
+    this.player = createHeroCombatProfile(this.hero.id, {
+      level: this.heroLevel,
+      modifiers: getLoadoutModifiers(
+        profileStore.profile?.inventory,
+        profileStore.profile?.loadout,
+      ),
+    });
     this.enemies = [];
     this.projectiles = [];
     this.particles = [];
@@ -220,7 +233,11 @@ export class DoffaGame {
     this.room = 1;
     this.clearedRooms = 0;
     this.score = 0;
-    this.player = createHeroCombatProfile(hero.id);
+    this.heroLevel = profile.heroProgress?.[hero.id]?.level ?? 1;
+    this.player = createHeroCombatProfile(hero.id, {
+      level: this.heroLevel,
+      modifiers: getLoadoutModifiers(profile.inventory, profile.loadout),
+    });
     this.enemies = [];
     this.projectiles = [];
     this.particles = [];
@@ -821,6 +838,13 @@ export class DoffaGame {
       ? this.tour.rooms.length
       : Math.max(this.clearedRooms, Math.max(0, this.room - 1));
     const beanReward = calculateRunBeanReward({ roomsCleared, bossDefeated });
+    const xpReward = calculateRunHeroXp({ roomsCleared, bossDefeated });
+    const heroProgressBefore = this.profileStore.profile.heroProgress?.[this.hero.id];
+    const heroProgressAfter = grantHeroXp(heroProgressBefore, xpReward);
+    const inventoryHasSpace = this.profileStore.profile.inventory.length < MAX_INVENTORY_ITEMS;
+    const equipmentDrop = inventoryHasSpace
+      ? rollEquipmentDrop(this.rng, { roomsCleared, bossDefeated })
+      : null;
     const receipt = createLocalRunReceipt({
       tourId: this.tour.id,
       heroId: this.hero.id,
@@ -844,6 +868,13 @@ export class DoffaGame {
       if (bossDefeated) {
         draft.bossesDefeated += 1;
       }
+      draft.heroProgress[this.hero.id] = {
+        level: heroProgressAfter.level,
+        xp: heroProgressAfter.xp,
+      };
+      if (equipmentDrop) {
+        draft.inventory.push({ ...equipmentDrop });
+      }
     });
 
     this.mode = "result";
@@ -859,6 +890,12 @@ export class DoffaGame {
       hero: this.hero,
       roomsCleared,
       beanReward,
+      xpReward,
+      heroLevelBefore: heroProgressBefore?.level ?? 1,
+      heroLevelAfter: heroProgressAfter.level,
+      levelsGained: heroProgressAfter.levelsGained,
+      equipmentDrop,
+      inventoryFull: !inventoryHasSpace,
       score: this.score,
       receipt,
     });
@@ -871,6 +908,7 @@ export class DoffaGame {
       tourCode: this.tour.code,
       roomName: this.roomDefinition?.name ?? "SEALED CHAMBER",
       heroName: this.hero.name,
+      heroLevel: this.heroLevel,
       weaponName: this.hero.weapon,
       hp: Math.ceil(this.player.hp),
       maxHp: Math.ceil(this.player.maxHp),

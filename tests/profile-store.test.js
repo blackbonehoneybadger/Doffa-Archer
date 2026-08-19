@@ -39,7 +39,7 @@ test("legacy aggregate progress migrates into the first tour record and default 
     bossesDefeated: 2,
   });
 
-  assert.equal(profile.version, 3);
+  assert.equal(profile.version, 4);
   assert.equal(profile.selectedHeroId, DEFAULT_HERO_ID);
   assert.deepEqual(profile.tourProgress[DEFAULT_TOUR_ID], {
     bestRoom: 4,
@@ -51,6 +51,29 @@ test("profile keeps only known hero identifiers", () => {
   assert.equal(normalizeProfile({ selectedHeroId: "pata" }).selectedHeroId, "pata");
   assert.equal(normalizeProfile({ selectedHeroId: "../unknown" }).selectedHeroId, DEFAULT_HERO_ID);
   assert.equal(normalizeProfile({ selectedHeroId: "not-in-roster" }).selectedHeroId, DEFAULT_HERO_ID);
+});
+
+test("profile v4 migrates hero levels and sanitizes local inventory", () => {
+  const profile = normalizeProfile({
+    version: 3,
+    heroProgress: {
+      pata: { level: 7, xp: 71 },
+      unknown: { level: 40, xp: 1_000 },
+    },
+    inventory: [
+      { instanceId: "loot-safe", itemId: "pressure-bore", rarity: "rare", level: 3 },
+      { instanceId: "../loot", itemId: "void-locket", rarity: "epic", level: 10 },
+      { instanceId: "loot-unknown", itemId: "fake-key", rarity: "epic", level: 10 },
+    ],
+    loadout: { weapon: "loot-safe", relic: "../loot" },
+  });
+
+  assert.equal(profile.version, 4);
+  assert.deepEqual(profile.heroProgress.pata, { level: 7, xp: 71 });
+  assert.equal(Object.hasOwn(profile.heroProgress, "unknown"), false);
+  assert.equal(profile.inventory.length, 5);
+  assert.equal(profile.loadout.weapon, "loot-safe");
+  assert.equal(profile.loadout.relic, "starter-relic");
 });
 
 test("profile store recovers from malformed local data", () => {

@@ -8,12 +8,13 @@
 - Replace obvious placeholder roughness while keeping assets original.
 - Completed foundation: validated data definitions for tours, rooms, enemies, and bosses.
 - Completed foundation: five-hero catalog, persistent selection, and distinct prototype weapons.
+- Completed foundation: per-hero XP and levels, four-slot loadouts, item rarities, sanitized inventory, and local run drops.
 
 ## Phase 2 — Production foundation
 
 - Add account service, server-created run sessions, event validation, and anti-replay storage.
 - Add deterministic combat telemetry suitable for cheat analysis.
-- Extend the content catalog with equipment, hero levels, room modifiers, and versioned balance tables.
+- Extend the prototype equipment and hero-level catalogs with upgrades, dismantling, room modifiers, and versioned server balance tables.
 - Build Android wrapper, signed release pipeline, crash reporting, and staged rollout.
 
 ## Phase 3 — Art and content

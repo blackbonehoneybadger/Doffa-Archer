@@ -3,6 +3,14 @@ import {
   DEFAULT_TOUR_ID,
   HERO_IDS,
 } from "../config/game-config.js";
+import {
+  createDefaultEquipmentState,
+  normalizeEquipmentState,
+} from "../game/equipment.js";
+import {
+  createDefaultHeroProgress,
+  normalizeHeroProgressMap,
+} from "../game/progression.js";
 
 const STORAGE_KEY = "doffa-heroes-profile-v1";
 const MAX_SAFE_STAT = 1_000_000_000;
@@ -14,8 +22,11 @@ const DEFAULT_TOUR_PROGRESS = Object.freeze({
   bossesDefeated: 0,
 });
 
+const defaultHeroProgress = createDefaultHeroProgress();
+const defaultEquipment = createDefaultEquipmentState();
+
 export const DEFAULT_PROFILE = Object.freeze({
-  version: 3,
+  version: 4,
   selectedHeroId: DEFAULT_HERO_ID,
   beans: 30,
   lifetimeBeans: 30,
@@ -25,6 +36,16 @@ export const DEFAULT_PROFILE = Object.freeze({
   tourProgress: Object.freeze({
     [DEFAULT_TOUR_ID]: DEFAULT_TOUR_PROGRESS,
   }),
+  heroProgress: Object.freeze(
+    Object.fromEntries(
+      Object.entries(defaultHeroProgress).map(([heroId, progress]) => [
+        heroId,
+        Object.freeze({ ...progress }),
+      ]),
+    ),
+  ),
+  inventory: Object.freeze(defaultEquipment.inventory.map((item) => Object.freeze({ ...item }))),
+  loadout: Object.freeze({ ...defaultEquipment.loadout }),
 });
 
 function safeInteger(value, fallback, maximum = MAX_SAFE_STAT) {
@@ -74,6 +95,10 @@ export function normalizeProfile(input = {}) {
   const candidate = input && typeof input === "object" ? input : {};
   const bestRoom = safeInteger(candidate.bestRoom, DEFAULT_PROFILE.bestRoom, MAX_ROOM_PROGRESS);
   const bossesDefeated = safeInteger(candidate.bossesDefeated, DEFAULT_PROFILE.bossesDefeated);
+  const equipment = normalizeEquipmentState({
+    inventory: candidate.inventory,
+    loadout: candidate.loadout,
+  });
   return {
     version: DEFAULT_PROFILE.version,
     selectedHeroId: normalizeHeroId(candidate.selectedHeroId),
@@ -83,6 +108,9 @@ export function normalizeProfile(input = {}) {
     bossesDefeated,
     runsStarted: safeInteger(candidate.runsStarted, DEFAULT_PROFILE.runsStarted),
     tourProgress: normalizeTourProgress(candidate.tourProgress, bestRoom, bossesDefeated),
+    heroProgress: normalizeHeroProgressMap(candidate.heroProgress),
+    inventory: equipment.inventory,
+    loadout: equipment.loadout,
   };
 }
 
@@ -126,6 +154,14 @@ export class ProfileStore {
           { ...progress },
         ]),
       ),
+      heroProgress: Object.fromEntries(
+        Object.entries(this.profile.heroProgress).map(([heroId, progress]) => [
+          heroId,
+          { ...progress },
+        ]),
+      ),
+      inventory: this.profile.inventory.map((item) => ({ ...item })),
+      loadout: { ...this.profile.loadout },
     };
     const updated = mutator(draft) ?? draft;
     return this.save(updated);

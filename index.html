@@ -22,7 +22,7 @@
           <img src="/assets/icon.svg" alt="" width="42" height="42">
           <span>
             <strong>DOFFA</strong>
-            <small>HEROES // PROTOTYPE 0.3.0</small>
+            <small>HEROES // PROTOTYPE 0.4.0</small>
           </span>
         </a>
         <div class="currency" aria-label="Entry beans">
@@ -63,6 +63,11 @@
             <span id="selected-hero-role">VANGUARD</span>
             <strong id="selected-hero-name">HONEY BADGER</strong>
             <small id="selected-hero-weapon">BLACK STEEL BAT</small>
+            <div class="hero-progression">
+              <span>LEVEL <b id="selected-hero-level">1</b></span>
+              <span id="selected-hero-xp">0 / 100 XP</span>
+            </div>
+            <div class="hero-xp-track" aria-hidden="true"><i id="selected-hero-xp-bar"></i></div>
             <div class="hero-ratings" aria-label="Hero ratings">
               <span>VIT <i id="selected-hero-vitality"></i></span>
               <span>PWR <i id="selected-hero-power"></i></span>
@@ -70,6 +75,17 @@
             </div>
           </div>
           <button id="change-hero" class="hero-change" type="button">CHANGE</button>
+        </article>
+
+        <article id="loadout-card" class="loadout-contract" aria-label="Equipped field loadout">
+          <div class="loadout-head">
+            <div>
+              <span>FIELD LOADOUT</span>
+              <strong>4 ACTIVE SLOTS</strong>
+            </div>
+            <button id="open-inventory" type="button">MANAGE INVENTORY</button>
+          </div>
+          <div id="loadout-slots" class="loadout-slots"></div>
         </article>
 
         <article class="tour-contract" aria-label="Selected tour">
@@ -130,6 +146,25 @@
         </div>
       </section>
 
+      <section id="equipment-overlay" class="modal-layer" hidden aria-labelledby="equipment-title">
+        <div class="modal-card equipment-modal">
+          <div class="hero-modal-head">
+            <div>
+              <div class="eyebrow">DOFFA FIELD ARMORY</div>
+              <h2 id="equipment-title">BUILD YOUR LOADOUT</h2>
+            </div>
+            <button id="close-inventory" class="icon-button" type="button" aria-label="Close inventory">×</button>
+          </div>
+          <p>Equip one item in each slot. Rarity and item level determine the active combat bonus.</p>
+          <div class="inventory-meta">
+            <span>RECOVERED ITEMS</span>
+            <strong id="inventory-count">0 / 100</strong>
+          </div>
+          <div id="inventory-grid" class="inventory-grid"></div>
+          <small class="art-warning">LOCAL PROTOTYPE LOOT // NO TOKEN VALUE // BROWSER STORAGE IS UNTRUSTED</small>
+        </div>
+      </section>
+
       <section id="ability-overlay" class="modal-layer" hidden aria-labelledby="ability-title">
         <div class="modal-card ability-modal">
           <div class="eyebrow">CHAMBER CLEARED</div>
@@ -148,6 +183,9 @@
             <div><dt>Tour</dt><dd id="result-tour">—</dd></div>
             <div><dt>Hero</dt><dd id="result-hero">—</dd></div>
             <div><dt>Beans recovered</dt><dd id="result-beans">0</dd></div>
+            <div><dt>Hero experience</dt><dd id="result-xp">0 XP</dd></div>
+            <div><dt>Hero level</dt><dd id="result-level">LEVEL 1</dd></div>
+            <div><dt>Item recovered</dt><dd id="result-drop">NONE</dd></div>
             <div><dt>Test receipt</dt><dd id="result-receipt">—</dd></div>
             <div><dt>Token claim</dt><dd>DISABLED</dd></div>
           </dl>

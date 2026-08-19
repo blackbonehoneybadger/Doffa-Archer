@@ -41,3 +41,26 @@ test("prototype heroes have materially different combat roles", () => {
   assert.ok(pata.attackInterval < badger.attackInterval);
   assert.ok(pata.attackRange > badger.attackRange);
 });
+
+test("hero levels and equipped modifiers are applied to an isolated run snapshot", () => {
+  const baseline = createHeroCombatProfile("honey-badger");
+  const upgraded = createHeroCombatProfile("honey-badger", {
+    level: 6,
+    modifiers: {
+      damagePct: 0.2,
+      maxHpPct: 0.15,
+      speedPct: 0.1,
+      attackSpeedPct: 0.25,
+      critChance: 0.05,
+      pierce: 1,
+    },
+  });
+
+  assert.equal(upgraded.heroLevel, 6);
+  assert.ok(upgraded.damage > baseline.damage);
+  assert.ok(upgraded.maxHp > baseline.maxHp);
+  assert.ok(upgraded.speed > baseline.speed);
+  assert.ok(upgraded.attackInterval < baseline.attackInterval);
+  assert.equal(upgraded.pierce, baseline.pierce + 1);
+  assert.ok(upgraded.critChance > baseline.critChance);
+});

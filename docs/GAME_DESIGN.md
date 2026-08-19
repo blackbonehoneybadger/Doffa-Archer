@@ -16,11 +16,17 @@ This project may use genre conventions as references, but it does not copy anoth
 6. Generate a reward-eligibility receipt after a verified victory.
 7. In production, a server validates the receipt before any token claim exists.
 
-## Milestone 0.3.0
+## Milestone 0.4.0
 
 - Five selectable hero placeholders: Honey Badger, Hadida, Boya, Mr. Kroo, and Pata.
 - Distinct health, speed, damage, range, fire rate, projectile count, ricochet, and splash profiles.
 - Persistent local hero selection and hero identity in the run HUD, results, and local receipt.
+- Persistent XP and levels stored separately for all five heroes.
+- Four equipment slots: weapon mod, armor, ring, and relic.
+- Ten equipment definitions across common, rare, and epic rarities.
+- Sanitized local inventory and loadout migration from profile schema v3 to v4.
+- Room-based local drop chance and one guaranteed item after a boss victory.
+- Level and loadout modifiers are snapshotted when a run starts.
 - Six rooms and one boss.
 - Four enemy archetypes with distinct movement or attack behavior.
 - Eight abilities and random three-card choices.
@@ -34,7 +40,7 @@ This project may use genre conventions as references, but it does not copy anoth
 
 ## Economy boundary
 
-Beans are gameplay energy and have no blockchain value. Local storage is intentionally treated as untrusted. Real DOFFA rewards are not part of this milestone.
+Beans, hero XP, equipment, and drops are prototype gameplay state and have no blockchain value. Local storage is intentionally treated as untrusted. Real DOFFA rewards are not part of this milestone.
 
 The future claim flow is:
 

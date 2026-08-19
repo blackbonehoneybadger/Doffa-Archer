@@ -1,5 +1,6 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { extname, join, relative } from "node:path";
+import { spawnSync } from "node:child_process";
 
 const root = process.cwd();
 const ignoredDirectories = new Set([".git", "node_modules", "coverage", "dist"]);
@@ -36,12 +37,35 @@ const patterns = [
     expression: new RegExp(["AK", "IA[0-9A-Z]{16}"].join("")),
   },
   {
+    name: "Google API key",
+    expression: new RegExp(["AI", "za[0-9A-Za-z_-]{30,}"].join("")),
+  },
+  {
+    name: "Stripe secret key",
+    expression: new RegExp(["s", "k_(?:live|test)_[0-9A-Za-z]{16,}"].join("")),
+  },
+  {
+    name: "Vercel access token",
+    expression: new RegExp(["ver", "cel_[0-9A-Za-z]{20,}"].join(""), "i"),
+  },
+  {
+    name: "Solana keypair byte array",
+    expression: new RegExp(["\\[(?:\\s*\\d{1,3}\\s*,){31,63}", "\\s*\\d{1,3}\\s*\\]"].join("")),
+  },
+  {
     name: "assigned high-entropy secret",
     expression: new RegExp(
       ["(?:PRIVATE_KEY|SECRET_KEY|SEED_PHRASE|MNEMONIC|API_KEY|ACCESS_TOKEN)", "\\s*[:=]\\s*['\\\"][^'\\\"]{16,}['\\\"]"].join(""),
       "i",
     ),
   },
+];
+
+const dangerousFileNames = [
+  /(^|\/)\.env$/i,
+  /(^|\/)(?:id|wallet|reward-wallet|keypair)\.json$/i,
+  /(^|\/)(?:secrets?|credentials?)\.json$/i,
+  /\.(?:key|pem|p12|pfx)$/i,
 ];
 
 function walk(directory) {
@@ -62,12 +86,31 @@ function walk(directory) {
 
 const findings = [];
 for (const file of walk(root)) {
+  const fileName = relative(root, file).replaceAll("\\", "/");
+  if (dangerousFileNames.some((pattern) => pattern.test(fileName))) {
+    findings.push(`${fileName}: sensitive filename`);
+  }
   const content = readFileSync(file, "utf8");
   for (const pattern of patterns) {
     if (pattern.expression.test(content)) {
-      findings.push(`${relative(root, file)}: ${pattern.name}`);
+      findings.push(`${fileName}: ${pattern.name}`);
     }
   }
+}
+
+const history = spawnSync(
+  "git",
+  ["log", "--all", "--format=", "--patch", "--no-ext-diff"],
+  { cwd: root, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
+);
+if (history.status === 0) {
+  for (const pattern of patterns) {
+    if (pattern.expression.test(history.stdout)) {
+      findings.push(`git history: ${pattern.name}`);
+    }
+  }
+} else if (history.error?.code !== "ENOENT") {
+  findings.push("git history: scan could not be completed");
 }
 
 if (findings.length > 0) {

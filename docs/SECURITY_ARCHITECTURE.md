@@ -2,7 +2,7 @@
 
 ## Current trust boundary
 
-The vertical slice is offline-first and stores only local gameplay progress. Everything in browser storage is editable by the player and therefore has zero authority over future token rewards.
+The vertical slice is offline-first and stores only local gameplay progress. Everything in browser storage—including hero levels, inventory, rarity, and loadout—is editable by the player and therefore has zero authority over future token rewards.
 
 Local run receipts now include validated tour and hero identifiers plus the build version. This improves auditability, but the receipt remains explicitly non-claimable and never becomes reward authority.
 

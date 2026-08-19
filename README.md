@@ -4,7 +4,7 @@ The first flagship game in the DOFFA Games universe: a portrait action-roguelite
 
 ## Current milestone
 
-Version `0.3.0` adds the first playable hero roster to the data-driven vertical slice:
+Version `0.4.0` adds persistent hero progression and a local equipment loop to the data-driven vertical slice:
 
 - tap the Roaster Core to collect entry beans;
 - spend beans to enter a six-room run;
@@ -13,11 +13,14 @@ Version `0.3.0` adds the first playable hero roster to the data-driven vertical 
 - defeat the Hollow Roaster boss;
 - select Honey Badger, Hadida, Boya, Mr. Kroo, or Pata;
 - test five different weapon profiles, ranges, health pools, and attack rhythms;
+- earn separate XP and levels for every hero;
+- equip a weapon mod, armor, ring, and relic;
+- recover common, rare, or epic local items after runs, with a guaranteed boss drop;
 - receive a local, non-claimable test receipt;
 - load the complete run from a validated tour/room/enemy content catalog;
 - preserve separate progress for each future tour.
 
-All visuals in this milestone are original procedural placeholders. The production character and monster pipeline begins after the combat loop is approved.
+All visuals in this milestone are original procedural placeholders. Equipment, XP, beans, and drops are browser-local prototype state with no token value. The production character and monster pipeline begins after the combat loop is approved.
 
 ## Run locally
 

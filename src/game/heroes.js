@@ -3,6 +3,7 @@ import {
   HERO_IDS,
   RUN_CONFIG,
 } from "../config/game-config.js";
+import { getHeroLevelMultiplier, normalizeHeroProgress } from "./progression.js";
 
 const WEAPON_VISUALS = new Set(["impact", "hammer", "shears", "razor", "rifle"]);
 
@@ -168,16 +169,33 @@ export function getUnlockedHeroes() {
   return HEROES.filter((hero) => hero.unlocked);
 }
 
-export function createHeroCombatProfile(heroId = DEFAULT_HERO_ID) {
+function safeModifier(modifiers, key, maximum) {
+  const value = modifiers && typeof modifiers === "object" ? modifiers[key] : 0;
+  return Number.isFinite(value) ? Math.min(maximum, Math.max(0, value)) : 0;
+}
+
+export function createHeroCombatProfile(
+  heroId = DEFAULT_HERO_ID,
+  { level = 1, modifiers = {} } = {},
+) {
   const hero = getHeroDefinition(heroId);
   if (!hero?.unlocked) {
     throw new RangeError(`Unknown or locked hero: ${heroId}`);
   }
 
   const combat = hero.combat;
+  const heroLevel = normalizeHeroProgress({ level }).level;
+  const levelMultiplier = getHeroLevelMultiplier(heroLevel);
+  const maxHp = Math.round(
+    combat.maxHp * levelMultiplier * (1 + safeModifier(modifiers, "maxHpPct", 5)),
+  );
+  const damage = Math.round(
+    combat.damage * levelMultiplier * (1 + safeModifier(modifiers, "damagePct", 5)),
+  );
   return {
     heroId: hero.id,
     heroName: hero.name,
+    heroLevel,
     weaponName: hero.weapon,
     accent: hero.palette.accent,
     secondary: hero.palette.secondary,
@@ -186,19 +204,19 @@ export function createHeroCombatProfile(heroId = DEFAULT_HERO_ID) {
     x: RUN_CONFIG.playerStartX,
     y: RUN_CONFIG.playerStartY,
     radius: 24,
-    hp: combat.maxHp,
-    maxHp: combat.maxHp,
-    speed: combat.speed,
-    damage: combat.damage,
+    hp: maxHp,
+    maxHp,
+    speed: Math.round(combat.speed * (1 + safeModifier(modifiers, "speedPct", 2))),
+    damage,
     projectileSpeed: combat.projectileSpeed,
     projectileCount: combat.projectileCount,
     projectileRadius: combat.projectileRadius,
     projectileLifetime: combat.projectileLifetime,
     attackRange: combat.attackRange,
-    pierce: combat.pierce,
+    pierce: combat.pierce + Math.floor(safeModifier(modifiers, "pierce", 5)),
     wallBounces: combat.wallBounces,
-    critChance: combat.critChance,
-    attackInterval: combat.attackInterval,
+    critChance: Math.min(0.75, combat.critChance + safeModifier(modifiers, "critChance", 0.6)),
+    attackInterval: combat.attackInterval / (1 + safeModifier(modifiers, "attackSpeedPct", 4)),
     splashRadius: combat.splashRadius,
     attackTimer: 0,
     invulnerability: 0,

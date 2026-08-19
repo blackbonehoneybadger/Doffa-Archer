@@ -1,12 +1,22 @@
 import { calculateTapReward, getRunEntryCost } from "../core/economy.js";
 import { ProfileStore } from "../core/profile-store.js";
 import { DEFAULT_TOUR_ID, getTourDefinition } from "../game/content.js";
+import {
+  EQUIPMENT_SLOTS,
+  EQUIPMENT_SLOT_LABELS,
+  MAX_INVENTORY_ITEMS,
+  formatEquipmentEffects,
+  getEquipmentDefinition,
+  getEquippedItem,
+  getRarityDefinition,
+} from "../game/equipment.js";
 import { DoffaGame } from "../game/game.js";
 import {
   DEFAULT_HERO_ID,
   getHeroDefinition,
   getUnlockedHeroes,
 } from "../game/heroes.js";
+import { getHeroXpRequirement } from "../game/progression.js";
 
 function requiredElement(id) {
   const element = document.getElementById(id);
@@ -31,6 +41,9 @@ export function bootstrapApp() {
     selectedHeroRole: requiredElement("selected-hero-role"),
     selectedHeroName: requiredElement("selected-hero-name"),
     selectedHeroWeapon: requiredElement("selected-hero-weapon"),
+    selectedHeroLevel: requiredElement("selected-hero-level"),
+    selectedHeroXp: requiredElement("selected-hero-xp"),
+    selectedHeroXpBar: requiredElement("selected-hero-xp-bar"),
     selectedHeroVitality: requiredElement("selected-hero-vitality"),
     selectedHeroPower: requiredElement("selected-hero-power"),
     selectedHeroSpeed: requiredElement("selected-hero-speed"),
@@ -38,6 +51,12 @@ export function bootstrapApp() {
     heroOverlay: requiredElement("hero-overlay"),
     heroGrid: requiredElement("hero-grid"),
     closeHeroSelect: requiredElement("close-hero-select"),
+    loadoutSlots: requiredElement("loadout-slots"),
+    openInventory: requiredElement("open-inventory"),
+    equipmentOverlay: requiredElement("equipment-overlay"),
+    closeInventory: requiredElement("close-inventory"),
+    inventoryGrid: requiredElement("inventory-grid"),
+    inventoryCount: requiredElement("inventory-count"),
     selectedTourCode: requiredElement("selected-tour-code"),
     selectedTourName: requiredElement("selected-tour-name"),
     selectedTourDistrict: requiredElement("selected-tour-district"),
@@ -64,6 +83,9 @@ export function bootstrapApp() {
     resultTour: requiredElement("result-tour"),
     resultHero: requiredElement("result-hero"),
     resultBeans: requiredElement("result-beans"),
+    resultXp: requiredElement("result-xp"),
+    resultLevel: requiredElement("result-level"),
+    resultDrop: requiredElement("result-drop"),
     resultReceipt: requiredElement("result-receipt"),
     returnHome: requiredElement("return-home"),
     confirmOverlay: requiredElement("confirm-overlay"),
@@ -84,15 +106,103 @@ export function bootstrapApp() {
   let deferredInstallPrompt = null;
   let burstTimer = 0;
 
+  const openInventory = () => {
+    renderInventory(profileStore.profile);
+    elements.heroOverlay.hidden = true;
+    elements.equipmentOverlay.hidden = false;
+  };
+
+  const renderLoadout = (profile) => {
+    elements.loadoutSlots.replaceChildren();
+    for (const slot of EQUIPMENT_SLOTS) {
+      const item = getEquippedItem(profile.inventory, profile.loadout, slot);
+      const definition = getEquipmentDefinition(item?.itemId);
+      const rarity = getRarityDefinition(item?.rarity);
+      const button = document.createElement("button");
+      button.className = "loadout-slot";
+      button.type = "button";
+      button.style.setProperty("--rarity-color", rarity?.color ?? "#a9927b");
+      button.setAttribute("aria-label", `Manage ${EQUIPMENT_SLOT_LABELS[slot].toLowerCase()} slot`);
+
+      const label = document.createElement("span");
+      label.textContent = EQUIPMENT_SLOT_LABELS[slot];
+      const name = document.createElement("strong");
+      name.textContent = definition?.name ?? "EMPTY";
+      const meta = document.createElement("small");
+      meta.textContent = item && rarity ? `${rarity.name} // LV.${item.level}` : "NO ITEM";
+      button.append(label, name, meta);
+      button.addEventListener("click", openInventory);
+      elements.loadoutSlots.append(button);
+    }
+  };
+
+  const renderInventory = (profile) => {
+    const equippedIds = new Set(Object.values(profile.loadout));
+    elements.inventoryCount.textContent = `${profile.inventory.length} / ${MAX_INVENTORY_ITEMS}`;
+    elements.inventoryGrid.replaceChildren();
+
+    for (const item of profile.inventory) {
+      const definition = getEquipmentDefinition(item.itemId);
+      const rarity = getRarityDefinition(item.rarity);
+      if (!definition || !rarity) {
+        continue;
+      }
+
+      const isEquipped = equippedIds.has(item.instanceId);
+      const button = document.createElement("button");
+      button.className = "inventory-item";
+      button.classList.toggle("is-equipped", isEquipped);
+      button.type = "button";
+      button.style.setProperty("--rarity-color", rarity.color);
+      button.setAttribute("aria-pressed", String(isEquipped));
+
+      const slot = document.createElement("span");
+      slot.className = "inventory-item-slot";
+      slot.textContent = EQUIPMENT_SLOT_LABELS[definition.slot];
+      const state = document.createElement("b");
+      state.textContent = isEquipped ? "ACTIVE" : "EQUIP";
+      slot.append(state);
+
+      const name = document.createElement("strong");
+      name.textContent = definition.name;
+      const meta = document.createElement("small");
+      meta.textContent = `${rarity.name} // LEVEL ${item.level}`;
+      const effects = document.createElement("em");
+      effects.textContent = formatEquipmentEffects(item);
+      const description = document.createElement("p");
+      description.textContent = definition.description;
+
+      button.append(slot, name, meta, effects, description);
+      button.addEventListener("click", () => {
+        profileStore.update((draft) => {
+          draft.loadout[definition.slot] = item.instanceId;
+        });
+        renderProfile(profileStore.profile);
+      });
+      elements.inventoryGrid.append(button);
+    }
+  };
+
   const renderProfile = (profile) => {
     const tourProgress = profile.tourProgress[selectedTour.id] ?? {
       bestRoom: 0,
       bossesDefeated: 0,
     };
+    const heroProgress = profile.heroProgress[selectedHero.id] ?? { level: 1, xp: 0 };
+    const xpRequirement = getHeroXpRequirement(heroProgress.level);
     elements.beans.textContent = profile.beans.toLocaleString("en-US");
     elements.bestRoom.textContent = `${Math.min(tourProgress.bestRoom, selectedTour.rooms.length)} / ${selectedTour.rooms.length}`;
     elements.bossWins.textContent = tourProgress.bossesDefeated.toLocaleString("en-US");
     elements.lifetimeBeans.textContent = profile.lifetimeBeans.toLocaleString("en-US");
+    elements.selectedHeroLevel.textContent = String(heroProgress.level);
+    elements.selectedHeroXp.textContent = xpRequirement > 0
+      ? `${heroProgress.xp} / ${xpRequirement} XP`
+      : "MAX LEVEL";
+    elements.selectedHeroXpBar.style.width = xpRequirement > 0
+      ? `${Math.min(100, (heroProgress.xp / xpRequirement) * 100)}%`
+      : "100%";
+    renderLoadout(profile);
+    renderInventory(profile);
   };
 
   const renderSelectedTour = () => {
@@ -123,6 +233,7 @@ export function bootstrapApp() {
       draft.selectedHeroId = hero.id;
     });
     renderSelectedHero();
+    renderProfile(profileStore.profile);
     renderHeroGrid();
     elements.heroOverlay.hidden = true;
   };
@@ -156,9 +267,13 @@ export function bootstrapApp() {
       name.textContent = hero.name;
       const weapon = document.createElement("small");
       weapon.textContent = hero.weapon;
+      const progress = profileStore.profile.heroProgress[hero.id] ?? { level: 1, xp: 0 };
+      const level = document.createElement("b");
+      level.className = "hero-option-level";
+      level.textContent = `LEVEL ${progress.level} // ${progress.xp} XP`;
       const description = document.createElement("p");
       description.textContent = hero.description;
-      copy.append(role, name, weapon, description);
+      copy.append(role, name, weapon, level, description);
 
       button.append(portrait, copy);
       button.addEventListener("click", () => selectHero(hero));
@@ -173,6 +288,7 @@ export function bootstrapApp() {
     elements.resultOverlay.hidden = true;
     elements.confirmOverlay.hidden = true;
     elements.heroOverlay.hidden = true;
+    elements.equipmentOverlay.hidden = true;
     elements.homeNotice.textContent = "";
     renderProfile(profileStore.profile);
   };
@@ -181,11 +297,11 @@ export function bootstrapApp() {
     canvas: elements.canvas,
     profileStore,
     onProfile: renderProfile,
-    onHud({ room, totalRooms, tourCode, roomName, heroName, weaponName, hp, maxHp }) {
+    onHud({ room, totalRooms, tourCode, roomName, heroName, heroLevel, weaponName, hp, maxHp }) {
       elements.hudTour.textContent = tourCode;
       elements.hudRoom.textContent = `${room} / ${totalRooms}`;
       elements.hudRoomName.textContent = roomName;
-      elements.hudHeroLabel.textContent = `${heroName} // ${weaponName}`;
+      elements.hudHeroLabel.textContent = `${heroName} L${heroLevel} // ${weaponName}`;
       elements.hudHealthText.textContent = `${hp} / ${maxHp}`;
       elements.hudHealth.style.width = `${Math.max(0, (hp / maxHp) * 100)}%`;
     },
@@ -227,6 +343,15 @@ export function bootstrapApp() {
       elements.resultTour.textContent = result.tour.code;
       elements.resultHero.textContent = result.hero.name;
       elements.resultBeans.textContent = `+${result.beanReward}`;
+      elements.resultXp.textContent = `+${result.xpReward} XP`;
+      elements.resultLevel.textContent = result.levelsGained > 0
+        ? `LEVEL ${result.heroLevelBefore} → ${result.heroLevelAfter}`
+        : `LEVEL ${result.heroLevelAfter}`;
+      const dropDefinition = getEquipmentDefinition(result.equipmentDrop?.itemId);
+      const dropRarity = getRarityDefinition(result.equipmentDrop?.rarity);
+      elements.resultDrop.textContent = dropDefinition && dropRarity
+        ? `${dropRarity.name} // ${dropDefinition.name}`
+        : result.inventoryFull ? "ARMORY FULL" : "NONE";
       elements.resultReceipt.textContent = result.receipt.id.slice(0, 12).toUpperCase();
       elements.resultOverlay.hidden = false;
     },
@@ -282,11 +407,18 @@ export function bootstrapApp() {
 
   elements.changeHero.addEventListener("click", () => {
     renderHeroGrid();
+    elements.equipmentOverlay.hidden = true;
     elements.heroOverlay.hidden = false;
   });
 
   elements.closeHeroSelect.addEventListener("click", () => {
     elements.heroOverlay.hidden = true;
+  });
+
+  elements.openInventory.addEventListener("click", openInventory);
+
+  elements.closeInventory.addEventListener("click", () => {
+    elements.equipmentOverlay.hidden = true;
   });
 
   elements.continueRun.addEventListener("click", () => {
