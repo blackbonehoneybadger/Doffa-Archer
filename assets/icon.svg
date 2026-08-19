@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">DOFFA Heroes crest</title>
+  <defs>
+    <linearGradient id="metal" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f1c16d"/>
+      <stop offset="0.45" stop-color="#a85e25"/>
+      <stop offset="1" stop-color="#4a2113"/>
+    </linearGradient>
+    <radialGradient id="ember">
+      <stop offset="0" stop-color="#ffbd55"/>
+      <stop offset="0.45" stop-color="#d75a1f"/>
+      <stop offset="1" stop-color="#170b08"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="#0d0907"/>
+  <path d="M256 50 425 147v218L256 462 87 365V147Z" fill="none" stroke="url(#metal)" stroke-width="20"/>
+  <circle cx="256" cy="256" r="143" fill="url(#ember)" opacity=".9"/>
+  <circle cx="256" cy="256" r="112" fill="#120c09" stroke="#c77835" stroke-width="9"/>
+  <path d="M180 137h79c87 0 132 46 132 119s-45 119-132 119h-79V137Zm70 58v122h13c42 0 65-22 65-61s-23-61-65-61h-13Z" fill="url(#metal)"/>
+  <path d="m121 397 270-270" stroke="#f3cf85" stroke-width="10" stroke-linecap="round" opacity=".7"/>
+</svg>

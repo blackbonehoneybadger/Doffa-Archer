@@ -1,0 +1,22 @@
+{
+  "id": "/",
+  "name": "DOFFA Heroes",
+  "short_name": "DOFFA",
+  "description": "The first action-roguelite in the DOFFA Games universe.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "portrait-primary",
+  "background_color": "#100b08",
+  "theme_color": "#100b08",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {
+      "src": "/assets/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+    <meta name="theme-color" content="#100b08">
+    <meta name="description" content="DOFFA Heroes — the first action-roguelite in the DOFFA Games universe.">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>DOFFA Heroes</title>
+    <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="stylesheet" href="/styles/main.css">
+    <script type="module" src="/src/main.js"></script>
+  </head>
+  <body>
+    <div class="noise" aria-hidden="true"></div>
+    <main id="app" class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="#" aria-label="DOFFA Heroes home">
+          <img src="/assets/icon.svg" alt="" width="42" height="42">
+          <span>
+            <strong>DOFFA</strong>
+            <small>HEROES // PROTOTYPE 0.4.0</small>
+          </span>
+        </a>
+        <div class="currency" aria-label="Entry beans">
+          <span class="currency-mark" aria-hidden="true"></span>
+          <strong id="top-beans">0</strong>
+          <small>BEANS</small>
+        </div>
+      </header>
+
+      <section id="home-screen" class="screen home-screen" aria-labelledby="home-title">
+        <div class="eyebrow">DOFFA GAMES // FIRST TITLE</div>
+        <h1 id="home-title">THE ROAST<br><span>DOES NOT FORGIVE.</span></h1>
+        <p class="lead">Charge the Core. Enter the sealed chambers. Stop moving to fire. Survive the Hollow Roaster.</p>
+
+        <div class="core-panel">
+          <div class="core-rings" aria-hidden="true">
+            <span></span><span></span><span></span>
+          </div>
+          <button id="tap-button" class="roaster-core" type="button" aria-label="Tap the Roaster Core to collect one bean">
+            <span class="core-glyph">D</span>
+            <span class="core-label">TAP CORE</span>
+          </button>
+          <div id="tap-burst" class="tap-burst" aria-hidden="true">+1</div>
+        </div>
+
+        <div class="home-stats" aria-label="Prototype progress">
+          <div><span>BEST ROOM</span><strong id="best-room">0 / 6</strong></div>
+          <div><span>BOSSES ENDED</span><strong id="boss-wins">0</strong></div>
+          <div><span>LIFETIME BEANS</span><strong id="lifetime-beans">0</strong></div>
+        </div>
+
+        <article id="selected-hero-card" class="hero-contract" aria-label="Selected hero">
+          <div id="selected-hero-portrait" class="hero-portrait" data-hero="honey-badger" aria-hidden="true">
+            <span id="selected-hero-mark">HB</span>
+            <small>ART PLACEHOLDER</small>
+          </div>
+          <div class="hero-copy">
+            <span id="selected-hero-role">VANGUARD</span>
+            <strong id="selected-hero-name">HONEY BADGER</strong>
+            <small id="selected-hero-weapon">BLACK STEEL BAT</small>
+            <div class="hero-progression">
+              <span>LEVEL <b id="selected-hero-level">1</b></span>
+              <span id="selected-hero-xp">0 / 100 XP</span>
+            </div>
+            <div class="hero-xp-track" aria-hidden="true"><i id="selected-hero-xp-bar"></i></div>
+            <div class="hero-ratings" aria-label="Hero ratings">
+              <span>VIT <i id="selected-hero-vitality"></i></span>
+              <span>PWR <i id="selected-hero-power"></i></span>
+              <span>SPD <i id="selected-hero-speed"></i></span>
+            </div>
+          </div>
+          <button id="change-hero" class="hero-change" type="button">CHANGE</button>
+        </article>
+
+        <article id="loadout-card" class="loadout-contract" aria-label="Equipped field loadout">
+          <div class="loadout-head">
+            <div>
+              <span>FIELD LOADOUT</span>
+              <strong>4 ACTIVE SLOTS</strong>
+            </div>
+            <button id="open-inventory" type="button">MANAGE INVENTORY</button>
+          </div>
+          <div id="loadout-slots" class="loadout-slots"></div>
+        </article>
+
+        <article class="tour-contract" aria-label="Selected tour">
+          <div class="tour-copy">
+            <span id="selected-tour-code">TOUR 01</span>
+            <strong id="selected-tour-name">THE HOLLOW ROASTERY</strong>
+            <small id="selected-tour-district">FURNACE DISTRICT</small>
+          </div>
+          <div class="tour-route">
+            <b>ACTIVE</b>
+            <span id="selected-tour-route">6 CHAMBERS // 1 BOSS</span>
+          </div>
+        </article>
+
+        <button id="start-run" class="primary-action" type="button">
+          <span id="start-run-label">ENTER TOUR 01</span>
+          <small><b id="entry-cost">25</b> BEANS</small>
+        </button>
+        <p id="home-notice" class="notice" role="status" aria-live="polite"></p>
+
+        <div class="prototype-note">
+          <strong>NO TOKEN CONNECTED</strong>
+          <span>Local gameplay prototype. No wallet, mint, transfer, or real reward.</span>
+        </div>
+      </section>
+
+      <section id="game-screen" class="screen game-screen" hidden aria-label="Combat arena">
+        <div class="game-hud">
+          <div class="hud-block">
+            <span id="hud-tour">TOUR 01</span>
+            <strong id="hud-room">1 / 6</strong>
+            <small id="hud-room-name">ASH INTAKE</small>
+          </div>
+          <div class="health-wrap" aria-label="Hero health">
+            <div class="health-label"><span id="hud-hero-label">HONEY BADGER // BLACK STEEL BAT</span><b id="hud-health-text">125 / 125</b></div>
+            <div class="health-track"><div id="hud-health" class="health-fill"></div></div>
+          </div>
+          <button id="abort-run" class="icon-button" type="button" aria-label="End run">×</button>
+        </div>
+        <div class="arena-shell">
+          <canvas id="game-canvas" width="720" height="1280" aria-label="DOFFA Heroes combat arena"></canvas>
+          <div class="control-hint">DRAG TO MOVE · RELEASE TO FIRE</div>
+        </div>
+      </section>
+
+      <section id="hero-overlay" class="modal-layer" hidden aria-labelledby="hero-select-title">
+        <div class="modal-card hero-modal">
+          <div class="hero-modal-head">
+            <div>
+              <div class="eyebrow">DOFFA OPERATIVE ROSTER</div>
+              <h2 id="hero-select-title">SELECT YOUR HERO</h2>
+            </div>
+            <button id="close-hero-select" class="icon-button" type="button" aria-label="Close hero selection">×</button>
+          </div>
+          <p>Each operative has a different weapon profile, range, health, and attack rhythm.</p>
+          <div id="hero-grid" class="hero-grid"></div>
+          <small class="art-warning">ORIGINAL COMBAT PLACEHOLDERS // LIKENESS ART WILL BE CREATED FROM APPROVED PHOTOS</small>
+        </div>
+      </section>
+
+      <section id="equipment-overlay" class="modal-layer" hidden aria-labelledby="equipment-title">
+        <div class="modal-card equipment-modal">
+          <div class="hero-modal-head">
+            <div>
+              <div class="eyebrow">DOFFA FIELD ARMORY</div>
+              <h2 id="equipment-title">BUILD YOUR LOADOUT</h2>
+            </div>
+            <button id="close-inventory" class="icon-button" type="button" aria-label="Close inventory">×</button>
+          </div>
+          <p>Equip one item in each slot. Rarity and item level determine the active combat bonus.</p>
+          <div class="inventory-meta">
+            <span>RECOVERED ITEMS</span>
+            <strong id="inventory-count">0 / 100</strong>
+          </div>
+          <div id="inventory-grid" class="inventory-grid"></div>
+          <small class="art-warning">LOCAL PROTOTYPE LOOT // NO TOKEN VALUE // BROWSER STORAGE IS UNTRUSTED</small>
+        </div>
+      </section>
+
+      <section id="ability-overlay" class="modal-layer" hidden aria-labelledby="ability-title">
+        <div class="modal-card ability-modal">
+          <div class="eyebrow">CHAMBER CLEARED</div>
+          <h2 id="ability-title">CHOOSE YOUR PRESSURE</h2>
+          <p>One upgrade. No undo.</p>
+          <div id="ability-choices" class="ability-grid"></div>
+        </div>
+      </section>
+
+      <section id="result-overlay" class="modal-layer" hidden aria-labelledby="result-title">
+        <div class="modal-card result-modal">
+          <div id="result-kicker" class="eyebrow">RUN CLOSED</div>
+          <h2 id="result-title">THE CHAMBER WON.</h2>
+          <div class="result-seal" aria-hidden="true"><span id="result-room">0</span><small>ROOMS</small></div>
+          <dl class="result-list">
+            <div><dt>Tour</dt><dd id="result-tour">—</dd></div>
+            <div><dt>Hero</dt><dd id="result-hero">—</dd></div>
+            <div><dt>Beans recovered</dt><dd id="result-beans">0</dd></div>
+            <div><dt>Hero experience</dt><dd id="result-xp">0 XP</dd></div>
+            <div><dt>Hero level</dt><dd id="result-level">LEVEL 1</dd></div>
+            <div><dt>Item recovered</dt><dd id="result-drop">NONE</dd></div>
+            <div><dt>Test receipt</dt><dd id="result-receipt">—</dd></div>
+            <div><dt>Token claim</dt><dd>DISABLED</dd></div>
+          </dl>
+          <button id="return-home" class="primary-action" type="button"><span>RETURN TO CORE</span></button>
+        </div>
+      </section>
+
+      <section id="confirm-overlay" class="modal-layer" hidden aria-labelledby="confirm-title">
+        <div class="modal-card confirm-modal">
+          <div class="eyebrow">RUN IN PROGRESS</div>
+          <h2 id="confirm-title">END THE RUN?</h2>
+          <p>You will keep only the reward from chambers already cleared.</p>
+          <div class="confirm-actions">
+            <button id="continue-run" class="secondary-action" type="button">CONTINUE FIGHTING</button>
+            <button id="confirm-abort" class="danger-action" type="button">END RUN</button>
+          </div>
+        </div>
+      </section>
+
+      <aside id="update-banner" class="update-banner" hidden aria-live="polite">
+        <span>A new build is ready.</span>
+        <button id="apply-update" type="button">UPDATE NOW</button>
+      </aside>
+
+      <footer class="footer">
+        <span>ORIGINAL DOFFA VERTICAL SLICE</span>
+        <button id="install-app" type="button" hidden>INSTALL APP</button>
+      </footer>
+    </main>
+    <noscript>DOFFA Heroes requires JavaScript.</noscript>
+  </body>
+</html>
