@@ -661,6 +661,49 @@ h1 span {
   font-weight: 800;
 }
 
+.confirm-modal {
+  width: min(100%, 460px);
+}
+
+.confirm-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.secondary-action,
+.danger-action {
+  min-height: 52px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--cream);
+  cursor: pointer;
+  font-size: 0.67rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.secondary-action:hover,
+.secondary-action:focus-visible {
+  border-color: var(--gold);
+  outline: none;
+}
+
+.danger-action {
+  border-color: rgba(199, 61, 45, 0.72);
+  background: linear-gradient(120deg, rgba(148, 45, 31, 0.8), rgba(72, 22, 17, 0.9));
+  color: #ffb09d;
+}
+
+.danger-action:hover,
+.danger-action:focus-visible {
+  border-color: #e66c54;
+  filter: brightness(1.12);
+  outline: none;
+}
+
 .update-banner {
   position: fixed;
   z-index: 30;
@@ -737,6 +780,10 @@ h1 span {
   .ability-card strong,
   .ability-card small {
     align-self: start;
+  }
+
+  .confirm-actions {
+    grid-template-columns: 1fr;
   }
 }
 

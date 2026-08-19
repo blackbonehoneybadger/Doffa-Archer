@@ -16,7 +16,7 @@ This project may use genre conventions as references, but it does not copy anoth
 6. Generate a reward-eligibility receipt after a verified victory.
 7. In production, a server validates the receipt before any token claim exists.
 
-## Milestone 0.1.0
+## Milestone 0.1.1
 
 - One playable hero placeholder.
 - Six rooms and one boss.

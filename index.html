@@ -22,7 +22,7 @@
           <img src="/assets/icon.svg" alt="" width="42" height="42">
           <span>
             <strong>DOFFA</strong>
-            <small>HEROES // PROTOTYPE 0.1</small>
+            <small>HEROES // PROTOTYPE 0.1.1</small>
           </span>
         </a>
         <div class="currency" aria-label="Entry beans">
@@ -104,6 +104,18 @@
             <div><dt>Token claim</dt><dd>DISABLED</dd></div>
           </dl>
           <button id="return-home" class="primary-action" type="button"><span>RETURN TO CORE</span></button>
+        </div>
+      </section>
+
+      <section id="confirm-overlay" class="modal-layer" hidden aria-labelledby="confirm-title">
+        <div class="modal-card confirm-modal">
+          <div class="eyebrow">RUN IN PROGRESS</div>
+          <h2 id="confirm-title">END THE RUN?</h2>
+          <p>You will keep only the reward from chambers already cleared.</p>
+          <div class="confirm-actions">
+            <button id="continue-run" class="secondary-action" type="button">CONTINUE FIGHTING</button>
+            <button id="confirm-abort" class="danger-action" type="button">END RUN</button>
+          </div>
         </div>
       </section>
 

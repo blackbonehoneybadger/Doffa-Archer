@@ -4,7 +4,7 @@ The first flagship game in the DOFFA Games universe: a portrait action-roguelite
 
 ## Current milestone
 
-Version `0.1.0` is the first playable vertical slice:
+Version `0.1.1` is the first playable vertical slice:
 
 - tap the Roaster Core to collect entry beans;
 - spend beans to enter a six-room run;

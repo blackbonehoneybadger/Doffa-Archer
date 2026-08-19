@@ -1,4 +1,4 @@
-const CACHE_NAME = "doffa-heroes-v0.1.0";
+const CACHE_NAME = "doffa-heroes-v0.1.1";
 const CORE_ASSETS = [
   "/",
   "/index.html",
@@ -8,6 +8,7 @@ const CORE_ASSETS = [
   "/src/main.js",
   "/src/config/game-config.js",
   "/src/core/economy.js",
+  "/src/core/fixed-timestep.js",
   "/src/core/profile-store.js",
   "/src/core/rng.js",
   "/src/core/run-receipt.js",

@@ -37,6 +37,9 @@ export function bootstrapApp() {
     resultBeans: requiredElement("result-beans"),
     resultReceipt: requiredElement("result-receipt"),
     returnHome: requiredElement("return-home"),
+    confirmOverlay: requiredElement("confirm-overlay"),
+    continueRun: requiredElement("continue-run"),
+    confirmAbort: requiredElement("confirm-abort"),
     updateBanner: requiredElement("update-banner"),
     applyUpdate: requiredElement("apply-update"),
     installApp: requiredElement("install-app"),
@@ -58,6 +61,7 @@ export function bootstrapApp() {
     elements.game.hidden = true;
     elements.abilityOverlay.hidden = true;
     elements.resultOverlay.hidden = true;
+    elements.confirmOverlay.hidden = true;
     elements.homeNotice.textContent = "";
     renderProfile(profileStore.profile);
   };
@@ -100,6 +104,7 @@ export function bootstrapApp() {
     },
     onRunEnd(result) {
       elements.abilityOverlay.hidden = true;
+      elements.confirmOverlay.hidden = true;
       elements.resultKicker.textContent = result.bossDefeated ? "TOUR CLEARED" : "RUN CLOSED";
       elements.resultTitle.textContent = result.bossDefeated
         ? "THE ROASTER FELL."
@@ -144,10 +149,18 @@ export function bootstrapApp() {
   });
 
   elements.abortRun.addEventListener("click", () => {
-    const shouldEnd = window.confirm("End this run and recover only the cleared-room reward?");
-    if (shouldEnd) {
-      game.abortRun();
-    }
+    game.setPaused(true);
+    elements.confirmOverlay.hidden = false;
+  });
+
+  elements.continueRun.addEventListener("click", () => {
+    elements.confirmOverlay.hidden = true;
+    game.setPaused(false);
+  });
+
+  elements.confirmAbort.addEventListener("click", () => {
+    elements.confirmOverlay.hidden = true;
+    game.abortRun();
   });
 
   elements.returnHome.addEventListener("click", showHome);

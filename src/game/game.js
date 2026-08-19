@@ -6,6 +6,7 @@ import {
 } from "../core/economy.js";
 import { SeededRng } from "../core/rng.js";
 import { createLocalRunReceipt } from "../core/run-receipt.js";
+import { consumeFixedSteps } from "../core/fixed-timestep.js";
 import { applyAbility, chooseAbilityCards } from "./abilities.js";
 
 const TAU = Math.PI * 2;
@@ -123,6 +124,8 @@ export class DoffaGame {
     this.clearDelay = 0;
     this.nextEnemyId = 1;
     this.lastFrame = 0;
+    this.accumulator = 0;
+    this.paused = false;
     this.frameRequest = 0;
     this.rng = new SeededRng();
 
@@ -195,6 +198,7 @@ export class DoffaGame {
         this.keys.clear();
         this.pointer = null;
         this.lastFrame = 0;
+        this.accumulator = 0;
       }
     });
   }
@@ -213,12 +217,19 @@ export class DoffaGame {
     }
 
     const frame = (timestamp) => {
-      const rawDelta = this.lastFrame ? (timestamp - this.lastFrame) / 1_000 : 0;
-      const delta = Math.min(rawDelta, 0.033);
+      const elapsed = this.lastFrame ? Math.max(0, (timestamp - this.lastFrame) / 1_000) : 0;
       this.lastFrame = timestamp;
 
-      if (this.mode === "running" && delta > 0) {
-        this.update(delta);
+      if (this.mode === "running" && !this.paused && elapsed > 0) {
+        const result = consumeFixedSteps(
+          this.accumulator,
+          elapsed,
+          (step) => this.update(step),
+          () => this.mode === "running" && !this.paused,
+        );
+        this.accumulator = result.accumulator;
+      } else {
+        this.accumulator = 0;
       }
       this.draw();
       this.frameRequest = requestAnimationFrame(frame);
@@ -249,6 +260,8 @@ export class DoffaGame {
     this.particles = [];
     this.ownedAbilities = [];
     this.clearDelay = 0;
+    this.accumulator = 0;
+    this.paused = false;
     this.rng = new SeededRng(Date.now() ^ (this.profileStore.profile.runsStarted * 2_654_435_761));
     this.spawnRoom(this.room);
     this.emitHud();
@@ -259,6 +272,13 @@ export class DoffaGame {
     if (this.mode === "running" || this.mode === "choice") {
       this.finishRun(false);
     }
+  }
+
+  setPaused(paused) {
+    this.paused = Boolean(paused);
+    this.pointer = null;
+    this.keys.clear();
+    this.accumulator = 0;
   }
 
   chooseAbility(abilityId) {
@@ -805,6 +825,8 @@ export class DoffaGame {
     });
 
     this.mode = "result";
+    this.paused = false;
+    this.accumulator = 0;
     this.pointer = null;
     this.keys.clear();
     this.projectiles = [];
