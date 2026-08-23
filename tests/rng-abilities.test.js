@@ -35,3 +35,26 @@ test("ability application mutates only the intended combat profile", () => {
   assert.equal(player.maxHp, 125);
   assert.equal(player.hp, 95);
 });
+
+test("run-progression abilities modify pickup, recovery, defense, and impact profiles", () => {
+  const player = {
+    pickupRadius: 92,
+    pickupSpeed: 520,
+    healOnRoomClearPct: 0,
+    damageReduction: 0,
+    projectileRadius: 8,
+    splashRadius: 0,
+    damage: 20,
+  };
+  applyAbility(player, "magnetic_draft");
+  applyAbility(player, "recovery_drip");
+  applyAbility(player, "pressure_shell");
+  applyAbility(player, "deep_roast");
+  assert.equal(player.pickupRadius, 202);
+  assert.equal(player.pickupSpeed, 650);
+  assert.equal(player.healOnRoomClearPct, 0.05);
+  assert.equal(player.damageReduction, 0.12);
+  assert.equal(player.projectileRadius, 10.8);
+  assert.equal(player.splashRadius, 36);
+  assert.ok(Math.abs(player.damage - 18.8) < 1e-9);
+});

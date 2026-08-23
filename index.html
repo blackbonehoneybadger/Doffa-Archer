@@ -10,6 +10,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>DOFFA Heroes</title>
     <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/assets/icon-192.png" sizes="192x192">
     <link rel="manifest" href="/manifest.webmanifest">
     <link rel="stylesheet" href="/styles/main.css">
     <script type="module" src="/src/main.js"></script>
@@ -22,7 +23,7 @@
           <img src="/assets/icon.svg" alt="" width="42" height="42">
           <span>
             <strong>DOFFA</strong>
-            <small>HEROES // PROTOTYPE 0.4.0</small>
+            <small>HEROES // PROTOTYPE 0.16.6</small>
           </span>
         </a>
         <div class="currency" aria-label="Entry beans">
@@ -49,20 +50,21 @@
         </div>
 
         <div class="home-stats" aria-label="Prototype progress">
-          <div><span>BEST ROOM</span><strong id="best-room">0 / 6</strong></div>
+          <div><span>BEST ROOM</span><strong id="best-room">0 / 50</strong></div>
           <div><span>BOSSES ENDED</span><strong id="boss-wins">0</strong></div>
           <div><span>LIFETIME BEANS</span><strong id="lifetime-beans">0</strong></div>
         </div>
 
         <article id="selected-hero-card" class="hero-contract" aria-label="Selected hero">
           <div id="selected-hero-portrait" class="hero-portrait" data-hero="honey-badger" aria-hidden="true">
+            <canvas id="selected-hero-art" class="hero-art" hidden></canvas>
             <span id="selected-hero-mark">HB</span>
             <small>ART PLACEHOLDER</small>
           </div>
           <div class="hero-copy">
             <span id="selected-hero-role">VANGUARD</span>
             <strong id="selected-hero-name">HONEY BADGER</strong>
-            <small id="selected-hero-weapon">BLACK STEEL BAT</small>
+            <small id="selected-hero-weapon">BLACK STEEL KATANA / SHURIKEN</small>
             <div class="hero-progression">
               <span>LEVEL <b id="selected-hero-level">1</b></span>
               <span id="selected-hero-xp">0 / 100 XP</span>
@@ -96,8 +98,9 @@
           </div>
           <div class="tour-route">
             <b>ACTIVE</b>
-            <span id="selected-tour-route">6 CHAMBERS // 1 BOSS</span>
+            <span id="selected-tour-route">50 CHAMBERS // 4 GUARDIANS // 1 BOSS</span>
           </div>
+          <button id="change-tour" class="tour-change" type="button">CHANGE</button>
         </article>
 
         <button id="start-run" class="primary-action" type="button">
@@ -116,18 +119,22 @@
         <div class="game-hud">
           <div class="hud-block">
             <span id="hud-tour">TOUR 01</span>
-            <strong id="hud-room">1 / 6</strong>
+            <strong id="hud-room">1 / 50</strong>
             <small id="hud-room-name">ASH INTAKE</small>
           </div>
           <div class="health-wrap" aria-label="Hero health">
-            <div class="health-label"><span id="hud-hero-label">HONEY BADGER // BLACK STEEL BAT</span><b id="hud-health-text">125 / 125</b></div>
+            <div class="health-label"><span id="hud-hero-label">HONEY BADGER // BLACK STEEL KATANA / SHURIKEN</span><b id="hud-health-text">125 / 125</b></div>
             <div class="health-track"><div id="hud-health" class="health-fill"></div></div>
+            <div class="encounter-label"><span id="hud-wave">WAVE 1 / 1</span><b id="hud-wave-countdown">FIGHT</b></div>
+            <div class="encounter-track"><i id="hud-wave-fill"></i></div>
+            <div class="run-level-label"><span>RUN LEVEL <b id="hud-run-level">1</b></span><small id="hud-run-xp-text">0 / 40 XP</small></div>
+            <div class="run-xp-track"><i id="hud-run-xp"></i></div>
           </div>
           <button id="abort-run" class="icon-button" type="button" aria-label="End run">×</button>
         </div>
         <div class="arena-shell">
           <canvas id="game-canvas" width="720" height="1280" aria-label="DOFFA Heroes combat arena"></canvas>
-          <div class="control-hint">DRAG TO MOVE · RELEASE TO FIRE</div>
+          <div id="control-hint" class="control-hint">DRAG TO MOVE · RELEASE TO FIRE</div>
         </div>
       </section>
 
@@ -143,6 +150,21 @@
           <p>Each operative has a different weapon profile, range, health, and attack rhythm.</p>
           <div id="hero-grid" class="hero-grid"></div>
           <small class="art-warning">ORIGINAL COMBAT PLACEHOLDERS // LIKENESS ART WILL BE CREATED FROM APPROVED PHOTOS</small>
+        </div>
+      </section>
+
+      <section id="tour-overlay" class="modal-layer" hidden aria-labelledby="tour-select-title">
+        <div class="modal-card tour-modal">
+          <div class="hero-modal-head">
+            <div>
+              <div class="eyebrow">DOFFA EXPEDITION MAP</div>
+              <h2 id="tour-select-title">SELECT YOUR TOUR</h2>
+            </div>
+            <button id="close-tour-select" class="icon-button" type="button" aria-label="Close tour selection">×</button>
+          </div>
+          <p>Each tour has its own rooms, enemy family, guardians, and final boss.</p>
+          <div id="tour-grid" class="tour-grid"></div>
+          <small class="art-warning">TOUR RECORDS ARE SAVED SEPARATELY ON THIS DEVICE</small>
         </div>
       </section>
 
@@ -167,9 +189,9 @@
 
       <section id="ability-overlay" class="modal-layer" hidden aria-labelledby="ability-title">
         <div class="modal-card ability-modal">
-          <div class="eyebrow">CHAMBER CLEARED</div>
+          <div id="ability-kicker" class="eyebrow">TOUR INITIATION</div>
           <h2 id="ability-title">CHOOSE YOUR PRESSURE</h2>
-          <p>One upgrade. No undo.</p>
+          <p id="ability-description">One upgrade. No undo.</p>
           <div id="ability-choices" class="ability-grid"></div>
         </div>
       </section>
@@ -182,6 +204,7 @@
           <dl class="result-list">
             <div><dt>Tour</dt><dd id="result-tour">—</dd></div>
             <div><dt>Hero</dt><dd id="result-hero">—</dd></div>
+            <div><dt>Run level</dt><dd id="result-run-level">LEVEL 1</dd></div>
             <div><dt>Beans recovered</dt><dd id="result-beans">0</dd></div>
             <div><dt>Hero experience</dt><dd id="result-xp">0 XP</dd></div>
             <div><dt>Hero level</dt><dd id="result-level">LEVEL 1</dd></div>

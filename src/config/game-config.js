@@ -1,5 +1,9 @@
-export const GAME_VERSION = "0.4.0";
+export const GAME_VERSION = "0.16.6";
 export const DEFAULT_TOUR_ID = "hollow-roastery";
+export const TOUR_IDS = Object.freeze([
+  DEFAULT_TOUR_ID,
+  "rootfall-jungle",
+]);
 export const DEFAULT_HERO_ID = "honey-badger";
 export const HERO_IDS = Object.freeze([
   "honey-badger",
@@ -24,4 +28,5 @@ export const RUN_CONFIG = Object.freeze({
   abilityChoices: 3,
   playerStartX: 360,
   playerStartY: 1050,
+  waveCountdownSeconds: 2.4,
 });

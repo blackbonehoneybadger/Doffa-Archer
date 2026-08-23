@@ -414,6 +414,25 @@ h1 span {
   box-shadow: 0 0 12px color-mix(in srgb, var(--hero-accent) 70%, transparent);
 }
 
+.hero-art {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+.hero-portrait.has-art::before,
+.hero-portrait.has-art::after {
+  display: none;
+}
+
+.hero-portrait.has-art > span,
+.hero-portrait.has-art > small {
+  opacity: 0;
+}
+
 .hero-portrait span,
 .hero-portrait small {
   position: absolute;
@@ -635,8 +654,8 @@ h1 span {
 .tour-contract {
   width: min(100%, 440px);
   display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 18px;
+  grid-template-columns: 1fr auto auto;
+  gap: 12px;
   align-items: center;
   margin: 0 0 12px;
   padding: 13px 15px;
@@ -683,7 +702,27 @@ h1 span {
 }
 
 .tour-route span {
-  white-space: nowrap;
+  max-width: 150px;
+  text-align: right;
+}
+
+.tour-change {
+  align-self: stretch;
+  padding: 0 8px;
+  border: 1px solid rgba(230, 180, 97, 0.35);
+  background: rgba(230, 180, 97, 0.035);
+  color: var(--gold);
+  cursor: pointer;
+  font-size: 0.45rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  writing-mode: vertical-rl;
+}
+
+.tour-change:hover,
+.tour-change:focus-visible {
+  border-color: var(--gold);
+  outline: none;
 }
 
 .primary-action {
@@ -807,6 +846,70 @@ h1 span {
   border: 1px solid rgba(243, 223, 189, 0.12);
 }
 
+.encounter-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 0.48rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.encounter-label b {
+  color: var(--gold);
+}
+
+.encounter-track {
+  height: 3px;
+  margin-top: 4px;
+  overflow: hidden;
+  background: rgba(230, 180, 97, 0.1);
+}
+
+.encounter-track i {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: linear-gradient(90deg, var(--bronze), var(--gold));
+  box-shadow: 0 0 12px rgba(230, 180, 97, 0.45);
+  transition: width 220ms ease;
+}
+
+.run-level-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 5px;
+  color: rgba(197, 154, 226, 0.75);
+  font-size: 0.46rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+}
+
+.run-level-label b,
+.run-level-label small {
+  color: #d8a9ff;
+}
+
+.run-xp-track {
+  height: 4px;
+  margin-top: 3px;
+  overflow: hidden;
+  background: rgba(197, 134, 255, 0.1);
+  border: 1px solid rgba(216, 169, 255, 0.1);
+}
+
+.run-xp-track i {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: linear-gradient(90deg, #6f3b95, #c586ff, #f0d0ff);
+  box-shadow: 0 0 12px rgba(197, 134, 255, 0.5);
+  transition: width 180ms ease;
+}
+
 .health-fill {
   width: 100%;
   height: 100%;
@@ -827,7 +930,7 @@ h1 span {
 .arena-shell {
   position: relative;
   width: 100%;
-  max-height: calc(100dvh - 156px - var(--safe-top) - var(--safe-bottom));
+  max-height: calc(100dvh - 196px - var(--safe-top) - var(--safe-bottom));
   margin: 0 auto;
   aspect-ratio: 9 / 16;
   overflow: hidden;
@@ -912,6 +1015,94 @@ h1 span {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
   margin-top: 22px;
+}
+
+.tour-modal {
+  width: min(100%, 690px);
+  text-align: left;
+}
+
+.tour-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.tour-option {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 176px;
+  padding: 16px;
+  border: 1px solid rgba(230, 180, 97, 0.24);
+  background:
+    linear-gradient(135deg, rgba(182, 107, 50, 0.13), transparent 62%),
+    rgba(255, 255, 255, 0.012);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.tour-option:hover,
+.tour-option:focus-visible,
+.tour-option.is-selected {
+  border-color: var(--gold);
+  background:
+    linear-gradient(135deg, rgba(182, 107, 50, 0.24), transparent 62%),
+    rgba(255, 255, 255, 0.025);
+  outline: none;
+}
+
+.tour-option.is-locked {
+  opacity: 0.48;
+  cursor: not-allowed;
+  filter: grayscale(0.55);
+}
+
+.tour-option-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tour-option-head b,
+.tour-option-head em {
+  color: var(--gold);
+  font-size: 0.48rem;
+  font-style: normal;
+  letter-spacing: 0.11em;
+}
+
+.tour-option-head em {
+  padding: 3px 5px;
+  border: 1px solid rgba(230, 180, 97, 0.35);
+}
+
+.tour-option > strong {
+  margin: 16px 0 5px;
+  color: var(--cream);
+  font-size: 0.9rem;
+  letter-spacing: 0.05em;
+}
+
+.tour-option > small,
+.tour-option-route,
+.tour-option-record {
+  color: var(--muted);
+  font-size: 0.48rem;
+  letter-spacing: 0.1em;
+}
+
+.tour-option-route {
+  margin-top: 18px;
+}
+
+.tour-option-record {
+  margin-top: auto;
+  padding-top: 12px;
+  color: rgba(243, 223, 189, 0.7);
 }
 
 .hero-option {
@@ -1320,6 +1511,10 @@ h1 span {
   }
 
   .hero-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tour-grid {
     grid-template-columns: 1fr;
   }
 

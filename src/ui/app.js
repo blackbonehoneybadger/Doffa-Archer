@@ -1,6 +1,7 @@
 import { calculateTapReward, getRunEntryCost } from "../core/economy.js";
 import { ProfileStore } from "../core/profile-store.js";
-import { DEFAULT_TOUR_ID, getTourDefinition } from "../game/content.js";
+import { DEFAULT_TOUR_ID } from "../config/game-config.js";
+import { TOURS } from "../game/content.js";
 import {
   EQUIPMENT_SLOTS,
   EQUIPMENT_SLOT_LABELS,
@@ -11,6 +12,7 @@ import {
   getRarityDefinition,
 } from "../game/equipment.js";
 import { DoffaGame } from "../game/game.js";
+import { renderHeroPortrait } from "../game/hero-sprites.js";
 import {
   DEFAULT_HERO_ID,
   getHeroDefinition,
@@ -26,17 +28,45 @@ function requiredElement(id) {
   return element;
 }
 
+export function resolveAvailableTour(tourId, tours = TOURS) {
+  const availableTours = Array.isArray(tours) ? tours : [];
+  const requestedTour = availableTours.find((tour) => tour?.id === tourId);
+  if (requestedTour?.unlocked) {
+    return requestedTour;
+  }
+
+  const defaultTour = availableTours.find((tour) => tour?.id === DEFAULT_TOUR_ID);
+  if (defaultTour?.unlocked) {
+    return defaultTour;
+  }
+  return availableTours.find((tour) => tour?.unlocked) ?? null;
+}
+
+export function isRunModeActive(mode) {
+  return mode === "running"
+    || mode === "choice"
+    || mode === "exit"
+    || mode === "dying";
+}
+
+function formatTourRoute(tour) {
+  const guardianCount = tour.rooms.filter((room) => room.elite).length;
+  return `${tour.rooms.length} CHAMBERS // ${guardianCount} GUARDIANS // 1 BOSS`;
+}
+
 export function bootstrapApp() {
   const elements = {
     home: requiredElement("home-screen"),
     game: requiredElement("game-screen"),
     canvas: requiredElement("game-canvas"),
+    controlHint: requiredElement("control-hint"),
     beans: requiredElement("top-beans"),
     bestRoom: requiredElement("best-room"),
     bossWins: requiredElement("boss-wins"),
     lifetimeBeans: requiredElement("lifetime-beans"),
     selectedHeroCard: requiredElement("selected-hero-card"),
     selectedHeroPortrait: requiredElement("selected-hero-portrait"),
+    selectedHeroArt: requiredElement("selected-hero-art"),
     selectedHeroMark: requiredElement("selected-hero-mark"),
     selectedHeroRole: requiredElement("selected-hero-role"),
     selectedHeroName: requiredElement("selected-hero-name"),
@@ -61,6 +91,10 @@ export function bootstrapApp() {
     selectedTourName: requiredElement("selected-tour-name"),
     selectedTourDistrict: requiredElement("selected-tour-district"),
     selectedTourRoute: requiredElement("selected-tour-route"),
+    changeTour: requiredElement("change-tour"),
+    tourOverlay: requiredElement("tour-overlay"),
+    tourGrid: requiredElement("tour-grid"),
+    closeTourSelect: requiredElement("close-tour-select"),
     tapButton: requiredElement("tap-button"),
     tapBurst: requiredElement("tap-burst"),
     startRun: requiredElement("start-run"),
@@ -74,7 +108,15 @@ export function bootstrapApp() {
     hudHeroLabel: requiredElement("hud-hero-label"),
     hudHealth: requiredElement("hud-health"),
     hudHealthText: requiredElement("hud-health-text"),
+    hudWave: requiredElement("hud-wave"),
+    hudWaveCountdown: requiredElement("hud-wave-countdown"),
+    hudWaveFill: requiredElement("hud-wave-fill"),
+    hudRunLevel: requiredElement("hud-run-level"),
+    hudRunXpText: requiredElement("hud-run-xp-text"),
+    hudRunXp: requiredElement("hud-run-xp"),
     abilityOverlay: requiredElement("ability-overlay"),
+    abilityKicker: requiredElement("ability-kicker"),
+    abilityDescription: requiredElement("ability-description"),
     abilityChoices: requiredElement("ability-choices"),
     resultOverlay: requiredElement("result-overlay"),
     resultKicker: requiredElement("result-kicker"),
@@ -82,6 +124,7 @@ export function bootstrapApp() {
     resultRoom: requiredElement("result-room"),
     resultTour: requiredElement("result-tour"),
     resultHero: requiredElement("result-hero"),
+    resultRunLevel: requiredElement("result-run-level"),
     resultBeans: requiredElement("result-beans"),
     resultXp: requiredElement("result-xp"),
     resultLevel: requiredElement("result-level"),
@@ -97,18 +140,21 @@ export function bootstrapApp() {
   };
 
   const profileStore = new ProfileStore();
-  let selectedHero = getHeroDefinition(profileStore.profile.selectedHeroId)
+  const savedRun = profileStore.profile.activeRun;
+  let selectedHero = getHeroDefinition(savedRun?.heroId ?? profileStore.profile.selectedHeroId)
     ?? getHeroDefinition(DEFAULT_HERO_ID);
-  const selectedTour = getTourDefinition(DEFAULT_TOUR_ID);
+  let selectedTour = resolveAvailableTour(savedRun?.tourId ?? profileStore.profile.selectedTourId);
   if (!selectedTour || !selectedHero) {
     throw new Error("Missing default game content");
   }
   let deferredInstallPrompt = null;
   let burstTimer = 0;
+  let flushDeferredServiceWorkerUpdate = () => {};
 
   const openInventory = () => {
     renderInventory(profileStore.profile);
     elements.heroOverlay.hidden = true;
+    elements.tourOverlay.hidden = true;
     elements.equipmentOverlay.hidden = false;
   };
 
@@ -203,14 +249,83 @@ export function bootstrapApp() {
       : "100%";
     renderLoadout(profile);
     renderInventory(profile);
+    const checkpoint = profile.activeRun;
+    elements.startRunLabel.textContent = checkpoint
+      ? `RESUME ${selectedTour.code} // ROOM ${checkpoint.room}`
+      : `ENTER ${selectedTour.code}`;
+    elements.entryCost.textContent = checkpoint ? "PAID" : String(getRunEntryCost());
+    elements.changeHero.disabled = Boolean(checkpoint);
+    elements.changeTour.disabled = Boolean(checkpoint);
+    elements.openInventory.disabled = Boolean(checkpoint);
   };
 
   const renderSelectedTour = () => {
     elements.selectedTourCode.textContent = selectedTour.code;
     elements.selectedTourName.textContent = selectedTour.name;
     elements.selectedTourDistrict.textContent = selectedTour.district;
-    elements.selectedTourRoute.textContent = `${selectedTour.rooms.length} CHAMBERS // 1 BOSS`;
-    elements.startRunLabel.textContent = `ENTER ${selectedTour.code}`;
+    elements.selectedTourRoute.textContent = formatTourRoute(selectedTour);
+    const checkpoint = profileStore.profile.activeRun;
+    elements.startRunLabel.textContent = checkpoint
+      ? `RESUME ${selectedTour.code} // ROOM ${checkpoint.room}`
+      : `ENTER ${selectedTour.code}`;
+  };
+
+  const selectTour = (tour) => {
+    if (!tour?.unlocked) {
+      return;
+    }
+    selectedTour = tour;
+    profileStore.update((draft) => {
+      draft.selectedTourId = tour.id;
+    });
+    renderSelectedTour();
+    renderProfile(profileStore.profile);
+    renderTourGrid();
+    elements.homeNotice.textContent = "";
+    elements.tourOverlay.hidden = true;
+  };
+
+  const renderTourGrid = () => {
+    elements.tourGrid.replaceChildren();
+    for (const tour of TOURS) {
+      const progress = profileStore.profile.tourProgress[tour.id] ?? {
+        bestRoom: 0,
+        bossesDefeated: 0,
+      };
+      const isSelected = tour.id === selectedTour.id;
+      const button = document.createElement("button");
+      button.className = "tour-option";
+      button.classList.toggle("is-selected", isSelected);
+      button.classList.toggle("is-locked", !tour.unlocked);
+      button.type = "button";
+      button.disabled = !tour.unlocked;
+      button.setAttribute("aria-pressed", String(isSelected));
+
+      const head = document.createElement("span");
+      head.className = "tour-option-head";
+      const code = document.createElement("b");
+      code.textContent = tour.code;
+      const state = document.createElement("em");
+      state.textContent = !tour.unlocked ? "LOCKED" : isSelected ? "ACTIVE" : "AVAILABLE";
+      head.append(code, state);
+
+      const name = document.createElement("strong");
+      name.textContent = tour.name;
+      const district = document.createElement("small");
+      district.textContent = tour.district;
+      const route = document.createElement("span");
+      route.className = "tour-option-route";
+      route.textContent = formatTourRoute(tour);
+      const record = document.createElement("span");
+      record.className = "tour-option-record";
+      record.textContent = `BEST ${Math.min(progress.bestRoom, tour.rooms.length)} / ${tour.rooms.length} // BOSSES ${progress.bossesDefeated}`;
+
+      button.append(head, name, district, route, record);
+      if (tour.unlocked) {
+        button.addEventListener("click", () => selectTour(tour));
+      }
+      elements.tourGrid.append(button);
+    }
   };
 
   const renderSelectedHero = () => {
@@ -218,6 +333,19 @@ export function bootstrapApp() {
     elements.selectedHeroCard.style.setProperty("--hero-accent", accent);
     elements.selectedHeroPortrait.style.setProperty("--hero-accent", accent);
     elements.selectedHeroPortrait.dataset.hero = selectedHero.id;
+    elements.selectedHeroPortrait.classList.remove("has-art");
+    elements.selectedHeroArt.hidden = true;
+    renderHeroPortrait(elements.selectedHeroArt, selectedHero)
+      .then((rendered) => {
+        if (elements.selectedHeroArt.dataset.heroRequest !== selectedHero.id) {
+          return;
+        }
+        elements.selectedHeroArt.hidden = !rendered;
+        elements.selectedHeroPortrait.classList.toggle("has-art", rendered);
+      })
+      .catch(() => {
+        elements.selectedHeroArt.hidden = true;
+      });
     elements.selectedHeroMark.textContent = selectedHero.monogram;
     elements.selectedHeroRole.textContent = selectedHero.role;
     elements.selectedHeroName.textContent = selectedHero.name;
@@ -253,11 +381,22 @@ export function bootstrapApp() {
       portrait.dataset.hero = hero.id;
       portrait.style.setProperty("--hero-accent", hero.palette.accent);
       portrait.setAttribute("aria-hidden", "true");
+      const art = document.createElement("canvas");
+      art.className = "hero-art";
+      art.hidden = true;
       const mark = document.createElement("span");
       mark.textContent = hero.monogram;
       const placeholder = document.createElement("small");
-      placeholder.textContent = "ART PLACEHOLDER";
-      portrait.append(mark, placeholder);
+      placeholder.textContent = hero.art ? "LOADING ART" : "ART PLACEHOLDER";
+      portrait.append(art, mark, placeholder);
+      renderHeroPortrait(art, hero)
+        .then((rendered) => {
+          art.hidden = !rendered;
+          portrait.classList.toggle("has-art", rendered);
+        })
+        .catch(() => {
+          art.hidden = true;
+        });
 
       const copy = document.createElement("span");
       copy.className = "hero-option-copy";
@@ -288,24 +427,90 @@ export function bootstrapApp() {
     elements.resultOverlay.hidden = true;
     elements.confirmOverlay.hidden = true;
     elements.heroOverlay.hidden = true;
+    elements.tourOverlay.hidden = true;
     elements.equipmentOverlay.hidden = true;
     elements.homeNotice.textContent = "";
     renderProfile(profileStore.profile);
+    flushDeferredServiceWorkerUpdate();
   };
 
   const game = new DoffaGame({
     canvas: elements.canvas,
     profileStore,
     onProfile: renderProfile,
-    onHud({ room, totalRooms, tourCode, roomName, heroName, heroLevel, weaponName, hp, maxHp }) {
+    onHud({
+      room,
+      totalRooms,
+      tourCode,
+      roomName,
+      roomType,
+      wave,
+      totalWaves,
+      waveCountdown,
+      exitOpen,
+      heroName,
+      heroLevel,
+      runLevel,
+      runXp,
+      runXpToNext,
+      weaponName,
+      hp,
+      maxHp,
+    }) {
       elements.hudTour.textContent = tourCode;
       elements.hudRoom.textContent = `${room} / ${totalRooms}`;
       elements.hudRoomName.textContent = roomName;
       elements.hudHeroLabel.textContent = `${heroName} L${heroLevel} // ${weaponName}`;
       elements.hudHealthText.textContent = `${hp} / ${maxHp}`;
       elements.hudHealth.style.width = `${Math.max(0, (hp / maxHp) * 100)}%`;
+      const safeRoom = roomType === "rest" || roomType === "event";
+      elements.hudWave.textContent = roomType === "rest"
+        ? "RECOVERY STATION"
+        : roomType === "event" ? "FIELD CONTRACT" : `WAVE ${wave} / ${totalWaves}`;
+      elements.hudWaveCountdown.textContent = exitOpen
+        ? "EXIT OPEN"
+        : roomType === "event"
+          ? "SELECT UPGRADE"
+          : roomType === "rest"
+            ? "SYSTEM STABLE"
+            : waveCountdown === null ? "FIGHT" : `NEXT ${Math.max(1, Math.ceil(waveCountdown))}S`;
+      const completedWaves = exitOpen
+        ? totalWaves
+        : waveCountdown === null ? Math.max(0, wave - 1) : wave;
+      const waveProgress = safeRoom || totalWaves <= 0
+        ? 100
+        : Math.min(100, (completedWaves / totalWaves) * 100);
+      elements.hudWaveFill.style.width = `${waveProgress}%`;
+      elements.hudRunLevel.textContent = String(runLevel);
+      elements.hudRunXpText.textContent = runXpToNext > 0
+        ? `${runXp} / ${runXpToNext} XP`
+        : "MAX LEVEL";
+      elements.hudRunXp.style.width = runXpToNext > 0
+        ? `${Math.min(100, (runXp / runXpToNext) * 100)}%`
+        : "100%";
+      elements.controlHint.textContent = exitOpen
+        ? roomType === "rest"
+          ? "RECOVERY COMPLETE · MOVE INTO THE OPEN DOOR"
+          : roomType === "event"
+            ? "CONTRACT ACCEPTED · MOVE INTO THE OPEN DOOR"
+            : "ROOM CLEARED · MOVE INTO THE OPEN DOOR"
+        : roomType === "event"
+          ? "SELECT ONE FIELD UPGRADE"
+          : waveCountdown === null
+            ? "DRAG TO MOVE · RELEASE TO FIRE"
+            : `NEXT WAVE IN ${Math.max(1, Math.ceil(waveCountdown))}`;
     },
-    onAbilityChoice(choices) {
+    onAbilityChoice(choices, context = {}) {
+      const levelChoice = context.source === "level";
+      const eventChoice = context.source === "event";
+      elements.abilityKicker.textContent = eventChoice
+        ? selectedTour.id === "rootfall-jungle" ? "ROOTFALL COVENANT" : "BROKER'S FIELD CONTRACT"
+        : levelChoice ? `POWER LEVEL ${context.runLevel}` : `${selectedTour.code} INITIATION`;
+      elements.abilityDescription.textContent = eventChoice
+        ? "The room offers one free field upgrade. Choose, then leave through the upper door."
+        : context.pendingChoices > 0
+          ? `${context.pendingChoices + 1} upgrades earned. Choose them one at a time.`
+          : levelChoice ? "Level secured. Choose one upgrade." : "One upgrade. No undo.";
       elements.abilityChoices.replaceChildren();
       for (const ability of choices) {
         const button = document.createElement("button");
@@ -325,7 +530,7 @@ export function bootstrapApp() {
         button.append(icon, name, description);
         button.addEventListener("click", () => {
           if (game.chooseAbility(ability.id)) {
-            elements.abilityOverlay.hidden = true;
+            elements.abilityOverlay.hidden = game.mode !== "choice";
           }
         });
         elements.abilityChoices.append(button);
@@ -337,11 +542,12 @@ export function bootstrapApp() {
       elements.confirmOverlay.hidden = true;
       elements.resultKicker.textContent = result.bossDefeated ? "TOUR CLEARED" : "RUN CLOSED";
       elements.resultTitle.textContent = result.bossDefeated
-        ? "THE ROASTER FELL."
+        ? result.tour.id === "rootfall-jungle" ? "THE ROOT TYRANT FELL." : "THE ROASTER FELL."
         : "THE CHAMBER WON.";
       elements.resultRoom.textContent = String(result.roomsCleared);
       elements.resultTour.textContent = result.tour.code;
       elements.resultHero.textContent = result.hero.name;
+      elements.resultRunLevel.textContent = `LEVEL ${result.runLevel}`;
       elements.resultBeans.textContent = `+${result.beanReward}`;
       elements.resultXp.textContent = `+${result.xpReward} XP`;
       elements.resultLevel.textContent = result.levelsGained > 0
@@ -357,11 +563,15 @@ export function bootstrapApp() {
     },
   });
 
-  elements.entryCost.textContent = String(getRunEntryCost());
+  elements.entryCost.textContent = profileStore.profile.activeRun ? "PAID" : String(getRunEntryCost());
   renderSelectedTour();
+  renderTourGrid();
   renderSelectedHero();
   renderHeroGrid();
   renderProfile(profileStore.profile);
+  if (profileStore.profile.activeRun) {
+    elements.homeNotice.textContent = "SAFE CHECKPOINT FOUND. RESUME WITHOUT ANOTHER ENTRY CHARGE.";
+  }
   game.startLoop();
 
   elements.tapButton.addEventListener("click", () => {
@@ -381,8 +591,16 @@ export function bootstrapApp() {
   });
 
   elements.startRun.addEventListener("click", () => {
-    const result = game.beginRun(selectedTour.id, selectedHero.id);
+    const resuming = Boolean(profileStore.profile.activeRun);
+    const result = resuming
+      ? game.resumeRun()
+      : game.beginRun(selectedTour.id, selectedHero.id);
     if (!result.ok) {
+      if (result.reason === "no-checkpoint" || result.reason === "invalid-checkpoint") {
+        elements.homeNotice.textContent = "THE SAVED RUN COULD NOT BE RESTORED. START A NEW RUN.";
+        renderProfile(profileStore.profile);
+        return;
+      }
       if (result.reason === "tour-unavailable") {
         elements.homeNotice.textContent = "THIS TOUR IS NOT AVAILABLE IN THIS BUILD.";
         return;
@@ -391,10 +609,18 @@ export function bootstrapApp() {
         elements.homeNotice.textContent = "THIS HERO IS NOT AVAILABLE IN THIS BUILD.";
         return;
       }
+      if (result.reason === "run-in-progress") {
+        elements.homeNotice.textContent = "A SAVED RUN IS ALREADY ACTIVE. RESUME IT FIRST.";
+        return;
+      }
       elements.homeNotice.textContent = `CHARGE ${result.missingBeans} MORE BEANS.`;
       return;
     }
 
+    selectedTour = result.tour ?? selectedTour;
+    selectedHero = result.hero ?? selectedHero;
+    renderSelectedTour();
+    renderSelectedHero();
     elements.home.hidden = true;
     elements.game.hidden = false;
     elements.homeNotice.textContent = "";
@@ -407,12 +633,24 @@ export function bootstrapApp() {
 
   elements.changeHero.addEventListener("click", () => {
     renderHeroGrid();
+    elements.tourOverlay.hidden = true;
     elements.equipmentOverlay.hidden = true;
     elements.heroOverlay.hidden = false;
   });
 
   elements.closeHeroSelect.addEventListener("click", () => {
     elements.heroOverlay.hidden = true;
+  });
+
+  elements.changeTour.addEventListener("click", () => {
+    renderTourGrid();
+    elements.heroOverlay.hidden = true;
+    elements.equipmentOverlay.hidden = true;
+    elements.tourOverlay.hidden = false;
+  });
+
+  elements.closeTourSelect.addEventListener("click", () => {
+    elements.tourOverlay.hidden = true;
   });
 
   elements.openInventory.addEventListener("click", openInventory);
@@ -449,24 +687,78 @@ export function bootstrapApp() {
     elements.installApp.hidden = true;
   });
 
-  registerServiceWorker(elements).catch(() => {
-    // A failed update check must not prevent offline gameplay.
-  });
+  registerServiceWorker(elements, () => isRunModeActive(game.mode))
+    .then((updateControl) => {
+      flushDeferredServiceWorkerUpdate = updateControl.flush;
+      flushDeferredServiceWorkerUpdate();
+    })
+    .catch(() => {
+      // A failed update check must not prevent offline gameplay.
+    });
 }
 
-async function registerServiceWorker(elements) {
+async function registerServiceWorker(elements, isRunActive) {
   if (!("serviceWorker" in navigator) || !window.isSecureContext) {
-    return;
+    return { flush() {} };
   }
 
   const registration = await navigator.serviceWorker.register("/service-worker.js", { scope: "/" });
+  const updateMessage = elements.updateBanner.querySelector("span");
+  let waitingWorker = null;
+  let activationRequested = false;
+  let reloadDeferred = false;
+  let refreshing = false;
+
+  const setUpdateMessage = (message) => {
+    if (updateMessage) {
+      updateMessage.textContent = message;
+    }
+  };
+
+  const activateWaitingWorker = () => {
+    if (!waitingWorker) {
+      return;
+    }
+    if (isRunActive()) {
+      activationRequested = true;
+      setUpdateMessage("Update queued. Finish this run, then return home.");
+      elements.applyUpdate.textContent = "UPDATE QUEUED";
+      elements.applyUpdate.disabled = true;
+      return;
+    }
+
+    activationRequested = false;
+    setUpdateMessage("Applying the new build…");
+    elements.applyUpdate.textContent = "UPDATING";
+    elements.applyUpdate.disabled = true;
+    waitingWorker.postMessage({ type: "SKIP_WAITING" });
+  };
+
+  const flush = () => {
+    if (isRunActive()) {
+      return;
+    }
+    if (reloadDeferred) {
+      reloadDeferred = false;
+      refreshing = true;
+      window.location.reload();
+      return;
+    }
+    if (activationRequested) {
+      activateWaitingWorker();
+    }
+  };
 
   const showUpdate = (worker) => {
     if (!worker || !navigator.serviceWorker.controller) {
       return;
     }
+    waitingWorker = worker;
     elements.updateBanner.hidden = false;
-    elements.applyUpdate.onclick = () => worker.postMessage({ type: "SKIP_WAITING" });
+    setUpdateMessage("A new build is ready.");
+    elements.applyUpdate.textContent = "UPDATE NOW";
+    elements.applyUpdate.disabled = false;
+    elements.applyUpdate.onclick = activateWaitingWorker;
   };
 
   if (registration.waiting) {
@@ -482,13 +774,22 @@ async function registerServiceWorker(elements) {
     });
   });
 
-  let refreshing = false;
   navigator.serviceWorker.addEventListener("controllerchange", () => {
-    if (!refreshing) {
-      refreshing = true;
-      window.location.reload();
+    if (refreshing) {
+      return;
     }
+    if (isRunActive()) {
+      reloadDeferred = true;
+      elements.updateBanner.hidden = false;
+      setUpdateMessage("Update installed. Finish this run, then return home.");
+      elements.applyUpdate.textContent = "RESTART QUEUED";
+      elements.applyUpdate.disabled = true;
+      return;
+    }
+    refreshing = true;
+    window.location.reload();
   });
 
   window.setInterval(() => registration.update(), 30 * 60 * 1_000);
+  return { flush };
 }

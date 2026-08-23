@@ -73,6 +73,45 @@ export const ABILITIES = Object.freeze([
       player.damage *= 1.32;
     },
   }),
+  Object.freeze({
+    id: "magnetic_draft",
+    glyph: "⌁",
+    name: "MAGNETIC DRAFT",
+    description: "Pull roast shards and recovery charges from farther away and collect them faster.",
+    apply(player) {
+      player.pickupRadius += 110;
+      player.pickupSpeed *= 1.25;
+    },
+  }),
+  Object.freeze({
+    id: "recovery_drip",
+    glyph: "✚",
+    name: "RECOVERY DRIP",
+    description: "Restore five percent maximum health whenever a chamber is cleared.",
+    apply(player) {
+      player.healOnRoomClearPct = Math.min(0.25, player.healOnRoomClearPct + 0.05);
+    },
+  }),
+  Object.freeze({
+    id: "pressure_shell",
+    glyph: "⬡",
+    name: "PRESSURE SHELL",
+    description: "Reduce incoming damage by twelve percent.",
+    apply(player) {
+      player.damageReduction = Math.min(0.55, player.damageReduction + 0.12);
+    },
+  }),
+  Object.freeze({
+    id: "deep_roast",
+    glyph: "◉",
+    name: "DEEP ROAST",
+    description: "Fire larger impact rounds with a wider blast, at slightly reduced direct damage.",
+    apply(player) {
+      player.projectileRadius *= 1.35;
+      player.splashRadius += 36;
+      player.damage *= 0.94;
+    },
+  }),
 ]);
 
 export function chooseAbilityCards(rng, count = 3, ownedIds = []) {
