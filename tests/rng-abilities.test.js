@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { SeededRng } from "../src/core/rng.js";
-import { applyAbility, chooseAbilityCards } from "../src/game/abilities.js";
+import { ABILITIES, applyAbility, chooseAbilityCards } from "../src/game/abilities.js";
 
 test("seeded RNG reproduces the same sequence", () => {
   const first = new SeededRng(42);
@@ -57,4 +57,25 @@ test("run-progression abilities modify pickup, recovery, defense, and impact pro
   assert.equal(player.projectileRadius, 10.8);
   assert.equal(player.splashRadius, 36);
   assert.ok(Math.abs(player.damage - 18.8) < 1e-9);
+});
+
+test("the Doffa ability pool covers Archero-style trajectories, elements, defense, and recovery", () => {
+  assert.equal(ABILITIES.length, 24);
+  assert.deepEqual(new Set(ABILITIES.map(({ tier }) => tier)), new Set(["S", "A", "B"]));
+  for (const category of ["trajectory", "element", "survival", "recovery", "melee"]) {
+    assert.equal(ABILITIES.some((candidate) => candidate.category === category), true, category);
+  }
+  const player = {
+    damage: 100, extraShotAngles: [], chainDamagePct: 0, burnDamagePct: 0,
+    frostSlowPct: 0, poisonDamagePct: 0, bloodThirstPct: 0, rageMaxPct: 0,
+    meleeDamagePct: 0, meleeRangePct: 0, critMultiplier: 2,
+  };
+  for (const id of ["cross_pressure", "chain_arc", "cinder_coat", "frost_lock", "toxic_roast", "blood_thirst", "rage_boiler", "tempered_edge", "execution_pressure"]) {
+    applyAbility(player, id);
+  }
+  assert.equal(player.extraShotAngles.length, 2);
+  assert.equal(player.chainDamagePct, 0.32);
+  assert.equal(player.frostSlowPct, 0.38);
+  assert.equal(player.bloodThirstPct, 0.012);
+  assert.equal(player.critMultiplier, 2.55);
 });

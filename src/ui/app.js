@@ -570,9 +570,12 @@ export function bootstrapApp() {
         const button = document.createElement("button");
         button.className = "ability-card";
         button.type = "button";
+        button.dataset.tier = ability.tier ?? "B";
+        button.dataset.category = ability.category ?? "utility";
 
         const icon = document.createElement("span");
         icon.className = "ability-icon";
+        icon.dataset.tier = ability.tier ?? "B";
         const glyph = document.createElement("span");
         glyph.textContent = ability.glyph;
         icon.append(glyph);

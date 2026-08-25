@@ -1363,6 +1363,17 @@ export class DoffaGame {
       return;
     }
     this.player.invulnerability = Math.max(0, this.player.invulnerability - delta);
+    if ((this.player.shieldPulseInterval ?? 0) > 0) {
+      this.player.shieldPulseTimer = (this.player.shieldPulseTimer ?? 0) - delta;
+      if (this.player.shieldPulseTimer <= 0) {
+        this.player.invulnerability = Math.max(
+          this.player.invulnerability,
+          this.player.shieldPulseDuration ?? 2,
+        );
+        this.player.shieldPulseTimer += this.player.shieldPulseInterval;
+        this.spawnParticles(this.player.x, this.player.y, "#8eeaff", 12, 120);
+      }
+    }
     this.hazardDamageCooldown = Math.max(0, this.hazardDamageCooldown - delta);
     this.updateDestructibles(delta);
     this.updatePlayer(delta);
@@ -1639,39 +1650,49 @@ export class DoffaGame {
     const spread = count > 1
       ? Math.min(0.52, weapon?.spread ?? 0.14 * (count - 1))
       : 0;
-    for (let index = 0; index < count; index += 1) {
-      const offset = count === 1 ? 0 : -spread / 2 + (spread * index) / (count - 1);
-      const angle = baseAngle + offset;
-      const critical = this.rng.next() < this.player.critChance;
-      this.pushProjectile({
-        x: this.player.x + Math.cos(angle) * 30,
-        y: this.player.y + Math.sin(angle) * 30,
-        vx: Math.cos(angle) * (weapon?.projectileSpeed ?? this.player.projectileSpeed),
-        vy: Math.sin(angle) * (weapon?.projectileSpeed ?? this.player.projectileSpeed),
-        radius: (weapon
-          ? weapon.projectileRadius * (this.player.projectileRadius / this.player.baseProjectileRadius)
-          : this.player.projectileRadius) * (critical ? 1.2 : 1),
-        damage: this.player.damage * (weapon?.damageMultiplier ?? 1) * (critical ? 2 : 1),
-        friendly: true,
-        critical,
-        color: this.player.accent,
-        secondary: this.player.secondary,
-        visual: weapon?.visual ?? this.player.weaponVisual,
-        maxAge: weapon?.projectileLifetime ?? this.player.projectileLifetime,
-        splashRadius: weapon
-          ? weapon.splashRadius + Math.max(0, this.player.splashRadius - this.player.baseSplashRadius)
-          : this.player.splashRadius,
-        hitsLeft: (weapon
-          ? weapon.pierce + Math.max(0, this.player.pierce - this.player.basePierce)
-          : this.player.pierce) + 1,
-        wallBounces: weapon
-          ? weapon.wallBounces + Math.max(0, this.player.wallBounces - this.player.baseWallBounces)
-          : this.player.wallBounces,
-        hitIds: new Set(),
-        sourceWeaponSlot: this.player.selectedWeaponSlot,
-        age: 0,
-        alive: true,
-      });
+    const directionalOffsets = [0, ...(this.player.extraShotAngles ?? [])];
+    const missingHealth = 1 - this.player.hp / Math.max(1, this.player.maxHp);
+    const rageMultiplier = 1 + missingHealth * (this.player.rageMaxPct ?? 0);
+    for (const directionalOffset of directionalOffsets) {
+      for (let index = 0; index < count; index += 1) {
+        const offset = count === 1 ? 0 : -spread / 2 + (spread * index) / (count - 1);
+        const angle = baseAngle + directionalOffset + offset;
+        const critical = this.rng.next() < this.player.critChance;
+        this.pushProjectile({
+          x: this.player.x + Math.cos(angle) * 30,
+          y: this.player.y + Math.sin(angle) * 30,
+          vx: Math.cos(angle) * (weapon?.projectileSpeed ?? this.player.projectileSpeed),
+          vy: Math.sin(angle) * (weapon?.projectileSpeed ?? this.player.projectileSpeed),
+          radius: (weapon
+            ? weapon.projectileRadius * (this.player.projectileRadius / this.player.baseProjectileRadius)
+            : this.player.projectileRadius) * (critical ? 1.2 : 1),
+          damage: this.player.damage * rageMultiplier * (weapon?.damageMultiplier ?? 1)
+            * (critical ? (this.player.critMultiplier ?? 2) : 1),
+          friendly: true,
+          critical,
+          color: this.player.accent,
+          secondary: this.player.secondary,
+          visual: weapon?.visual ?? this.player.weaponVisual,
+          maxAge: weapon?.projectileLifetime ?? this.player.projectileLifetime,
+          splashRadius: weapon
+            ? weapon.splashRadius + Math.max(0, this.player.splashRadius - this.player.baseSplashRadius)
+            : this.player.splashRadius,
+          hitsLeft: (weapon
+            ? weapon.pierce + Math.max(0, this.player.pierce - this.player.basePierce)
+            : this.player.pierce) + 1,
+          wallBounces: weapon
+            ? weapon.wallBounces + Math.max(0, this.player.wallBounces - this.player.baseWallBounces)
+            : this.player.wallBounces,
+          chainDamagePct: this.player.chainDamagePct ?? 0,
+          burnDamagePct: this.player.burnDamagePct ?? 0,
+          frostSlowPct: this.player.frostSlowPct ?? 0,
+          poisonDamagePct: this.player.poisonDamagePct ?? 0,
+          hitIds: new Set(),
+          sourceWeaponSlot: this.player.selectedWeaponSlot,
+          age: 0,
+          alive: true,
+        });
+      }
     }
 
     this.spawnParticles(this.player.x, this.player.y, this.player.accent, 4, 90);
@@ -1684,7 +1705,7 @@ export class DoffaGame {
   }
 
   performMeleeStrike(baseAngle, weapon) {
-    const range = weapon?.attackRange ?? 132;
+    const range = (weapon?.attackRange ?? 132) * (1 + (this.player.meleeRangePct ?? 0));
     const halfArc = (weapon?.meleeArc ?? 1.2) / 2;
     const maxTargets = Math.max(1, weapon?.maxTargets ?? 1);
     const candidates = [];
@@ -1716,7 +1737,11 @@ export class DoffaGame {
     candidates.sort((first, second) => first.distance - second.distance);
     for (const candidate of candidates.slice(0, maxTargets)) {
       const critical = this.rng.next() < this.player.critChance;
-      const damage = this.player.damage * (weapon?.damageMultiplier ?? 1) * (critical ? 2 : 1);
+      const missingHealth = 1 - this.player.hp / Math.max(1, this.player.maxHp);
+      const rageMultiplier = 1 + missingHealth * (this.player.rageMaxPct ?? 0);
+      const damage = this.player.damage * rageMultiplier * (weapon?.damageMultiplier ?? 1)
+        * (1 + (this.player.meleeDamagePct ?? 0))
+        * (critical ? (this.player.critMultiplier ?? 2) : 1);
       if (candidate.kind === "enemy") {
         const hpBefore = candidate.entity.hp;
         if (critical) this.onAudio?.("critical", { heroId: this.hero.id, visual: this.player.lastAttackVisual });
@@ -1727,6 +1752,7 @@ export class DoffaGame {
           candidate.y,
           critical ? "#fff0b0" : this.player.accent,
         );
+        this.applyPlayerElementalHit(candidate.entity, damage, this.player);
         if (candidate.entity.hp <= 0 && hpBefore > 0) this.onVoice?.("meleeFinisher");
         else if (critical || damage >= candidate.entity.maxHp * .28) this.onVoice?.("heavy");
       } else {
@@ -1790,6 +1816,7 @@ export class DoffaGame {
       enemy.stateTimer = Math.max(0, enemy.stateTimer - delta);
       enemy.phaseTimer += delta;
       enemy.hitFlash = Math.max(0, enemy.hitFlash - delta);
+      this.updateEnemyPlayerEffects(enemy, delta);
 
       if (enemy.defeated) {
         enemy.defeatTimer = Math.max(0, (enemy.defeatTimer ?? 0) - delta);
@@ -2864,6 +2891,7 @@ export class DoffaGame {
       const impactColor = projectile.critical ? "#fff0b0" : projectile.color;
       if (projectile.critical) this.onAudio?.("critical", { heroId: this.hero.id, visual: projectile.visual });
       this.damageEnemy(enemy, projectile.damage, projectile.x, projectile.y, impactColor);
+      this.applyPlayerElementalHit(enemy, projectile.damage, projectile);
       if (enemy.hp <= 0 && hpBefore > 0) {
         this.onVoice?.(projectile.sourceWeaponSlot === "ranged" ? "rangedFinisher" : "meleeFinisher");
       } else if (projectile.critical || projectile.damage >= enemy.maxHp * .28) {
@@ -2904,6 +2932,82 @@ export class DoffaGame {
         projectile.secondary,
       );
       if (enemy.hp <= 0 && hpBefore > 0) this.onVoice?.("rangedFinisher");
+    }
+  }
+
+  applyPlayerElementalHit(enemy, damage, source = {}) {
+    if (!enemy?.alive || enemy.defeated) return;
+    const burnPct = Number(source.burnDamagePct) || 0;
+    const poisonPct = Number(source.poisonDamagePct) || 0;
+    const frostPct = Number(source.frostSlowPct) || 0;
+    const chainPct = Number(source.chainDamagePct) || 0;
+    if (burnPct > 0) {
+      enemy.burnTimer = 2;
+      enemy.burnDps = Math.max(enemy.burnDps ?? 0, damage * burnPct / 2);
+      enemy.elementTick = Math.min(enemy.elementTick ?? 0.25, 0.25);
+    }
+    if (poisonPct > 0) {
+      enemy.poisonTimer = 4;
+      enemy.poisonDps = Math.max(enemy.poisonDps ?? 0, damage * poisonPct / 4);
+      enemy.elementTick = Math.min(enemy.elementTick ?? 0.25, 0.25);
+    }
+    if (frostPct > 0) {
+      if (!Number.isFinite(enemy.preFrostSpeed)) enemy.preFrostSpeed = enemy.speed;
+      enemy.frostTimer = 2;
+      enemy.speed = enemy.preFrostSpeed * (1 - Math.min(0.65, frostPct));
+    }
+    if (chainPct > 0) {
+      const targets = this.enemies
+        .filter((candidate) => candidate !== enemy && candidate.alive && !candidate.defeated)
+        .map((candidate) => ({ candidate, distance: distanceSquared(enemy, candidate) }))
+        .filter(({ distance }) => distance <= 150 * 150)
+        .sort((first, second) => first.distance - second.distance)
+        .slice(0, 2);
+      for (const { candidate } of targets) {
+        this.damageEnemy(candidate, damage * chainPct, candidate.x, candidate.y, "#8eeaff");
+        this.spawnParticles(candidate.x, candidate.y, "#8eeaff", 5, 95);
+      }
+    }
+  }
+
+  updateEnemyPlayerEffects(enemy, delta) {
+    if (!enemy?.alive || enemy.defeated) return;
+    if ((enemy.frostTimer ?? 0) > 0) {
+      enemy.frostTimer = Math.max(0, enemy.frostTimer - delta);
+      if (enemy.frostTimer <= 0 && Number.isFinite(enemy.preFrostSpeed)) {
+        enemy.speed = enemy.preFrostSpeed;
+        enemy.preFrostSpeed = null;
+      }
+    }
+    enemy.burnTimer = Math.max(0, (enemy.burnTimer ?? 0) - delta);
+    enemy.poisonTimer = Math.max(0, (enemy.poisonTimer ?? 0) - delta);
+    if (enemy.burnTimer <= 0 && enemy.poisonTimer <= 0) return;
+    enemy.elementTick = (enemy.elementTick ?? 0.25) - delta;
+    if (enemy.elementTick > 0) return;
+    enemy.elementTick += 0.25;
+    const damage = (enemy.burnTimer > 0 ? (enemy.burnDps ?? 0) : 0)
+      + (enemy.poisonTimer > 0 ? (enemy.poisonDps ?? 0) : 0);
+    if (damage > 0) {
+      this.damageEnemy(
+        enemy,
+        damage * 0.25,
+        enemy.x,
+        enemy.y,
+        enemy.burnTimer > 0 ? "#ff7a32" : "#96cf55",
+      );
+    }
+  }
+
+  triggerPlayerDeathBurst(defeatedEnemy) {
+    const radius = this.player.deathBurstRadius ?? 0;
+    const damage = this.player.damage * (this.player.deathBurstPct ?? 0);
+    if (radius <= 0 || damage <= 0) return;
+    this.spawnParticles(defeatedEnemy.x, defeatedEnemy.y, "#ffb15a", 18, 195);
+    for (const enemy of this.enemies) {
+      if (enemy === defeatedEnemy || !enemy.alive || enemy.defeated) continue;
+      if (distanceSquared(defeatedEnemy, enemy) <= radius * radius) {
+        this.damageEnemy(enemy, damage, enemy.x, enemy.y, "#ffb15a");
+      }
     }
   }
 
@@ -2974,6 +3078,13 @@ export class DoffaGame {
         enemy.isBoss ? 46 : enemy.isElite ? 34 : 18,
         230,
       );
+      if ((this.player.bloodThirstPct ?? 0) > 0) {
+        this.player.hp = Math.min(
+          this.player.maxHp,
+          this.player.hp + this.player.maxHp * this.player.bloodThirstPct,
+        );
+      }
+      this.triggerPlayerDeathBurst(enemy);
     } else {
       this.onAudio?.("enemyHit", {
         enemyType: enemy.type,

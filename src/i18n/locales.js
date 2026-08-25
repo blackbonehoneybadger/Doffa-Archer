@@ -51,6 +51,20 @@ const TRADEOFF_RU = {
   "predator-focus": ["Фокус хищника", "Получить 10% шанса критического удара, но потерять 10% скорости."],
   "redline-step": ["Шаг на пределе", "Получить 15% скорости, но потерять 10% урона."],
 };
+const EXTRA_ABILITY_RU = {
+  cross_pressure: ["Перекрёстный огонь", "Дальняя атака выпускает два боковых снаряда. Общий урон немного снижен."],
+  rear_guard: ["Защита тыла", "Дальняя атака выпускает дополнительный снаряд назад."],
+  chain_arc: ["Цепная молния", "Попадание поражает ближайших врагов молнией на 32% урона."],
+  cinder_coat: ["Обжигающее покрытие", "Атаки поджигают врага и наносят 45% урона за две секунды."],
+  frost_lock: ["Морозный захват", "Атаки замедляют врагов на 38% в течение двух секунд."],
+  toxic_roast: ["Ядовитая обжарка", "Атаки отравляют врага на 60% урона за четыре секунды."],
+  death_burst: ["Посмертный взрыв", "Побеждённые враги взрываются и наносят 70% урона атаки."],
+  guardian_discs: ["Диски стража", "Каждые десять секунд герой получает две секунды неуязвимости."],
+  blood_thirst: ["Жажда крови", "Победа над врагом восстанавливает 1,2% максимального здоровья."],
+  rage_boiler: ["Котёл ярости", "Чем меньше здоровья, тем выше урон — вплоть до 38%."],
+  tempered_edge: ["Закалённое лезвие", "Урон ближнего боя повышается на 22%, а дальность удара — на 18%."],
+  execution_pressure: ["Давление казни", "Критические удары получают ещё 55% критического урона."],
+};
 for (const [locale] of SUPPORTED_LOCALES) {
   const rows = locale === "en" ? EN_ABILITIES : locale === "ru" ? RU_ABILITIES : ABILITY_IDS.map((_, index) => `${GENERIC_ABILITY[locale][0]} ${index + 1}|${GENERIC_ABILITY[locale][1]}`);
   rows.forEach((row, index) => {
@@ -77,6 +91,13 @@ export function translateAbility(locale, ability) {
     return { ...ability, name: TRADEOFF_RU[tradeoffId][0], description: TRADEOFF_RU[tradeoffId][1] };
   }
   if (String(ability.id).includes(":") && locale !== "en") {
+    return { ...ability, name: GENERIC_ABILITY[normalizeLocale(locale)][0], description: GENERIC_ABILITY[normalizeLocale(locale)][1] };
+  }
+  if (locale === "ru" && EXTRA_ABILITY_RU[ability.id]) {
+    return { ...ability, name: EXTRA_ABILITY_RU[ability.id][0], description: EXTRA_ABILITY_RU[ability.id][1] };
+  }
+  if (!ABILITY_IDS.includes(ability.id)) {
+    if (locale === "en") return { ...ability };
     return { ...ability, name: GENERIC_ABILITY[normalizeLocale(locale)][0], description: GENERIC_ABILITY[normalizeLocale(locale)][1] };
   }
   return { ...ability, name: translate(locale, `ability.${ability.id}.name`), description: translate(locale, `ability.${ability.id}.description`) };

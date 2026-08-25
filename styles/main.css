@@ -1485,6 +1485,29 @@ h1 span {
   cursor: pointer;
 }
 
+.ability-card[data-tier="S"] {
+  border-color: #f4b75d;
+  box-shadow: inset 0 0 24px rgba(244, 137, 61, 0.12), 0 0 18px rgba(244, 183, 93, 0.12);
+}
+
+.ability-card[data-tier="A"] {
+  border-color: #b67743;
+}
+
+.ability-card[data-tier="S"] .ability-icon::after,
+.ability-card[data-tier="A"] .ability-icon::after {
+  content: attr(data-tier);
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  padding: 2px 5px;
+  border: 1px solid currentColor;
+  background: #170d08;
+  color: #f4b75d;
+  font: 700 9px/1 system-ui, sans-serif;
+  transform: rotate(-45deg);
+}
+
 .ability-card:hover,
 .ability-card:focus-visible {
   border-color: var(--gold);
@@ -1493,6 +1516,7 @@ h1 span {
 }
 
 .ability-icon {
+  position: relative;
   width: 48px;
   height: 48px;
   display: grid;
