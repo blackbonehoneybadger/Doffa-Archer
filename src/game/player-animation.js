@@ -101,7 +101,17 @@ export function getPlayerFullMotionFrame(player = {}, stateRows = {}, animationA
     return animatedFrame;
   }
 
-  const row = stateRows && typeof stateRows === "object" ? stateRows[state] : undefined;
+  let row = stateRows && typeof stateRows === "object" ? stateRows[state] : undefined;
+  // Legacy full-direction sheets contain one planted pose and one stride pose
+  // per direction. Alternating those authored cells makes the feet visibly
+  // plant and push instead of sliding a frozen run pose across the floor.
+  if (!animationAtlas && state === "run") {
+    const plantedRow = stateRows?.idle;
+    const stridePhase = Math.floor(safeTimer(player.animationClock)) % 4;
+    if (Number.isInteger(plantedRow) && (stridePhase === 0 || stridePhase === 3)) {
+      row = plantedRow;
+    }
+  }
   if (!Number.isInteger(row) || row < 0 || row % 2 !== 0) {
     return null;
   }
@@ -180,10 +190,13 @@ export function getPlayerAnimationPose(player = {}) {
   const defeated = Number.isFinite(player.hp) && player.hp <= 0;
 
   return Object.freeze({
-    bob: defeated ? 30 : moving ? Math.abs(stride) * 5 : Math.sin(clock * 0.7) * 1.5,
-    lean: defeated ? -1.18 : moving ? stride * 0.035 : 0,
-    scaleX: defeated ? 1.08 : 1 + strike * 0.045,
-    scaleY: defeated ? 0.76 : 1 - strike * 0.04,
+    bob: defeated ? 30 : moving ? -Math.abs(stride) * 3.5 : Math.sin(clock * 0.7) * 1.5,
+    lean: defeated ? -1.18 : moving ? stride * 0.018 : 0,
+    // Character size must never change between idle, movement, attack, hit,
+    // and defeat. The authored frame carries the pose; the renderer keeps a
+    // single physical scale so reactions cannot suddenly grow or shrink.
+    scaleX: 1,
+    scaleY: 1,
     shadowScale: defeated ? 1.28 : moving ? 0.92 + Math.abs(stride) * 0.12 : 1,
     strike,
     hit,

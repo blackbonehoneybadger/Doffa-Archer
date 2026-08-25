@@ -125,7 +125,7 @@ test("a completed Rootfall run starts its own content and persists isolated tour
     assert.equal(result.tour.id, ROOTFALL_TOUR_ID);
     assert.equal(result.roomsCleared, 50);
     assert.equal(result.bossDefeated, true);
-    assert.equal(result.beanReward, 120);
+    assert.equal(result.beanReward, 50);
     assert.equal(result.receipt.tourId, ROOTFALL_TOUR_ID);
     assert.equal(result.receipt.roomsCleared, 50);
     assert.equal(result.receipt.bossDefeated, true);
@@ -137,7 +137,7 @@ test("a completed Rootfall run starts its own content and persists isolated tour
       bestRoom: 0,
       bossesDefeated: 0,
     });
-    assert.equal(store.profile.beans, 125);
+    assert.equal(store.profile.beans, 55);
   } finally {
     globalThis.HTMLCanvasElement = previousCanvas;
     globalThis.window = previousWindow;

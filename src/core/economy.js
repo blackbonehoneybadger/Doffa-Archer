@@ -1,7 +1,10 @@
 export const ECONOMY = Object.freeze({
-  version: 1,
+  version: 2,
   tapBeans: 1,
   runEntryBeans: 25,
+  minimumWager: 1,
+  maximumWager: 1_000_000_000,
+  victoryMultiplier: 2,
   roomClearBeans: 2,
   bossClearBeans: 20,
   defeatRecoveryBeans: 4,
@@ -18,13 +21,28 @@ export function calculateTapReward(tapCount = 1) {
   return tapCount * ECONOMY.tapBeans;
 }
 
-export function getRunEntryCost() {
-  return ECONOMY.runEntryBeans;
+export function normalizeWager(value) {
+  if (!Number.isFinite(value)) return ECONOMY.runEntryBeans;
+  return Math.min(
+    ECONOMY.maximumWager,
+    Math.max(ECONOMY.minimumWager, Math.floor(value)),
+  );
 }
 
-export function canEnterRun(beanBalance) {
+export function getRunEntryCost(wager = ECONOMY.runEntryBeans) {
+  return normalizeWager(wager);
+}
+
+export function canEnterRun(beanBalance, wager = ECONOMY.runEntryBeans) {
   requireNonNegativeInteger(beanBalance, "beanBalance");
-  return beanBalance >= getRunEntryCost();
+  return beanBalance >= getRunEntryCost(wager);
+}
+
+export function calculateWagerPayout({ wager, bossDefeated }) {
+  if (typeof bossDefeated !== "boolean") {
+    throw new TypeError("bossDefeated must be a boolean");
+  }
+  return bossDefeated ? normalizeWager(wager) * ECONOMY.victoryMultiplier : 0;
 }
 
 export function calculateRunBeanReward({ roomsCleared, bossDefeated }) {

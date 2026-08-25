@@ -115,9 +115,23 @@ export function getEnemyDirectionalStateFrame(
 }
 
 export function getEnemyFullMotionFrame(enemy = {}, stateRows = {}, animationAtlas = null) {
+  const state = getEnemyAnimationState(enemy);
+  if (!animationAtlas && state === "move" && Number.isFinite(enemy.animationClock)) {
+    const plantedRow = stateRows?.idle;
+    const stridePhase = Math.floor(safeTimer(enemy.animationClock)) % 4;
+    if (Number.isInteger(plantedRow) && (stridePhase === 0 || stridePhase === 3)) {
+      const direction = getEnemyFacingDirection(enemy);
+      const directionIndex = ENEMY_FACING_DIRECTIONS.indexOf(direction);
+      return Object.freeze({
+        state,
+        direction,
+        index: plantedRow * 4 + directionIndex,
+      });
+    }
+  }
   return getEnemyDirectionalStateFrame(
     enemy,
-    getEnemyAnimationState(enemy),
+    state,
     stateRows,
     animationAtlas,
   );

@@ -42,7 +42,7 @@ test("legacy aggregate progress migrates into the first tour record and default 
     bossesDefeated: 2,
   });
 
-  assert.equal(profile.version, 6);
+  assert.equal(profile.version, 8);
   assert.equal(profile.selectedHeroId, DEFAULT_HERO_ID);
   assert.equal(profile.selectedTourId, DEFAULT_TOUR_ID);
   assert.deepEqual(profile.tourProgress[DEFAULT_TOUR_ID], {
@@ -88,7 +88,7 @@ test("profile v6 migrates hero levels and sanitizes local inventory", () => {
     loadout: { weapon: "loot-safe", relic: "../loot" },
   });
 
-  assert.equal(profile.version, 6);
+  assert.equal(profile.version, 8);
   assert.deepEqual(profile.heroProgress.pata, { level: 7, xp: 71 });
   assert.equal(Object.hasOwn(profile.heroProgress, "unknown"), false);
   assert.equal(profile.inventory.length, 5);

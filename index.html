@@ -23,30 +23,42 @@
           <img src="/assets/icon.svg" alt="" width="42" height="42">
           <span>
             <strong>DOFFA</strong>
-            <small>HEROES // PROTOTYPE 0.16.6</small>
+            <small>HEROES // PROTOTYPE 0.18.6</small>
           </span>
         </a>
+        <label class="language-control" aria-label="Language">
+          <select id="language-select">
+            <option value="ru">Русский</option><option value="en">English</option>
+            <option value="es">Español</option><option value="pt-BR">Português</option>
+            <option value="de">Deutsch</option><option value="fr">Français</option>
+            <option value="it">Italiano</option><option value="tr">Türkçe</option>
+            <option value="ar">العربية</option><option value="zh-Hans">简体中文</option>
+            <option value="ja">日本語</option><option value="ko">한국어</option>
+          </select>
+        </label>
+        <button id="audio-toggle" class="audio-toggle" type="button" aria-label="Mute game audio" aria-pressed="false">🔊</button>
         <div class="currency" aria-label="Entry beans">
           <span class="currency-mark" aria-hidden="true"></span>
           <strong id="top-beans">0</strong>
-          <small>BEANS</small>
+          <small data-i18n="beans">BEANS</small>
         </div>
       </header>
 
       <section id="home-screen" class="screen home-screen" aria-labelledby="home-title">
         <div class="eyebrow">DOFFA GAMES // FIRST TITLE</div>
-        <h1 id="home-title">THE ROAST<br><span>DOES NOT FORGIVE.</span></h1>
-        <p class="lead">Charge the Core. Enter the sealed chambers. Stop moving to fire. Survive the Hollow Roaster.</p>
+        <h1 id="home-title" data-i18n="tagline">THE ROAST DOES NOT FORGIVE.</h1>
+        <p class="lead" data-i18n="lead">Charge the golden bean. Choose your wager. Survive every chamber and defeat Caprizord.</p>
 
         <div class="core-panel">
           <div class="core-rings" aria-hidden="true">
             <span></span><span></span><span></span>
           </div>
           <button id="tap-button" class="roaster-core" type="button" aria-label="Tap the Roaster Core to collect one bean">
-            <span class="core-glyph">D</span>
-            <span class="core-label">TAP CORE</span>
+            <img class="core-bean" src="/assets/ui/golden-coffee-bean-v1.png" alt="">
+            <span class="core-label" data-i18n="tap">TAP BEAN</span>
           </button>
           <div id="tap-burst" class="tap-burst" aria-hidden="true">+1</div>
+          <div id="tap-beans" class="tap-beans" aria-hidden="true"></div>
         </div>
 
         <div class="home-stats" aria-label="Prototype progress">
@@ -59,7 +71,7 @@
           <div id="selected-hero-portrait" class="hero-portrait" data-hero="honey-badger" aria-hidden="true">
             <canvas id="selected-hero-art" class="hero-art" hidden></canvas>
             <span id="selected-hero-mark">HB</span>
-            <small>ART PLACEHOLDER</small>
+            <small>PORTRAIT LOADING</small>
           </div>
           <div class="hero-copy">
             <span id="selected-hero-role">VANGUARD</span>
@@ -76,10 +88,10 @@
               <span>SPD <i id="selected-hero-speed"></i></span>
             </div>
           </div>
-          <button id="change-hero" class="hero-change" type="button">CHANGE</button>
+          <button id="change-hero" class="hero-change" type="button" data-i18n="change">CHANGE</button>
         </article>
 
-        <article id="loadout-card" class="loadout-contract" aria-label="Equipped field loadout">
+        <article id="loadout-card" class="loadout-contract" aria-label="Equipped field loadout" hidden>
           <div class="loadout-head">
             <div>
               <span>FIELD LOADOUT</span>
@@ -100,8 +112,16 @@
             <b>ACTIVE</b>
             <span id="selected-tour-route">50 CHAMBERS // 4 GUARDIANS // 1 BOSS</span>
           </div>
-          <button id="change-tour" class="tour-change" type="button">CHANGE</button>
+          <button id="change-tour" class="tour-change" type="button" data-i18n="change">CHANGE</button>
         </article>
+
+        <fieldset id="wager-selector" class="wager-selector">
+          <legend data-i18n="wager">TOUR WAGER</legend>
+          <label for="wager-input">BEANS</label>
+          <input id="wager-input" type="number" inputmode="numeric" min="1" step="1" value="25" aria-label="Bean wager">
+          <button id="wager-all" type="button">ALL</button>
+          <small data-i18n="rule">COMPLETE THE TOUR: ×2 · DEFEAT: WAGER BURNS</small>
+        </fieldset>
 
         <button id="start-run" class="primary-action" type="button">
           <span id="start-run-label">ENTER TOUR 01</span>
@@ -134,7 +154,19 @@
         </div>
         <div class="arena-shell">
           <canvas id="game-canvas" width="720" height="1280" aria-label="DOFFA Heroes combat arena"></canvas>
-          <div id="control-hint" class="control-hint">DRAG TO MOVE · RELEASE TO FIRE</div>
+          <div class="weapon-selector" aria-label="Weapon selection">
+            <button id="weapon-melee" class="weapon-switch is-selected" type="button" data-slot="melee" aria-pressed="true">
+              <img id="weapon-melee-icon" src="/assets/ui/katana-v1.png" alt="">
+              <span data-i18n="melee">MELEE</span>
+              <small id="weapon-melee-name">KATANA</small>
+            </button>
+            <button id="weapon-ranged" class="weapon-switch" type="button" data-slot="ranged" aria-pressed="false">
+              <img id="weapon-ranged-icon" src="/assets/ui/shuriken-v1.png" alt="">
+              <span data-i18n="ranged">RANGED</span>
+              <small id="weapon-ranged-name">SHURIKEN</small>
+            </button>
+          </div>
+          <div id="control-hint" class="control-hint" data-i18n="move">RIGHT SIDE: DRAG TO MOVE · LEFT SIDE: SWITCH WEAPON</div>
         </div>
       </section>
 
@@ -143,13 +175,13 @@
           <div class="hero-modal-head">
             <div>
               <div class="eyebrow">DOFFA OPERATIVE ROSTER</div>
-              <h2 id="hero-select-title">SELECT YOUR HERO</h2>
+              <h2 id="hero-select-title" data-i18n="heroes">SELECT YOUR HERO</h2>
             </div>
             <button id="close-hero-select" class="icon-button" type="button" aria-label="Close hero selection">×</button>
           </div>
           <p>Each operative has a different weapon profile, range, health, and attack rhythm.</p>
           <div id="hero-grid" class="hero-grid"></div>
-          <small class="art-warning">ORIGINAL COMBAT PLACEHOLDERS // LIKENESS ART WILL BE CREATED FROM APPROVED PHOTOS</small>
+          <small class="art-warning">APPROVED PORTRAIT SET // CONSISTENT SHOULDER-TO-CHEST FRAMING</small>
         </div>
       </section>
 
@@ -158,7 +190,7 @@
           <div class="hero-modal-head">
             <div>
               <div class="eyebrow">DOFFA EXPEDITION MAP</div>
-              <h2 id="tour-select-title">SELECT YOUR TOUR</h2>
+              <h2 id="tour-select-title" data-i18n="tours">SELECT YOUR TOUR</h2>
             </div>
             <button id="close-tour-select" class="icon-button" type="button" aria-label="Close tour selection">×</button>
           </div>
@@ -208,7 +240,7 @@
             <div><dt>Beans recovered</dt><dd id="result-beans">0</dd></div>
             <div><dt>Hero experience</dt><dd id="result-xp">0 XP</dd></div>
             <div><dt>Hero level</dt><dd id="result-level">LEVEL 1</dd></div>
-            <div><dt>Item recovered</dt><dd id="result-drop">NONE</dd></div>
+            <div hidden><dt>Item recovered</dt><dd id="result-drop">NONE</dd></div>
             <div><dt>Test receipt</dt><dd id="result-receipt">—</dd></div>
             <div><dt>Token claim</dt><dd>DISABLED</dd></div>
           </dl>

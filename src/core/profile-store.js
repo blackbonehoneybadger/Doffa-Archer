@@ -13,6 +13,8 @@ import {
   normalizeHeroProgressMap,
 } from "../game/progression.js";
 import { normalizeActiveRunCheckpoint } from "./active-run-checkpoint.js";
+import { normalizeWager } from "./economy.js";
+import { normalizeLocale } from "../i18n/locales.js";
 
 const STORAGE_KEY = "doffa-heroes-profile-v1";
 const MAX_SAFE_STAT = 1_000_000_000;
@@ -28,9 +30,11 @@ const defaultHeroProgress = createDefaultHeroProgress();
 const defaultEquipment = createDefaultEquipmentState();
 
 export const DEFAULT_PROFILE = Object.freeze({
-  version: 6,
+  version: 8,
   selectedHeroId: DEFAULT_HERO_ID,
   selectedTourId: DEFAULT_TOUR_ID,
+  selectedWager: 25,
+  locale: "ru",
   beans: 30,
   lifetimeBeans: 30,
   bestRoom: 0,
@@ -113,6 +117,8 @@ export function normalizeProfile(input = {}) {
     version: DEFAULT_PROFILE.version,
     selectedHeroId: normalizeHeroId(candidate.selectedHeroId),
     selectedTourId: normalizeTourId(candidate.selectedTourId),
+    selectedWager: normalizeWager(candidate.selectedWager),
+    locale: normalizeLocale(candidate.locale),
     beans: safeInteger(candidate.beans, DEFAULT_PROFILE.beans),
     lifetimeBeans: safeInteger(candidate.lifetimeBeans, DEFAULT_PROFILE.lifetimeBeans),
     bestRoom,
@@ -178,6 +184,7 @@ export class ProfileStore {
         ? {
             ...this.profile.activeRun,
             ownedAbilities: [...this.profile.activeRun.ownedAbilities],
+            roomTradeoffIds: [...(this.profile.activeRun.roomTradeoffIds ?? [])],
           }
         : null,
     };

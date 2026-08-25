@@ -142,7 +142,17 @@ export const ROOM_ART_CATALOG = Object.freeze({
 });
 
 const roomEntries = new Map();
+const roomIdentityEntries = new Map();
 let nextRoomArtLeaseId = 1;
+
+const ORGANIC_ROOM_ENVIRONMENTS = new Set([
+  "canopy",
+  "mire",
+  "mycelium",
+  "briar",
+  "rootdeep",
+  "rootheart",
+]);
 
 function hashRoomId(roomId) {
   let hash = 2166136261;
@@ -151,6 +161,134 @@ function hashRoomId(roomId) {
     hash = Math.imul(hash, 16777619);
   }
   return hash >>> 0;
+}
+
+function mixRoomSeed(seed, salt) {
+  let value = (seed ^ Math.imul(salt + 1, 0x9e3779b1)) >>> 0;
+  value ^= value >>> 16;
+  value = Math.imul(value, 0x7feb352d);
+  value ^= value >>> 15;
+  value = Math.imul(value, 0x846ca68b);
+  value ^= value >>> 16;
+  return value >>> 0;
+}
+
+function roomSeedUnit(seed, salt) {
+  return mixRoomSeed(seed, salt) / 0x1_0000_0000;
+}
+
+function freezePoint(point) {
+  return Object.freeze({
+    x: Math.round(point.x * 1_000) / 1_000,
+    y: Math.round(point.y * 1_000) / 1_000,
+  });
+}
+
+function createRoomRoute(seed) {
+  const direction = seed & 1 ? 1 : -1;
+  const baseX = direction > 0 ? 0.18 : 0.82;
+  const farX = direction > 0 ? 0.82 : 0.18;
+  return Object.freeze([
+    freezePoint({ x: baseX, y: 0.12 + roomSeedUnit(seed, 1) * 0.08 }),
+    freezePoint({ x: 0.28 + roomSeedUnit(seed, 2) * 0.22, y: 0.34 + roomSeedUnit(seed, 3) * 0.08 }),
+    freezePoint({ x: 0.5 + roomSeedUnit(seed, 4) * 0.22, y: 0.61 + roomSeedUnit(seed, 5) * 0.08 }),
+    freezePoint({ x: farX, y: 0.84 + roomSeedUnit(seed, 6) * 0.08 }),
+  ]);
+}
+
+function createRoomNodes(seed) {
+  const count = 3 + (mixRoomSeed(seed, 7) % 3);
+  return Object.freeze(Array.from({ length: count }, (_, index) => freezePoint({
+    x: 0.13 + roomSeedUnit(seed, 11 + index * 2) * 0.74,
+    y: 0.16 + roomSeedUnit(seed, 12 + index * 2) * 0.72,
+  })));
+}
+
+/**
+ * Return the deterministic visual fingerprint painted over a reusable room plate.
+ *
+ * The 16 visible radial bits are unique for every currently authored room;
+ * route, topology, landmark, nodes and edge cuts make that identity readable at
+ * gameplay scale instead of relying on an almost invisible tint variation.
+ */
+export function getRoomCompositeIdentity(roomId, roomNumber = 0, environment = "") {
+  const normalizedRoomNumber = Number.isFinite(roomNumber)
+    ? Math.max(0, Math.floor(roomNumber))
+    : 0;
+  const key = `${environment}:${roomId}:${normalizedRoomNumber}`;
+  const cached = roomIdentityEntries.get(key);
+  if (cached) {
+    return cached;
+  }
+
+  const seed = hashRoomId(`${roomId}:${normalizedRoomNumber}`);
+  const identity = Object.freeze({
+    seed,
+    style: ORGANIC_ROOM_ENVIRONMENTS.has(environment) ? "organic" : "industrial",
+    mirror: Boolean(seed & 1),
+    topology: mixRoomSeed(seed, 17) % 6,
+    sigilBits: seed,
+    tintAlpha: .04 + (mixRoomSeed(seed, 18) % 7) * .009,
+    lightX: .18 + (mixRoomSeed(seed, 19) % 65) / 100,
+    lightY: .2 + (mixRoomSeed(seed, 20) % 56) / 100,
+    bandOffset: 300 + (mixRoomSeed(seed, 21) % 620),
+    bandSlope: (mixRoomSeed(seed, 22) % 5) - 2,
+    landmark: freezePoint({
+      x: .23 + roomSeedUnit(seed, 23) * .54,
+      y: .3 + roomSeedUnit(seed, 24) * .4,
+    }),
+    landmarkScale: .82 + roomSeedUnit(seed, 25) * .42,
+    route: createRoomRoute(seed),
+    nodes: createRoomNodes(seed),
+    edgeMask: mixRoomSeed(seed, 26) & 0xff,
+  });
+  roomIdentityEntries.set(key, identity);
+  return identity;
+}
+
+function clampLayoutValue(value, minimum, maximum) {
+  return Math.min(maximum, Math.max(minimum, value));
+}
+
+function getLayoutOffset(seed, salt, limit) {
+  const span = limit * 2 + 1;
+  return (mixRoomSeed(seed, salt) % span) - limit;
+}
+
+/**
+ * Give repeated authored obstacle templates a small room-specific offset while
+ * preserving counts, kinds, dimensions, hazard timing and navigable corridors.
+ */
+export function personalizeRoomLayout(layout, roomId, roomNumber = 0) {
+  const source = layout ?? {};
+  const obstacles = Array.isArray(source.obstacles) ? source.obstacles : [];
+  const hazards = Array.isArray(source.hazards) ? source.hazards : [];
+  if (obstacles.length === 0 && hazards.length === 0) {
+    return { ...source, obstacles: [...obstacles], hazards: [...hazards] };
+  }
+
+  const seed = hashRoomId(`layout:${roomId}:${roomNumber}`);
+  return {
+    ...source,
+    obstacles: obstacles.map((obstacle, index) => {
+      const x = obstacle.x + getLayoutOffset(seed, 31 + index * 4, 16);
+      const y = obstacle.y + getLayoutOffset(seed, 32 + index * 4, 18);
+      return {
+        ...obstacle,
+        x: Math.round(clampLayoutValue(x, 58, 662 - obstacle.width)),
+        y: Math.round(clampLayoutValue(y, 278, 1_052 - obstacle.height)),
+      };
+    }),
+    hazards: hazards.map((hazard, index) => {
+      const x = hazard.x + getLayoutOffset(seed, 81 + index * 3, 20);
+      const y = hazard.y + getLayoutOffset(seed, 82 + index * 3, 22);
+      return {
+        ...hazard,
+        x: Math.round(clampLayoutValue(x, 70 + hazard.radius, 650 - hazard.radius)),
+        y: Math.round(clampLayoutValue(y, 286 + hazard.radius, 1_044 - hazard.radius)),
+      };
+    }),
+  };
 }
 
 export function getRoomArtVariantIndex(environment, { roomId = "", roomNumber = 0 } = {}) {

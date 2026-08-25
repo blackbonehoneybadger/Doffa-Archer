@@ -79,6 +79,25 @@ test("enemy state rows and facing map to one full-motion atlas cell", () => {
   assert.equal(getEnemyFullMotionFrame({ facing: 0 }, null), null);
 });
 
+test("legacy enemy movement alternates planted and stride poses so feet do not slide", () => {
+  const stateRows = { idle: 0, move: 2, attack: 4 };
+  const planted = getEnemyFullMotionFrame({
+    facing: Math.PI / 2,
+    moving: true,
+    animationClock: 0.2,
+  }, stateRows);
+  const stride = getEnemyFullMotionFrame({
+    facing: Math.PI / 2,
+    moving: true,
+    animationClock: 1.2,
+  }, stateRows);
+
+  assert.equal(planted.state, "move");
+  assert.equal(planted.index, 2);
+  assert.equal(stride.state, "move");
+  assert.equal(stride.index, 10);
+});
+
 test("enemy full-motion selection supports multi-frame directional clips", () => {
   const animationAtlas = {
     version: 1,

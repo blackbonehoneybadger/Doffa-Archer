@@ -65,18 +65,18 @@ test("the final wave opens an exit before the ability choice", () => {
   assert.equal(choices.length, RUN_CONFIG.abilityChoices);
 });
 
-test("rooms without ability rewards advance immediately after the exit", () => {
+test("every completed combat room opens exactly one ability choice", () => {
   const game = createEncounterHarness(2);
   game.mode = "exit";
-  let advanced = false;
-  game.advanceToNextRoom = () => {
-    advanced = true;
-    game.room += 1;
-  };
+  game.pendingAbilityChoices = 1;
+  let choices = null;
+  game.onAbilityChoice = (nextChoices) => { choices = nextChoices; };
 
   game.handleRoomExit();
 
-  assert.equal(advanced, true);
-  assert.equal(game.room, 3);
+  assert.equal(game.mode, "choice");
+  assert.equal(game.pendingAbilityChoices, 0);
+  assert.equal(choices.length, RUN_CONFIG.abilityChoices);
+  assert.equal(game.room, 2);
   assert.equal(game.clearedRooms, 2);
 });

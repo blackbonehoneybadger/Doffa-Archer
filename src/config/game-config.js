@@ -1,4 +1,4 @@
-export const GAME_VERSION = "0.16.6";
+export const GAME_VERSION = "0.18.6";
 export const DEFAULT_TOUR_ID = "hollow-roastery";
 export const TOUR_IDS = Object.freeze([
   DEFAULT_TOUR_ID,

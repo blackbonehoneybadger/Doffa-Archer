@@ -3,18 +3,55 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { getTourDefinition } from "../src/game/content.js";
+import { DoffaGame } from "../src/game/game.js";
 import {
   ROOM_ART_CATALOG,
   ROOM_ENVIRONMENTS,
+  getRoomCompositeIdentity,
   getRoomArtCacheEntryCount,
   getRoomArt,
   getRoomArtVariantIndex,
   loadRoomArt,
+  personalizeRoomLayout,
   releaseRoomArt,
   validateRoomArtCatalog,
 } from "../src/game/room-art.js";
 
 const root = process.cwd();
+
+function createIdentityRecordingContext() {
+  const operations = [];
+  const context = {};
+  const record = (name) => (...args) => {
+    for (const argument of args) {
+      if (typeof argument === "number") {
+        assert.equal(Number.isFinite(argument), true, `${name} received a non-finite number`);
+      }
+    }
+    operations.push(name);
+  };
+  for (const name of [
+    "save",
+    "restore",
+    "beginPath",
+    "rect",
+    "clip",
+    "translate",
+    "rotate",
+    "stroke",
+    "arc",
+    "moveTo",
+    "lineTo",
+    "quadraticCurveTo",
+    "strokeRect",
+    "fillRect",
+    "ellipse",
+    "fill",
+  ]) {
+    context[name] = record(name);
+  }
+  return { context, operations };
+}
 
 function readJpegDimensions(buffer) {
   assert.equal(buffer[0], 0xff);
@@ -170,6 +207,97 @@ test("the authored Rootfall route uses every organic district and safe-room plat
     );
   }
   assert.deepEqual([...usedByEnvironment.get("rootheart")], ["root-throne"]);
+});
+
+test("all one hundred rooms receive a stable material visual fingerprint", () => {
+  const identities = [];
+  for (const tourId of ["hollow-roastery", "rootfall-jungle"]) {
+    const tour = getTourDefinition(tourId);
+    tour.rooms.forEach((room, index) => {
+      const identity = getRoomCompositeIdentity(room.id, index + 1, room.environment);
+      identities.push(identity);
+      assert.equal(
+        getRoomCompositeIdentity(room.id, index + 1, room.environment),
+        identity,
+        `Room identity should be memoized for ${room.id}`,
+      );
+      assert.equal(identity.route.length, 4);
+      assert.ok(identity.nodes.length >= 3);
+      assert.ok(identity.nodes.length <= 5);
+      assert.ok(identity.landmark.x >= .23 && identity.landmark.x <= .77);
+      assert.ok(identity.landmark.y >= .3 && identity.landmark.y <= .7);
+      for (const point of [...identity.route, ...identity.nodes]) {
+        assert.ok(point.x >= 0 && point.x <= 1);
+        assert.ok(point.y >= 0 && point.y <= 1);
+      }
+    });
+  }
+
+  assert.equal(identities.length, 100);
+  assert.equal(new Set(identities.map((identity) => identity.sigilBits)).size, 100);
+  assert.equal(new Set(identities.map((identity) => JSON.stringify({
+    topology: identity.topology,
+    sigilBits: identity.sigilBits,
+    landmark: identity.landmark,
+    route: identity.route,
+    nodes: identity.nodes,
+    edgeMask: identity.edgeMask,
+  }))).size, 100);
+  assert.deepEqual(new Set(identities.map((identity) => identity.style)), new Set([
+    "industrial",
+    "organic",
+  ]));
+});
+
+test("all room identity overlays emit finite balanced Canvas operations", () => {
+  const game = Object.create(DoffaGame.prototype);
+  for (const tourId of ["hollow-roastery", "rootfall-jungle"]) {
+    const tour = getTourDefinition(tourId);
+    tour.rooms.forEach((room, index) => {
+      const identity = getRoomCompositeIdentity(room.id, index + 1, room.environment);
+      const { context, operations } = createIdentityRecordingContext();
+      game.drawRoomIdentityOverlay(context, { accent: "#d66b3b", line: "#e0b978" }, identity);
+      assert.ok(operations.length > 25, `${room.id} emitted too few identity operations`);
+      assert.equal(
+        operations.filter((operation) => operation === "save").length,
+        operations.filter((operation) => operation === "restore").length,
+        `${room.id} leaked Canvas state`,
+      );
+    });
+  }
+});
+
+test("layout personalization is deterministic, bounded, and preserves mechanics", () => {
+  const source = {
+    obstacles: [{ x: 116, y: 492, width: 120, height: 56, kind: "crate" }],
+    hazards: [{
+      x: 198,
+      y: 418,
+      radius: 44,
+      kind: "steam",
+      interval: 3,
+      activeDuration: 1,
+      phase: .73,
+      damage: 8,
+    }],
+  };
+  const first = personalizeRoomLayout(source, "ash-room-01", 1);
+  const repeated = personalizeRoomLayout(source, "ash-room-01", 1);
+  const second = personalizeRoomLayout(source, "ash-room-03", 3);
+
+  assert.deepEqual(repeated, first);
+  assert.notDeepEqual(second, first);
+  assert.equal(first.obstacles[0].kind, source.obstacles[0].kind);
+  assert.equal(first.obstacles[0].width, source.obstacles[0].width);
+  assert.equal(first.obstacles[0].height, source.obstacles[0].height);
+  assert.equal(first.hazards[0].kind, source.hazards[0].kind);
+  assert.equal(first.hazards[0].interval, source.hazards[0].interval);
+  assert.equal(first.hazards[0].activeDuration, source.hazards[0].activeDuration);
+  assert.equal(first.hazards[0].damage, source.hazards[0].damage);
+  assert.ok(first.obstacles[0].x >= 58);
+  assert.ok(first.obstacles[0].x + first.obstacles[0].width <= 662);
+  assert.ok(first.obstacles[0].y >= 278);
+  assert.ok(first.obstacles[0].y + first.obstacles[0].height <= 1_052);
 });
 
 test("room art catalog rejects missing, duplicate, or processed backdrops", () => {

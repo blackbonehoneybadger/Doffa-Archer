@@ -8,11 +8,22 @@ import {
   validateDirectionalAnimationAtlas,
 } from "./animation-player.js";
 import { ENEMY_FACING_DIRECTIONS } from "./enemy-animation.js";
+import {
+  createUniqueEncounterWaves,
+  getEncounterSignature,
+} from "./encounter-design.js";
+import { personalizeRoomLayout } from "./room-art.js";
 
 const STANDARD_ENEMY_MOTION_STATE_ROWS = Object.freeze({
   idle: 0,
   move: 2,
   attack: 4,
+});
+
+export const KAPRIZARD_BOSS_IDENTITY = Object.freeze({
+  id: "kaprizard",
+  headIdentity: "kaprizard-head-v1",
+  faceExposed: true,
 });
 
 function freezeEnemy(id, definition) {
@@ -81,6 +92,7 @@ export const ENEMY_CATALOG = Object.freeze({
   ash_hound: freezeEnemy("ash_hound", {
     name: "ASH HOUND",
     family: "hollow_roastery",
+    difficultyTier: 1,
     behavior: "ash_hound",
     art: {
       sprite: "/assets/enemies/ash-hound.png",
@@ -243,6 +255,11 @@ export const ENEMY_CATALOG = Object.freeze({
     family: "hollow_roastery",
     behavior: "hollow_roaster",
     identity: "kaprizard",
+    headIdentity: KAPRIZARD_BOSS_IDENTITY.headIdentity,
+    faceExposed: true,
+    bodySignature: "mechanical-roaster-colossus",
+    attackSignature: "pressure-lanes-and-ember-crown",
+    locomotionSignature: "piston-stomp",
     art: {
       sprite: "/assets/enemies/hollow-roaster-kaprizard-v3.png",
       motionSprite: "/assets/enemies/hollow-roaster-motion-v2.png",
@@ -266,6 +283,7 @@ export const ENEMY_CATALOG = Object.freeze({
   razor_mantis: freezeEnemy("razor_mantis", {
     name: "RAZOR MANTIS",
     family: "rootfall_jungle",
+    difficultyTier: 2,
     behavior: "razor_mantis",
     art: {
       sprite: "/assets/enemies/razor-mantis.png",
@@ -445,6 +463,11 @@ export const ENEMY_CATALOG = Object.freeze({
     family: "rootfall_jungle",
     behavior: "rootfall_tyrant",
     identity: "kaprizard",
+    headIdentity: KAPRIZARD_BOSS_IDENTITY.headIdentity,
+    faceExposed: true,
+    bodySignature: "black-sap-root-titan",
+    attackSignature: "root-lanes-and-thorn-crown",
+    locomotionSignature: "root-drag",
     art: {
       sprite: "/assets/enemies/rootfall-tyrant-kaprizard-v1.png",
       motionSprite: "/assets/enemies/rootfall-tyrant-motion-v1.png",
@@ -562,7 +585,7 @@ function hazard(x, y, radius, kind, roomNumber, damage) {
   };
 }
 
-function createRoomLayout(environment, roomNumber) {
+function createBaseRoomLayout(environment, roomNumber) {
   const flipped = roomNumber % 2 === 0;
   const left = flipped ? 476 : 116;
   const right = flipped ? 116 : 476;
@@ -646,16 +669,15 @@ function createRoomLayout(environment, roomNumber) {
   };
 }
 
-function createStandardWave(pool, roomNumber, waveIndex, sectorIndex) {
-  const baseCount = 2 + Math.floor(sectorIndex / 2);
-  const count = Math.min(5, baseCount + ((roomNumber + waveIndex) % 3 === 0 ? 1 : 0));
-  return Array.from(
-    { length: count },
-    (_, enemyIndex) => pool[(roomNumber * 3 + waveIndex * 2 + enemyIndex) % pool.length],
+function createRoomLayout(environment, roomNumber) {
+  return personalizeRoomLayout(
+    createBaseRoomLayout(environment, roomNumber),
+    `${environment}-room-${roomNumber}`,
+    roomNumber,
   );
 }
 
-function createStandardRoom(sector, sectorIndex, localIndex) {
+function createStandardRoom(sector, sectorIndex, localIndex, usedSignatures) {
   const roomNumber = sectorIndex * 10 + localIndex + 1;
   const safeRoom = HOLLOW_SAFE_ROOM_BY_NUMBER[roomNumber];
   if (safeRoom) {
@@ -672,10 +694,13 @@ function createStandardRoom(sector, sectorIndex, localIndex) {
 
   const localRoomNumber = localIndex + 1;
   const waveCount = localRoomNumber === 5 || localRoomNumber === 9 ? 2 : 1;
-  const waves = Array.from(
-    { length: waveCount },
-    (_, waveIndex) => createStandardWave(sector.enemies, roomNumber, waveIndex, sectorIndex),
-  );
+  const waves = createUniqueEncounterWaves({
+    pool: sector.enemies,
+    roomNumber,
+    sectorIndex,
+    waveCount,
+    usedSignatures,
+  });
   const layout = createRoomLayout(sector.environment, roomNumber);
   return {
     id: sector.environment + "-" + String(roomNumber).padStart(2, "0"),
@@ -703,12 +728,15 @@ function createEliteRoom(sector, sectorIndex) {
 
 function createHollowRoasteryRooms() {
   const rooms = [];
+  const usedSignatures = new Set();
   HOLLOW_TOUR_SECTORS.forEach((sector, sectorIndex) => {
     sector.names.forEach((_, localIndex) => {
-      rooms.push(createStandardRoom(sector, sectorIndex, localIndex));
+      rooms.push(createStandardRoom(sector, sectorIndex, localIndex, usedSignatures));
     });
     if (sector.elite) {
-      rooms.push(createEliteRoom(sector, sectorIndex));
+      const eliteRoom = createEliteRoom(sector, sectorIndex);
+      usedSignatures.add(getEncounterSignature(eliteRoom.waves));
+      rooms.push(eliteRoom);
     }
   });
   rooms.push({
@@ -832,7 +860,7 @@ function rootfallHazard(environment, x, y, radius, roomNumber, phaseOffset = 0) 
   };
 }
 
-function createRootfallLayout(environment, roomNumber) {
+function createBaseRootfallLayout(environment, roomNumber) {
   if (environment === "rootheart") {
     return { obstacles: [], hazards: [] };
   }
@@ -960,16 +988,15 @@ function createRootfallLayout(environment, roomNumber) {
   };
 }
 
-function createRootfallWave(pool, roomNumber, waveIndex, sectorIndex) {
-  const baseCount = 2 + Math.floor(sectorIndex / 2);
-  const count = Math.min(5, baseCount + ((roomNumber + waveIndex) % 4 === 0 ? 1 : 0));
-  return Array.from(
-    { length: count },
-    (_, enemyIndex) => pool[(roomNumber * 5 + waveIndex * 3 + enemyIndex) % pool.length],
+function createRootfallLayout(environment, roomNumber) {
+  return personalizeRoomLayout(
+    createBaseRootfallLayout(environment, roomNumber),
+    `${environment}-room-${roomNumber}`,
+    roomNumber,
   );
 }
 
-function createRootfallStandardRoom(sector, sectorIndex, localIndex) {
+function createRootfallStandardRoom(sector, sectorIndex, localIndex, usedSignatures) {
   const roomNumber = sectorIndex * 10 + localIndex + 1;
   const safeRoom = ROOTFALL_SAFE_ROOM_BY_NUMBER[roomNumber];
   if (safeRoom) {
@@ -987,10 +1014,13 @@ function createRootfallStandardRoom(sector, sectorIndex, localIndex) {
   const waveCount = roomNumber === 49
     ? 3
     : ROOTFALL_DOUBLE_WAVE_ROOMS.has(roomNumber) ? 2 : 1;
-  const waves = Array.from(
-    { length: waveCount },
-    (_, waveIndex) => createRootfallWave(sector.enemies, roomNumber, waveIndex, sectorIndex),
-  );
+  const waves = createUniqueEncounterWaves({
+    pool: sector.enemies,
+    roomNumber,
+    sectorIndex,
+    waveCount,
+    usedSignatures,
+  });
   const layout = createRootfallLayout(sector.environment, roomNumber);
   return {
     id: `rootfall-${sector.environment}-${String(roomNumber).padStart(2, "0")}`,
@@ -1019,12 +1049,15 @@ function createRootfallEliteRoom(sector, sectorIndex) {
 
 function createRootfallJungleRooms() {
   const rooms = [];
+  const usedSignatures = new Set();
   ROOTFALL_TOUR_SECTORS.forEach((sector, sectorIndex) => {
     sector.names.forEach((_, localIndex) => {
-      rooms.push(createRootfallStandardRoom(sector, sectorIndex, localIndex));
+      rooms.push(createRootfallStandardRoom(sector, sectorIndex, localIndex, usedSignatures));
     });
     if (sector.elite) {
-      rooms.push(createRootfallEliteRoom(sector, sectorIndex));
+      const eliteRoom = createRootfallEliteRoom(sector, sectorIndex);
+      usedSignatures.add(getEncounterSignature(eliteRoom.waves));
+      rooms.push(eliteRoom);
     }
   });
   rooms.push({
@@ -1087,6 +1120,9 @@ export function validateContentCatalog(tours = TOURS, enemies = ENEMY_CATALOG) {
   const tourCodes = new Set();
   const families = new Set();
   const themes = new Set();
+  const bossBodies = new Set();
+  const bossAttacks = new Set();
+  const bossLocomotion = new Set();
   const environmentOwners = new Map();
   const supportedBackdrops = new Set(["transparent", "light-checker", "magenta"]);
   const supportedRewards = new Set(["advance", "ability", "event", "finish"]);
@@ -1224,6 +1260,21 @@ export function validateContentCatalog(tours = TOURS, enemies = ENEMY_CATALOG) {
     }
     if (enemy.boss && enemy.identity !== "kaprizard") {
       errors.push("Boss " + enemy.id + " must preserve the Kaprizard identity");
+    }
+    if (enemy.boss && (
+      enemy.headIdentity !== KAPRIZARD_BOSS_IDENTITY.headIdentity
+      || enemy.faceExposed !== true
+    )) {
+      errors.push("Boss " + enemy.id + " must keep the exposed Kaprizard head");
+    }
+    for (const [signature, owners, label] of [
+      [enemy.bodySignature, bossBodies, "body"],
+      [enemy.attackSignature, bossAttacks, "attack"],
+      [enemy.locomotionSignature, bossLocomotion, "locomotion"],
+    ]) {
+      if (!enemy.boss) break;
+      if (!signature || owners.has(signature)) errors.push("Boss " + enemy.id + " must use a unique " + label + " signature");
+      else owners.add(signature);
     }
     if (!Number.isInteger(enemy.xp) || enemy.xp <= 0) {
       errors.push("Enemy " + enemy.id + " must define positive integer run XP");

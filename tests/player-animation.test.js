@@ -90,7 +90,7 @@ test("full-direction motion maps state rows and facing sectors to one atlas cell
     { state: "idle", direction: "east", index: 0 },
   );
   assert.deepEqual(
-    getPlayerFullMotionFrame({ hp: 100, moving: true, facing: -Math.PI / 2 }, stateRows),
+    getPlayerFullMotionFrame({ hp: 100, moving: true, facing: -Math.PI / 2, animationClock: 1.1 }, stateRows),
     { state: "run", direction: "north", index: 14 },
   );
   assert.deepEqual(
@@ -99,6 +99,20 @@ test("full-direction motion maps state rows and facing sectors to one atlas cell
   );
   assert.equal(getPlayerFullMotionFrame({ hp: 100, hitAnimation: 0.1 }, stateRows), null);
   assert.equal(getPlayerFullMotionFrame({ hp: 100 }, null), null);
+});
+
+test("legacy run sheets alternate planted and stride poses so feet do not slide", () => {
+  const stateRows = { idle: 0, run: 2, attack: 4 };
+  const planted = getPlayerFullMotionFrame({
+    hp: 100, moving: true, facing: Math.PI / 2, animationClock: 0.2,
+  }, stateRows);
+  const stride = getPlayerFullMotionFrame({
+    hp: 100, moving: true, facing: Math.PI / 2, animationClock: 1.2,
+  }, stateRows);
+
+  assert.equal(planted.state, "run");
+  assert.equal(planted.index, 2);
+  assert.equal(stride.index, 10);
 });
 
 test("full-direction reactions map hit and defeat to their authored atlas rows", () => {
@@ -175,7 +189,7 @@ test("player animation timers advance deterministically", () => {
   assert.ok(Math.abs(player.hitAnimation - 0.09) < 1e-9);
   assert.ok(pose.strike > 0.99);
   assert.ok(pose.hit > 0.44 && pose.hit < 0.46);
-  assert.ok(pose.bob > 0);
+  assert.ok(pose.bob < 0, "the stride lifts the sprite while its shadow stays grounded");
 });
 
 test("defeated pose collapses the static sprite consistently", () => {
@@ -188,7 +202,8 @@ test("defeated pose collapses the static sprite consistently", () => {
   assert.equal(pose.defeated, true);
   assert.equal(pose.bob, 30);
   assert.ok(pose.lean < -1);
-  assert.ok(pose.scaleY < 0.8);
+  assert.equal(pose.scaleX, 1);
+  assert.equal(pose.scaleY, 1);
   assert.ok(pose.shadowScale > 1);
 });
 

@@ -44,6 +44,7 @@ test("offline shell includes the data-driven content and progression catalogs", 
   assert.equal(worker.includes('"/src/game/animation-player.js"'), true);
   assert.equal(worker.includes('"/src/game/asset-window.js"'), true);
   assert.equal(worker.includes('"/src/game/destructibles.js"'), true);
+  assert.equal(worker.includes('"/src/game/encounter-design.js"'), true);
   assert.equal(worker.includes('"/src/game/arena-geometry.js"'), true);
   assert.equal(worker.includes('"/src/game/heroes.js"'), true);
   assert.equal(worker.includes('"/src/game/player-animation.js"'), true);
@@ -53,6 +54,7 @@ test("offline shell includes the data-driven content and progression catalogs", 
   assert.equal(worker.includes('"/src/game/hero-sprites.js"'), true);
   assert.equal(worker.includes('"/src/game/enemy-sprites.js"'), true);
   assert.equal(worker.includes('"/src/game/enemy-animation.js"'), true);
+  assert.equal(worker.includes('"/src/game/enemy-difficulty.js"'), true);
   assert.equal(worker.includes('"/src/game/sprite-loader.js"'), true);
   assert.equal(worker.includes('"/src/game/room-art.js"'), true);
   assert.equal(worker.includes('"/src/game/room-effects.js"'), true);
@@ -122,7 +124,7 @@ test("offline shell includes the data-driven content and progression catalogs", 
   assert.equal(worker.includes('"/assets/enemies/hollow-roaster-motion-v2.png"'), true);
   assert.equal(worker.includes('"/assets/enemies/hollow-roaster-special-v1.png"'), true);
   assert.equal(worker.includes('"/assets/enemies/hollow-roaster-reactions-v1.png"'), true);
-  assert.equal(worker.includes("doffa-heroes-v0.16.6"), true);
+  assert.equal(worker.includes("doffa-heroes-v0.18.6"), true);
   assert.equal(worker.includes("const TOUR_ASSETS = ["), true);
   assert.equal(worker.includes('"/assets/rooms/rootfall-jungle-canopy-v2.jpg"'), true);
   assert.equal(worker.includes('"/assets/rooms/rootfall-jungle-mire-v2.jpg"'), true);
@@ -221,7 +223,9 @@ test("every offline core and tour asset exists and all build versions agree", ()
 
 test("all playable heroes use one combat render height", () => {
   const game = readFileSync(join(root, "src/game/game.js"), "utf8");
-  assert.equal(game.includes("const targetHeight = 170;"), true);
+  const metrics = readFileSync(join(root, "src/game/sprite-render-metrics.js"), "utf8");
+  assert.equal(metrics.includes("HERO_COMBAT_RENDER_HEIGHT = 170"), true);
+  assert.equal(game.includes("const targetHeight = HERO_COMBAT_RENDER_HEIGHT;"), true);
   assert.equal(game.includes('this.hero.id === "honey-badger"'), false);
 });
 
@@ -234,4 +238,15 @@ test("every required UI element exists in the HTML shell", () => {
   for (const id of requiredIds) {
     assert.equal(html.includes(`id="${id}"`), true, `Missing #${id}`);
   }
+});
+
+test("mobile weapon controls stay compact in the lower-left corner", () => {
+  const css = readFileSync(join(process.cwd(), "styles/main.css"), "utf8");
+  const selectorRule = css.match(/\.weapon-selector\s*\{([\s\S]*?)\}/)?.[1] ?? "";
+  const buttonRule = css.match(/\.weapon-switch\s*\{([\s\S]*?)\}/)?.[1] ?? "";
+  assert.match(selectorRule, /left:\s*8px/);
+  assert.match(selectorRule, /bottom:\s*38px/);
+  assert.doesNotMatch(selectorRule, /top:\s*50%/);
+  assert.match(buttonRule, /width:\s*50px/);
+  assert.match(buttonRule, /min-height:\s*54px/);
 });

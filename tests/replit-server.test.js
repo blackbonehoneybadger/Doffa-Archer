@@ -23,7 +23,7 @@ test("Replit server exposes the game shell, icons, and service-worker scope secu
     assert.equal(shell.status, 200);
     assert.match(shell.headers.get("content-type") ?? "", /^text\/html/);
     assert.match(shell.headers.get("content-security-policy") ?? "", /frame-ancestors 'none'/);
-    assert.match(await shell.text(), /PROTOTYPE 0\.16\.6/);
+    assert.match(await shell.text(), /PROTOTYPE 0\.18\.6/);
 
     const icon = await fetch(`${origin}/assets/icon-192.png`);
     assert.equal(icon.status, 200);

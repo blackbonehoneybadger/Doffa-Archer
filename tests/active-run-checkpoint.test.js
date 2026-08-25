@@ -80,7 +80,8 @@ test("checkpoint normalization rejects invalid identity and sanitizes every rest
   };
   const checkpoint = normalizeProfile({ activeRun: base }).activeRun;
 
-  assert.equal(checkpoint.version, 1);
+  assert.equal(checkpoint.version, 2);
+  assert.equal(checkpoint.wager, 25);
   assert.equal(checkpoint.score, 92);
   assert.equal(checkpoint.heroLevel, 50);
   assert.equal(checkpoint.playerHp, 1_000_000);
@@ -179,14 +180,14 @@ test("finishing clears the checkpoint atomically so rewards cannot be granted tw
     game.finishRun(true);
 
     assert.equal(store.profile.activeRun, null);
-    assert.equal(store.profile.beans, 125);
+    assert.equal(store.profile.beans, 55);
     assert.equal(store.profile.bossesDefeated, 1);
 
     const reloadedStore = new ProfileStore(storage);
     const reloadedGame = createGame(reloadedStore);
     assert.deepEqual(reloadedGame.resumeRun(), { ok: false, reason: "no-checkpoint" });
     reloadedGame.finishRun(true);
-    assert.equal(reloadedStore.profile.beans, 125);
+    assert.equal(reloadedStore.profile.beans, 55);
     assert.equal(reloadedStore.profile.bossesDefeated, 1);
   } finally {
     restoreDom();

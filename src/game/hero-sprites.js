@@ -13,6 +13,16 @@ export function acquireHeroSpriteLease(hero, options) {
   return acquireSpriteLease(`hero:${hero?.id ?? "unknown"}`, hero?.art, options);
 }
 
+export function acquireHeroPortraitSpriteLease(hero, options) {
+  if (!hero?.art?.portraitSprite) {
+    return acquireHeroSpriteLease(hero, options);
+  }
+  return acquireSpriteLease(`hero-portrait:${hero.id}`, {
+    sprite: hero.art.portraitSprite,
+    backdrop: "transparent",
+  }, options);
+}
+
 export function loadHeroDirectionalSprite(hero) {
   if (!hero?.art?.directionalSprite) {
     return Promise.resolve(null);
@@ -143,14 +153,13 @@ export function loadHeroReactionAnimationPage(hero, pageId) {
 export async function renderHeroPortrait(canvas, hero) {
   const requestId = hero?.id ?? "none";
   canvas.dataset.heroRequest = requestId;
-  const lease = acquireHeroSpriteLease(hero, { owner: `portrait:${requestId}` });
+  const lease = acquireHeroPortraitSpriteLease(hero, { owner: `portrait:${requestId}` });
   try {
     const sprite = await lease.promise;
     if (!sprite || canvas.dataset.heroRequest !== requestId) {
       return false;
     }
 
-    const crop = hero.art.portraitCrop;
     canvas.width = 256;
     canvas.height = 320;
     const context = canvas.getContext("2d", { alpha: true });
@@ -158,13 +167,24 @@ export async function renderHeroPortrait(canvas, hero) {
       return false;
     }
     context.clearRect(0, 0, canvas.width, canvas.height);
-    context.imageSmoothingEnabled = false;
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = "high";
+    const sourceRatio = sprite.width / sprite.height;
+    const targetRatio = canvas.width / canvas.height;
+    const sourceWidth = sourceRatio > targetRatio
+      ? Math.round(sprite.height * targetRatio)
+      : sprite.width;
+    const sourceHeight = sourceRatio > targetRatio
+      ? sprite.height
+      : Math.round(sprite.width / targetRatio);
+    const sourceX = Math.round((sprite.width - sourceWidth) / 2);
+    const sourceY = Math.max(0, Math.round((sprite.height - sourceHeight) * 0.18));
     context.drawImage(
       sprite,
-      Math.round(crop.x * sprite.width),
-      Math.round(crop.y * sprite.height),
-      Math.round(crop.width * sprite.width),
-      Math.round(crop.height * sprite.height),
+      sourceX,
+      sourceY,
+      sourceWidth,
+      sourceHeight,
       0,
       0,
       canvas.width,

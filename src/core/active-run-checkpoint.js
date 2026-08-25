@@ -2,13 +2,15 @@ import { HERO_IDS, TOUR_IDS } from "../config/game-config.js";
 import { ABILITIES } from "../game/abilities.js";
 import { normalizeHeroProgress } from "../game/progression.js";
 import { normalizeRunProgress } from "../game/run-progression.js";
+import { normalizeWager } from "./economy.js";
 
-export const ACTIVE_RUN_CHECKPOINT_VERSION = 1;
+export const ACTIVE_RUN_CHECKPOINT_VERSION = 2;
 
 const MAX_CHECKPOINT_ROOM = 100;
 const MAX_CHECKPOINT_SCORE = 1_000_000_000;
 const MAX_CHECKPOINT_HP = 1_000_000;
 const MAX_CHECKPOINT_ABILITIES = 32;
+const MAX_CHECKPOINT_TRADEOFFS = 8;
 const RUN_ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9_-]{7,95}$/;
 const CHECKPOINT_PHASES = new Set(["room-start", "checkpoint-choice", "room-exit"]);
 const ABILITY_IDS = new Set(ABILITIES.map((ability) => ability.id));
@@ -30,11 +32,17 @@ function normalizeAbilityIds(input) {
     .filter((abilityId) => typeof abilityId === "string" && ABILITY_IDS.has(abilityId));
 }
 
+function normalizeTradeoffIds(input) {
+  if (!Array.isArray(input)) return [];
+  return input.slice(0, MAX_CHECKPOINT_TRADEOFFS)
+    .filter((id) => typeof id === "string" && /^[a-z0-9-]{3,64}:[a-z0-9-]{3,40}$/.test(id));
+}
+
 export function normalizeActiveRunCheckpoint(input) {
   const candidate = input && typeof input === "object" ? input : null;
   if (
     !candidate
-    || candidate.version !== ACTIVE_RUN_CHECKPOINT_VERSION
+    || ![1, ACTIVE_RUN_CHECKPOINT_VERSION].includes(candidate.version)
     || typeof candidate.runId !== "string"
     || !RUN_ID_PATTERN.test(candidate.runId)
     || !TOUR_IDS.includes(candidate.tourId)
@@ -82,5 +90,7 @@ export function normalizeActiveRunCheckpoint(input) {
     runXp: runProgress.xp,
     rngState: candidate.rngState >>> 0,
     savedAt: safeInteger(candidate.savedAt, 0, Number.MAX_SAFE_INTEGER),
+    wager: candidate.version === 1 ? 25 : normalizeWager(candidate.wager),
+    roomTradeoffIds: normalizeTradeoffIds(candidate.roomTradeoffIds),
   };
 }

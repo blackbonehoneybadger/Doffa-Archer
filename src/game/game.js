@@ -1,6 +1,6 @@
 import { RUN_CONFIG, VIEWPORT } from "../config/game-config.js";
 import {
-  calculateRunBeanReward,
+  calculateWagerPayout,
   canEnterRun,
   getRunEntryCost,
 } from "../core/economy.js";
@@ -47,6 +47,8 @@ import {
   loadEnemyReactionAnimationPage,
   loadEnemySpecialAnimationPage,
 } from "./enemy-sprites.js";
+import { getEnemyProjectileStyle } from "./enemy-projectiles.js";
+import { getEnemyDifficultyProfile } from "./enemy-difficulty.js";
 import {
   MAX_INVENTORY_ITEMS,
   getLoadoutModifiers,
@@ -57,6 +59,11 @@ import {
   createHeroCombatProfile,
   getHeroDefinition,
 } from "./heroes.js";
+import {
+  getHeroWeaponDefinition,
+  getSelectedWeaponProfile,
+  normalizeWeaponSlot,
+} from "./hero-weapons.js";
 import {
   acquireHeroDirectionalSpriteLease,
   acquireHeroFullMotionSpriteLease,
@@ -69,6 +76,11 @@ import {
 } from "./hero-sprites.js";
 import { calculateRunHeroXp, grantHeroXp } from "./progression.js";
 import {
+  applyRoomTradeoff,
+  getRoomTradeoffs,
+  resolveTradeoffById,
+} from "./room-tradeoffs.js";
+import {
   advancePlayerAnimation,
   getPlayerAnimationFrame,
   getPlayerAnimationPose,
@@ -78,8 +90,13 @@ import {
   triggerPlayerDefeat,
   triggerPlayerHit,
 } from "./player-animation.js";
+import {
+  HERO_COMBAT_ANCHOR_Y,
+  HERO_COMBAT_RENDER_HEIGHT,
+  getSpriteRenderMetrics,
+} from "./sprite-render-metrics.js";
 import { getRunXpRequirement, grantRunXp } from "./run-progression.js";
-import { acquireRoomArtLease, getRoomArt } from "./room-art.js";
+import { acquireRoomArtLease, getRoomArt, getRoomCompositeIdentity } from "./room-art.js";
 import {
   getRoomAmbientMote,
   getRoomEffectProfile,
@@ -117,6 +134,9 @@ const HAZARD_COLORS = Object.freeze({
 const ANIMATION_PAGE_RETRY_MS = 1_500;
 const ANIMATION_PAGE_CACHE_MAX_ENTRIES = 10;
 const ANIMATION_PAGE_CACHE_MAX_BYTES = 64 * 1024 * 1024;
+const MAX_ACTIVE_PARTICLES = 240;
+const MAX_ACTIVE_COMBAT_TEXTS = 48;
+const MAX_ACTIVE_PROJECTILES = 220;
 
 function clamp(value, minimum, maximum) {
   return Math.min(maximum, Math.max(minimum, value));
@@ -141,7 +161,16 @@ function distanceSquared(a, b) {
 }
 
 export class DoffaGame {
-  constructor({ canvas, profileStore, onHud, onProfile, onAbilityChoice, onRunEnd }) {
+  constructor({
+    canvas,
+    profileStore,
+    onHud,
+    onProfile,
+    onAbilityChoice,
+    onRunEnd,
+    onVoice = () => {},
+    onAudio = () => {},
+  }) {
     if (!(canvas instanceof HTMLCanvasElement)) {
       throw new TypeError("DoffaGame requires a canvas element");
     }
@@ -153,6 +182,8 @@ export class DoffaGame {
     this.onProfile = onProfile;
     this.onAbilityChoice = onAbilityChoice;
     this.onRunEnd = onRunEnd;
+    this.onVoice = onVoice;
+    this.onAudio = onAudio;
 
     this.mode = "idle";
     this.tour = getTourDefinition(DEFAULT_TOUR_ID);
@@ -181,6 +212,7 @@ export class DoffaGame {
     this.pickups = [];
     this.destructibles = [];
     this.ownedAbilities = [];
+    this.roomTradeoffIds = [];
     this.activeAbilityChoices = new Set();
     this.runLevel = 1;
     this.runXp = 0;
@@ -199,6 +231,8 @@ export class DoffaGame {
     this.screenShake = 0;
     this.lastFrame = 0;
     this.accumulator = 0;
+    this.frameTimeAverageMs = 16.7;
+    this.reducedEffects = false;
     this.paused = false;
     this.frameRequest = 0;
     this.rng = new SeededRng();
@@ -726,6 +760,9 @@ export class DoffaGame {
       }
 
       const point = this.toCanvasPoint(event);
+      if (event.pointerType !== "mouse" && point.x < VIEWPORT.width / 2) {
+        return;
+      }
       this.pointer = {
         id: event.pointerId,
         startX: point.x,
@@ -792,6 +829,16 @@ export class DoffaGame {
       const pageHidden = Boolean(document.hidden);
       const elapsed = this.lastFrame ? Math.max(0, (timestamp - this.lastFrame) / 1_000) : 0;
       this.lastFrame = timestamp;
+      if (elapsed > 0) {
+        const frameMs = Math.min(100, elapsed * 1_000);
+        this.frameTimeAverageMs = this.frameTimeAverageMs * 0.9 + frameMs * 0.1;
+        const effectPressure = this.particles.length > 160 || this.projectiles.length > 160;
+        if (this.reducedEffects) {
+          this.reducedEffects = this.frameTimeAverageMs >= 18.5 || effectPressure;
+        } else {
+          this.reducedEffects = this.frameTimeAverageMs > 23 || effectPressure;
+        }
+      }
 
       const simulationActive = this.mode === "running"
         || this.mode === "exit"
@@ -905,10 +952,12 @@ export class DoffaGame {
       heroLevel: this.heroLevel,
       playerHp: this.player.hp,
       ownedAbilities: [...this.ownedAbilities],
+      roomTradeoffIds: [...this.roomTradeoffIds],
       runLevel: this.runLevel,
       runXp: this.runXp,
       rngState: this.rng.state >>> 0,
       savedAt: Date.now(),
+      wager: this.wager,
     };
   }
 
@@ -948,7 +997,8 @@ export class DoffaGame {
         && roomDefinition?.reward === "ability"
       );
     const validRoomExit = checkpoint.phase !== "room-exit"
-      || roomDefinition?.roomType === "event";
+      || roomDefinition?.roomType === "event"
+      || roomDefinition?.roomType === "rest";
     if (!tour?.unlocked || !hero?.unlocked || !roomDefinition || !validChoice || !validRoomExit) {
       this.discardInvalidActiveRun();
       return { ok: false, reason: "invalid-checkpoint" };
@@ -964,9 +1014,14 @@ export class DoffaGame {
     this.runXp = checkpoint.runXp;
     this.runXpToNext = getRunXpRequirement(this.runLevel);
     this.rng = new SeededRng(checkpoint.rngState);
+    this.wager = checkpoint.wager;
     for (const abilityId of checkpoint.ownedAbilities) {
       applyAbility(this.player, abilityId);
       this.ownedAbilities.push(abilityId);
+    }
+    for (const tradeoffId of checkpoint.roomTradeoffIds ?? []) {
+      const tradeoff = resolveTradeoffById(tradeoffId);
+      if (tradeoff && applyRoomTradeoff(this.player, tradeoff)) this.roomTradeoffIds.push(tradeoffId);
     }
     this.player.hp = clamp(checkpoint.playerHp, 1, this.player.maxHp);
 
@@ -1006,21 +1061,24 @@ export class DoffaGame {
     if (profile.activeRun) {
       return { ok: false, reason: "run-in-progress" };
     }
-    if (!canEnterRun(profile.beans)) {
-      return { ok: false, missingBeans: getRunEntryCost() - profile.beans };
+    const wager = getRunEntryCost(profile.selectedWager);
+    if (!canEnterRun(profile.beans, wager)) {
+      return { ok: false, missingBeans: wager - profile.beans };
     }
 
     this.heroLevel = profile.heroProgress?.[hero.id]?.level ?? 1;
     this.resetRunRuntime(tour, hero, this.heroLevel, profile);
     this.runId = this.createRunId();
+    this.wager = wager;
     this.rng = new SeededRng(Date.now() ^ ((profile.runsStarted + 1) * 2_654_435_761));
     const checkpoint = this.createActiveRunCheckpoint("room-start");
     this.profileStore.update((draft) => {
-      draft.beans -= getRunEntryCost();
+      draft.beans -= wager;
       draft.runsStarted += 1;
       draft.activeRun = checkpoint;
     });
     this.onProfile(this.profileStore.profile);
+    this.onAudio?.("startRun", { tourId: tour.id, heroId: hero.id, wager });
     this.spawnRoom(this.room);
     this.emitHud();
     this.startLoop();
@@ -1055,6 +1113,20 @@ export class DoffaGame {
 
     const choiceContext = this.choiceContext;
     this.activeAbilityChoices.clear();
+    this.onAudio?.("choicePick", { source: choiceContext?.source, abilityId });
+    if (choiceContext?.source === "tradeoff") {
+      const choice = choiceContext.choices.find((candidate) => candidate.id === abilityId);
+      if (!choice || !applyRoomTradeoff(this.player, choice)) return false;
+      this.roomTradeoffIds.push(choice.id);
+      this.choiceContext = null;
+      this.mode = "exit";
+      this.roomExitOpen = true;
+      this.clearedRooms = Math.max(this.clearedRooms, this.room);
+      this.persistActiveRunCheckpoint("room-exit");
+      this.emitHud();
+      this.startLoop();
+      return true;
+    }
     applyAbility(this.player, abilityId);
     this.ownedAbilities.push(abilityId);
     if (choiceContext?.source === "level") {
@@ -1101,11 +1173,25 @@ export class DoffaGame {
     this.keys.clear();
     const choices = chooseAbilityCards(this.rng, RUN_CONFIG.abilityChoices, this.ownedAbilities);
     this.activeAbilityChoices = new Set(choices.map((ability) => ability.id));
+    this.onAudio?.("choiceOpen", { source, runLevel: this.runLevel });
     this.onAbilityChoice(choices, {
       source,
       runLevel: this.runLevel,
       pendingChoices: this.pendingAbilityChoices,
     });
+    return true;
+  }
+
+  openTradeoffChoice() {
+    const choices = getRoomTradeoffs(this.roomDefinition?.id);
+    if (choices.length === 0) return false;
+    this.mode = "choice";
+    this.choiceContext = { source: "tradeoff", resumeMode: "exit", choices };
+    this.pointer = null;
+    this.keys.clear();
+    this.activeAbilityChoices = new Set(choices.map((choice) => choice.id));
+    this.onAudio?.("choiceOpen", { source: "tradeoff", roomId: this.roomDefinition?.id });
+    this.onAbilityChoice?.(choices, { source: "tradeoff", roomName: this.roomDefinition.name });
     return true;
   }
 
@@ -1139,6 +1225,12 @@ export class DoffaGame {
     }
 
     this.roomDefinition = roomDefinition;
+    this.onAudio?.("roomEnter", {
+      tourId: this.tour.id,
+      roomId: roomDefinition.id,
+      roomType: roomDefinition.roomType,
+      boss: Boolean(roomDefinition.boss),
+    });
     this.syncRoomAssetWindow(roomNumber);
     this.destructibles = roomDefinition.destructibles.map((placement) => (
       createRuntimeDestructible(placement, this.nextDestructibleId++)
@@ -1146,17 +1238,14 @@ export class DoffaGame {
 
     if (roomDefinition.roomType === "rest") {
       this.wave = 0;
-      this.mode = "exit";
-      this.roomExitOpen = true;
-      this.healPlayer(this.player.maxHp * roomDefinition.restorationPct);
-      this.spawnParticles(this.player.x, this.player.y, "#74d692", 22, 115);
       this.syncRoomAssetWindow(roomNumber, { combatRoomOffset: 1 });
+      this.openTradeoffChoice();
       return;
     }
     if (roomDefinition.roomType === "event") {
       this.wave = 0;
       this.syncRoomAssetWindow(roomNumber, { combatRoomOffset: 1 });
-      this.openAbilityChoice("event", "exit");
+      this.openTradeoffChoice();
       return;
     }
 
@@ -1173,6 +1262,11 @@ export class DoffaGame {
     this.enemies = [];
     this.projectiles = [];
     this.waveCountdown = null;
+    this.onAudio?.("waveStart", {
+      room: this.room,
+      wave: waveNumber,
+      enemyTypes: [...types],
+    });
     this.player.invulnerability = Math.max(this.player.invulnerability, 0.42);
     const columns = Math.min(3, types.length);
     types.forEach((type, index) => {
@@ -1200,12 +1294,12 @@ export class DoffaGame {
 
     const isBoss = base.boss;
     const isElite = base.elite;
-    const scale = isBoss
-      ? 1
-      : isElite
-        ? 1 + (roomNumber - 1) * 0.015
-        : 1 + (roomNumber - 1) * 0.028;
-    const hp = Math.round(base.hp * scale);
+    const difficulty = getEnemyDifficultyProfile(roomNumber, {
+      elite: isElite,
+      boss: isBoss,
+      tourTier: this.tour?.difficultyTier ?? 1,
+    });
+    const hp = Math.round(base.hp * difficulty.hpMultiplier);
     return {
       id: this.nextEnemyId++,
       type,
@@ -1217,8 +1311,12 @@ export class DoffaGame {
       radius: base.radius,
       hp,
       maxHp: hp,
-      speed: base.speed,
-      contactDamage: base.contactDamage,
+      speed: base.speed * difficulty.speedMultiplier,
+      contactDamage: Math.max(1, Math.round(
+        base.contactDamage * difficulty.contactDamageMultiplier,
+      )),
+      attackRateMultiplier: difficulty.attackRateMultiplier,
+      difficultyProgress: difficulty.progress,
       score: base.score,
       xp: base.xp,
       attackTimer: this.rng.next() * 0.8 + 0.4,
@@ -1283,8 +1381,10 @@ export class DoffaGame {
     }
 
     if (this.mode === "exit") {
+      this.updateProjectiles(delta);
       this.updateParticles(delta);
       this.updateCombatTexts(delta);
+      this.projectiles = this.projectiles.filter((projectile) => projectile.alive);
       this.pickups = this.pickups.filter((pickup) => pickup.alive);
       this.particles = this.particles.filter((particle) => particle.life > 0);
       this.combatTexts = this.combatTexts.filter((entry) => entry.life > 0);
@@ -1379,19 +1479,26 @@ export class DoffaGame {
   }
 
   updatePlayer(delta) {
+    this.player.weaponSwitchCooldown = Math.max(0, (this.player.weaponSwitchCooldown ?? 0) - delta);
     const direction = this.getMovementDirection();
     const moving = Math.abs(direction.x) > 0.01 || Math.abs(direction.y) > 0.01;
     this.player.moving = moving;
     advancePlayerAnimation(this.player, delta, moving);
 
     if (moving) {
+      const footstepPhase = Math.floor(this.player.animationClock / Math.PI);
+      if (footstepPhase !== this.player.footstepPhase) {
+        this.player.footstepPhase = footstepPhase;
+        this.spawnParticles(this.player.x, this.player.y + 34, "rgba(222, 188, 135, 0.5)", 2, 28);
+        this.onAudio?.("footstep", { heroId: this.hero.id });
+      }
       this.player.facing = Math.atan2(direction.y, direction.x);
       this.player.x += direction.x * this.player.speed * delta;
       this.player.y += direction.y * this.player.speed * delta;
       this.player.attackTimer = Math.max(this.player.attackTimer, 0.08);
     } else {
       this.player.attackTimer -= delta;
-      if (this.player.attackTimer <= 0 && this.enemies.length > 0) {
+      if (this.player.attackTimer <= 0 && this.hasAttackTargets()) {
         const fired = this.fireAtNearestEnemy();
         this.player.attackTimer = fired ? this.player.attackInterval : 0.08;
       }
@@ -1477,6 +1584,8 @@ export class DoffaGame {
   }
 
   fireAtNearestEnemy() {
+    const weapon = getSelectedWeaponProfile(this.player);
+    const maximumRange = weapon?.attackRange ?? this.player.attackRange;
     let target = null;
     let nearestDistance = Number.POSITIVE_INFINITY;
     for (const enemy of this.enemies) {
@@ -1484,18 +1593,26 @@ export class DoffaGame {
         continue;
       }
       const currentDistance = distanceSquared(this.player, enemy);
-      if (currentDistance < nearestDistance) {
+      if (currentDistance <= maximumRange * maximumRange && currentDistance < nearestDistance) {
         nearestDistance = currentDistance;
-        target = enemy;
+        target = { kind: "enemy", entity: enemy, x: enemy.x, y: enemy.y };
       }
     }
 
-    const secondaryWeapon = this.player.secondaryWeapon;
-    const maximumRange = Math.max(
-      this.player.attackRange,
-      secondaryWeapon?.attackRange ?? 0,
-    );
-    if (!target || nearestDistance > maximumRange * maximumRange) {
+    if (!target) {
+      for (const destructible of this.destructibles ?? []) {
+        if (!destructible.alive) continue;
+        const x = destructible.x + destructible.width / 2;
+        const y = destructible.y + destructible.height / 2;
+        const currentDistance = (this.player.x - x) ** 2 + (this.player.y - y) ** 2;
+        if (currentDistance <= maximumRange * maximumRange && currentDistance < nearestDistance) {
+          nearestDistance = currentDistance;
+          target = { kind: "destructible", entity: destructible, x, y };
+        }
+      }
+    }
+
+    if (!target) {
       return false;
     }
 
@@ -1503,26 +1620,30 @@ export class DoffaGame {
     this.player.facing = baseAngle;
     triggerPlayerAttack(this.player);
     const nextAttackSequence = (this.player.attackSequence ?? 0) + 1;
-    const useSecondary = Boolean(
-      secondaryWeapon
-      && (nearestDistance > this.player.attackRange * this.player.attackRange
-        || nextAttackSequence % secondaryWeapon.every === 0),
-    );
-    const weapon = useSecondary ? secondaryWeapon : null;
+    const useSecondary = Boolean(weapon);
+    this.player.attackSequence = nextAttackSequence;
+    this.player.lastAttackVisual = weapon?.visual ?? this.player.weaponVisual;
+    this.onAudio?.("heroAttack", {
+      heroId: this.hero.id,
+      slot: this.player.selectedWeaponSlot,
+      visual: this.player.lastAttackVisual,
+    });
+    if (this.player.selectedWeaponSlot !== "ranged") {
+      this.performMeleeStrike(baseAngle, weapon);
+      this.spawnParticles(this.player.x, this.player.y, this.player.accent, 5, 95);
+      return true;
+    }
     const count = useSecondary
       ? weapon.projectileCount + Math.max(0, this.player.projectileCount - 1)
       : this.player.projectileCount;
     const spread = count > 1
       ? Math.min(0.52, weapon?.spread ?? 0.14 * (count - 1))
       : 0;
-    this.player.attackSequence = nextAttackSequence;
-    this.player.lastAttackVisual = weapon?.visual ?? this.player.weaponVisual;
-
     for (let index = 0; index < count; index += 1) {
       const offset = count === 1 ? 0 : -spread / 2 + (spread * index) / (count - 1);
       const angle = baseAngle + offset;
       const critical = this.rng.next() < this.player.critChance;
-      this.projectiles.push({
+      this.pushProjectile({
         x: this.player.x + Math.cos(angle) * 30,
         y: this.player.y + Math.sin(angle) * 30,
         vx: Math.cos(angle) * (weapon?.projectileSpeed ?? this.player.projectileSpeed),
@@ -1547,6 +1668,7 @@ export class DoffaGame {
           ? weapon.wallBounces + Math.max(0, this.player.wallBounces - this.player.baseWallBounces)
           : this.player.wallBounces,
         hitIds: new Set(),
+        sourceWeaponSlot: this.player.selectedWeaponSlot,
         age: 0,
         alive: true,
       });
@@ -1556,13 +1678,114 @@ export class DoffaGame {
     return true;
   }
 
+  hasAttackTargets() {
+    return (this.enemies ?? []).some((enemy) => enemy.alive && !enemy.defeated)
+      || (this.destructibles ?? []).some((destructible) => destructible.alive);
+  }
+
+  performMeleeStrike(baseAngle, weapon) {
+    const range = weapon?.attackRange ?? 132;
+    const halfArc = (weapon?.meleeArc ?? 1.2) / 2;
+    const maxTargets = Math.max(1, weapon?.maxTargets ?? 1);
+    const candidates = [];
+    const consider = (kind, entity, x, y) => {
+      const dx = x - this.player.x;
+      const dy = y - this.player.y;
+      const distance = Math.hypot(dx, dy);
+      const angle = Math.atan2(dy, dx);
+      const angleDelta = Math.abs(Math.atan2(Math.sin(angle - baseAngle), Math.cos(angle - baseAngle)));
+      if (distance <= range && angleDelta <= halfArc) {
+        candidates.push({ kind, entity, x, y, distance });
+      }
+    };
+
+    for (const enemy of this.enemies ?? []) {
+      if (enemy.alive && !enemy.defeated) consider("enemy", enemy, enemy.x, enemy.y);
+    }
+    for (const destructible of this.destructibles ?? []) {
+      if (destructible.alive) {
+        consider(
+          "destructible",
+          destructible,
+          destructible.x + destructible.width / 2,
+          destructible.y + destructible.height / 2,
+        );
+      }
+    }
+
+    candidates.sort((first, second) => first.distance - second.distance);
+    for (const candidate of candidates.slice(0, maxTargets)) {
+      const critical = this.rng.next() < this.player.critChance;
+      const damage = this.player.damage * (weapon?.damageMultiplier ?? 1) * (critical ? 2 : 1);
+      if (candidate.kind === "enemy") {
+        const hpBefore = candidate.entity.hp;
+        if (critical) this.onAudio?.("critical", { heroId: this.hero.id, visual: this.player.lastAttackVisual });
+        this.damageEnemy(
+          candidate.entity,
+          damage,
+          candidate.x,
+          candidate.y,
+          critical ? "#fff0b0" : this.player.accent,
+        );
+        if (candidate.entity.hp <= 0 && hpBefore > 0) this.onVoice?.("meleeFinisher");
+        else if (critical || damage >= candidate.entity.maxHp * .28) this.onVoice?.("heavy");
+      } else {
+        this.damageDestructible(candidate.entity, damage, candidate.x, candidate.y, this.player.accent);
+      }
+    }
+  }
+
+  selectWeapon(slot) {
+    if (!this.player || !this.hero || (this.player.weaponSwitchCooldown ?? 0) > 0) {
+      return false;
+    }
+    const nextSlot = normalizeWeaponSlot(slot);
+    if (nextSlot === "ranged" && !this.player.secondaryWeapon) {
+      return false;
+    }
+    if (this.player.selectedWeaponSlot === nextSlot) {
+      return true;
+    }
+    this.player.selectedWeaponSlot = nextSlot;
+    this.player.weaponSwitchCooldown = 0.25;
+    this.player.attackTimer = Math.max(this.player.attackTimer, 0.12);
+    this.onAudio?.("weaponSwitch", {
+      heroId: this.hero.id,
+      slot: nextSlot,
+      visual: getSelectedWeaponProfile(this.player)?.visual ?? this.player.weaponVisual,
+    });
+    this.emitHud();
+    return true;
+  }
+
+  cueEnemyAttack(enemy, duration) {
+    if (!enemy) return enemy;
+    const safeDuration = Number.isFinite(duration) && duration > 0 ? duration : 0.36;
+    const beginsTelegraph = (enemy.attackAnimation ?? 0) <= 0
+      && (enemy.stateTimer ?? 0) > 0
+      && Math.abs(enemy.stateTimer - safeDuration) < 0.08;
+    triggerEnemyAttack(enemy, duration);
+    const details = {
+      enemyType: enemy.type,
+      pattern: enemy.attackPattern ?? enemy.state,
+      isElite: enemy.isElite,
+      isBoss: enemy.isBoss,
+    };
+    if (beginsTelegraph && enemy.state === "boss-phase") {
+      this.onAudio?.("bossPhase", details);
+    } else {
+      this.onAudio?.(beginsTelegraph ? "enemyTelegraph" : "enemyAttack", details);
+    }
+    return enemy;
+  }
+
   updateEnemies(delta) {
     for (const enemy of this.enemies) {
       advanceEnemyAnimation(enemy, delta);
       enemy.moving = false;
       const previousX = enemy.x;
       const previousY = enemy.y;
-      enemy.attackTimer -= delta;
+      enemy.attackTimer -= delta * (enemy.attackRateMultiplier ?? 1);
       enemy.contactTimer = Math.max(0, enemy.contactTimer - delta);
       enemy.stateTimer = Math.max(0, enemy.stateTimer - delta);
       enemy.phaseTimer += delta;
@@ -1651,7 +1874,7 @@ export class DoffaGame {
       if (!enemy.submerged
         && distanceSquared(enemy, this.player) <= collisionRadius * collisionRadius
         && enemy.contactTimer <= 0) {
-        triggerEnemyAttack(enemy);
+        this.cueEnemyAttack(enemy);
         this.damagePlayer(enemy.contactDamage);
         enemy.contactTimer = 0.7;
       }
@@ -1680,7 +1903,7 @@ export class DoffaGame {
     if (enemy.state === "channel") {
       if (enemy.stateTimer <= 0) {
         this.fireEnemyProjectile(enemy.x, enemy.y, enemy.aimAngle, 330, 9, 8);
-        triggerEnemyAttack(enemy, 0.24);
+        this.cueEnemyAttack(enemy, 0.24);
         enemy.state = "idle";
         enemy.attackTimer = 1.45 + this.rng.next() * 0.35;
       }
@@ -1707,7 +1930,7 @@ export class DoffaGame {
       enemy.aimAngle = Math.atan2(this.player.y - enemy.y, this.player.x - enemy.x);
       enemy.state = "channel";
       enemy.stateTimer = 0.48;
-      triggerEnemyAttack(enemy, enemy.stateTimer);
+      this.cueEnemyAttack(enemy, enemy.stateTimer);
       this.spawnParticles(enemy.x, enemy.y, "#ef8c4e", 7, 58);
     }
   }
@@ -1739,7 +1962,7 @@ export class DoffaGame {
       enemy.aimAngle = Math.atan2(direction.y, direction.x);
       enemy.state = "windup";
       enemy.stateTimer = 0.72;
-      triggerEnemyAttack(enemy, enemy.stateTimer);
+      this.cueEnemyAttack(enemy, enemy.stateTimer);
       this.spawnParticles(enemy.x, enemy.y, "#d98c46", 10, 80);
     }
   }
@@ -1750,7 +1973,7 @@ export class DoffaGame {
         for (const offset of [-0.16, 0, 0.16]) {
           this.fireEnemyProjectile(enemy.x, enemy.y, enemy.aimAngle + offset, 290, 8, 7);
         }
-        triggerEnemyAttack(enemy, 0.26);
+        this.cueEnemyAttack(enemy, 0.26);
         enemy.state = "idle";
         enemy.attackTimer = 2.05;
       }
@@ -1766,7 +1989,7 @@ export class DoffaGame {
       enemy.aimAngle = Math.atan2(this.player.y - enemy.y, this.player.x - enemy.x);
       enemy.state = "volley-windup";
       enemy.stateTimer = 0.56;
-      triggerEnemyAttack(enemy, enemy.stateTimer);
+      this.cueEnemyAttack(enemy, enemy.stateTimer);
       this.spawnParticles(enemy.x, enemy.y, "#d85c3a", 9, 62);
     }
   }
@@ -1776,7 +1999,7 @@ export class DoffaGame {
       if (enemy.stateTimer <= 0) {
         enemy.state = "pounce-dash";
         enemy.stateTimer = 0.34;
-        triggerEnemyAttack(enemy, 0.24);
+        this.cueEnemyAttack(enemy, 0.24);
       }
       return;
     }
@@ -1801,7 +2024,7 @@ export class DoffaGame {
       enemy.aimAngle = Math.atan2(direction.y, direction.x);
       enemy.state = "pounce-windup";
       enemy.stateTimer = 0.42;
-      triggerEnemyAttack(enemy, enemy.stateTimer);
+      this.cueEnemyAttack(enemy, enemy.stateTimer);
       this.spawnParticles(enemy.x, enemy.y, "#83b65f", 9, 72);
     }
   }
@@ -1820,7 +2043,7 @@ export class DoffaGame {
             7,
           );
         }
-        triggerEnemyAttack(enemy, 0.26);
+        this.cueEnemyAttack(enemy, 0.26);
         enemy.state = "idle";
         enemy.attackTimer = 1.6;
       }
@@ -1847,7 +2070,7 @@ export class DoffaGame {
       enemy.aimAngle = Math.atan2(toPlayerY, toPlayerX);
       enemy.state = "seed-windup";
       enemy.stateTimer = 0.5;
-      triggerEnemyAttack(enemy, enemy.stateTimer);
+      this.cueEnemyAttack(enemy, enemy.stateTimer);
       this.spawnParticles(enemy.x, enemy.y, "#a8c460", 8, 64);
     }
   }
@@ -1880,7 +2103,7 @@ export class DoffaGame {
         enemy.stateTimer = 0.18;
         enemy.aimAngle = Math.atan2(this.player.y - enemy.y, this.player.x - enemy.x);
         this.fireRadialBurst(enemy, 6, 260, 9, 7, enemy.aimAngle);
-        triggerEnemyAttack(enemy, 0.32);
+        this.cueEnemyAttack(enemy, 0.32);
         this.spawnParticles(enemy.x, enemy.y, "#a4743f", 18, 140);
       }
       return;
@@ -1899,7 +2122,7 @@ export class DoffaGame {
       enemy.aimAngle = Math.atan2(this.player.y - enemy.y, this.player.x - enemy.x);
       enemy.state = "burrow-windup";
       enemy.stateTimer = 0.42;
-      triggerEnemyAttack(enemy, enemy.stateTimer);
+      this.cueEnemyAttack(enemy, enemy.stateTimer);
     }
   }
 
@@ -1917,7 +2140,7 @@ export class DoffaGame {
             7,
           );
         });
-        triggerEnemyAttack(enemy, 0.3);
+        this.cueEnemyAttack(enemy, 0.3);
         enemy.state = "idle";
         enemy.attackTimer = 1.85;
       }
@@ -1934,7 +2157,7 @@ export class DoffaGame {
       enemy.aimAngle = Math.atan2(this.player.y - enemy.y, this.player.x - enemy.x);
       enemy.state = "spore-windup";
       enemy.stateTimer = 0.54;
-      triggerEnemyAttack(enemy, enemy.stateTimer);
+      this.cueEnemyAttack(enemy, enemy.stateTimer);
       this.spawnParticles(enemy.x, enemy.y, "#8bcbd1", 11, 78);
     }
   }
@@ -1948,7 +2171,7 @@ export class DoffaGame {
     enemy.dashY = direction.y;
     enemy.state = "elite-windup";
     enemy.stateTimer = duration;
-    triggerEnemyAttack(enemy, duration);
+    this.cueEnemyAttack(enemy, duration);
     this.spawnParticles(enemy.x, enemy.y, "#ee7135", 15, 125);
   }
 
@@ -1965,10 +2188,10 @@ export class DoffaGame {
         if (enemy.attackPattern === "cleaver-charge") {
           enemy.state = "elite-dash";
           enemy.stateTimer = 0.58;
-          triggerEnemyAttack(enemy, 0.22);
+          this.cueEnemyAttack(enemy, 0.22);
         } else {
           this.fireRadialBurst(enemy, 10, 270, 10, 8, enemy.phaseTimer * 0.2);
-          triggerEnemyAttack(enemy, 0.24);
+          this.cueEnemyAttack(enemy, 0.24);
           enemy.state = "idle";
           enemy.attackTimer = 1.45;
         }
@@ -2004,7 +2227,7 @@ export class DoffaGame {
         } else {
           this.fireRadialBurst(enemy, 14, 285, 10, 8, enemy.phaseTimer * 0.32);
         }
-        triggerEnemyAttack(enemy, 0.26);
+        this.cueEnemyAttack(enemy, 0.26);
         enemy.state = "idle";
         enemy.attackTimer = 1.16;
       }
@@ -2043,7 +2266,7 @@ export class DoffaGame {
             this.fireEnemyProjectile(enemy.x, enemy.y, angle, speed, 9, 7);
           }
         }
-        triggerEnemyAttack(enemy, 0.28);
+        this.cueEnemyAttack(enemy, 0.28);
         enemy.state = "idle";
         enemy.attackTimer = 1.05;
       }
@@ -2066,10 +2289,10 @@ export class DoffaGame {
         if (enemy.attackPattern === "saw-charge") {
           enemy.state = "elite-dash";
           enemy.stateTimer = 0.62;
-          triggerEnemyAttack(enemy, 0.22);
+          this.cueEnemyAttack(enemy, 0.22);
         } else {
           this.fireRadialBurst(enemy, 12, 355, 12, 9, enemy.phaseTimer * 0.25);
-          triggerEnemyAttack(enemy, 0.25);
+          this.cueEnemyAttack(enemy, 0.25);
           enemy.state = "idle";
           enemy.attackTimer = 1.3;
         }
@@ -2102,7 +2325,7 @@ export class DoffaGame {
           enemy.state = "elite-dash";
           enemy.stateTimer = 0.34;
           enemy.dashRepeats = 2;
-          triggerEnemyAttack(enemy, 0.24);
+          this.cueEnemyAttack(enemy, 0.24);
         } else {
           for (let index = 0; index < 12; index += 1) {
             if (index % 4 === 0) {
@@ -2111,7 +2334,7 @@ export class DoffaGame {
             const angle = enemy.phaseTimer * 0.24 + (index / 12) * TAU;
             this.fireEnemyProjectile(enemy.x, enemy.y, angle, 300, 11, 8);
           }
-          triggerEnemyAttack(enemy, 0.28);
+          this.cueEnemyAttack(enemy, 0.28);
           enemy.state = "idle";
           enemy.attackTimer = 1.28;
         }
@@ -2159,7 +2382,7 @@ export class DoffaGame {
           this.fireRadialBurst(enemy, 10, 220, 10, 8, enemy.phaseTimer * 0.22);
           this.fireRadialBurst(enemy, 10, 320, 10, 8, enemy.phaseTimer * 0.22 + Math.PI / 10);
         }
-        triggerEnemyAttack(enemy, 0.3);
+        this.cueEnemyAttack(enemy, 0.3);
         enemy.state = "idle";
         enemy.attackTimer = 1.32;
       }
@@ -2196,7 +2419,7 @@ export class DoffaGame {
             this.fireEnemyProjectile(enemy.x, enemy.y, angle, index % 2 === 0 ? 235 : 325, 10, 8);
           }
         }
-        triggerEnemyAttack(enemy, 0.3);
+        this.cueEnemyAttack(enemy, 0.3);
         enemy.state = "idle";
         enemy.attackTimer = 1.16;
       }
@@ -2221,13 +2444,13 @@ export class DoffaGame {
         if (enemy.attackPattern === "vine-charge") {
           enemy.state = "elite-dash";
           enemy.stateTimer = 0.56;
-          triggerEnemyAttack(enemy, 0.25);
+          this.cueEnemyAttack(enemy, 0.25);
         } else {
           this.fireRadialBurst(enemy, 12, 310, 12, 9, enemy.phaseTimer * 0.28);
           for (const offset of [-0.18, 0, 0.18]) {
             this.fireEnemyProjectile(enemy.x, enemy.y, enemy.aimAngle + offset, 410, 12, 9);
           }
-          triggerEnemyAttack(enemy, 0.3);
+          this.cueEnemyAttack(enemy, 0.3);
           enemy.state = "idle";
           enemy.attackTimer = 1.28;
         }
@@ -2264,7 +2487,7 @@ export class DoffaGame {
       enemy.state = "boss-phase";
       enemy.stateTimer = 1.08;
       enemy.attackTimer = 0.84;
-      triggerEnemyAttack(enemy, enemy.stateTimer);
+      this.cueEnemyAttack(enemy, enemy.stateTimer);
       this.spawnParticles(enemy.x, enemy.y, "#d98d36", 36, 235);
       return;
     }
@@ -2273,7 +2496,7 @@ export class DoffaGame {
       if (enemy.stateTimer <= 0) {
         this.fireRadialBurst(enemy, 12, 240, 12, 9, enemy.phaseTimer * 0.3);
         this.fireRadialBurst(enemy, 12, 340, 12, 9, enemy.phaseTimer * 0.3 + Math.PI / 12);
-        triggerEnemyAttack(enemy, 0.42);
+        this.cueEnemyAttack(enemy, 0.42);
         enemy.state = "idle";
         enemy.attackPattern = null;
         enemy.attackTimer = 0.7;
@@ -2292,7 +2515,7 @@ export class DoffaGame {
           enemy.state = "idle";
           enemy.attackTimer = enraged ? 0.78 : 1.14;
         }
-        triggerEnemyAttack(enemy, 0.34);
+        this.cueEnemyAttack(enemy, 0.34);
       }
       return;
     }
@@ -2333,7 +2556,7 @@ export class DoffaGame {
       enemy.dashY = direction.y;
       enemy.state = "boss-windup";
       enemy.stateTimer = enraged ? 0.5 : 0.7;
-      triggerEnemyAttack(enemy, enemy.stateTimer);
+      this.cueEnemyAttack(enemy, enemy.stateTimer);
       this.spawnParticles(enemy.x, enemy.y, "#d98d36", 22, 175);
     }
   }
@@ -2381,7 +2604,7 @@ export class DoffaGame {
       enemy.state = "boss-phase";
       enemy.stateTimer = 0.92;
       enemy.attackTimer = 1.05;
-      triggerEnemyAttack(enemy, enemy.stateTimer);
+      this.cueEnemyAttack(enemy, enemy.stateTimer);
       this.spawnParticles(enemy.x, enemy.y, "#ffb84f", 30, 210);
       return;
     }
@@ -2389,7 +2612,7 @@ export class DoffaGame {
     if (enemy.state === "boss-phase") {
       if (enemy.stateTimer <= 0) {
         this.fireRadialBurst(enemy, 16, 300, 11, 8, enemy.phaseTimer * 0.36);
-        triggerEnemyAttack(enemy, 0.38);
+        this.cueEnemyAttack(enemy, 0.38);
         enemy.state = "idle";
         enemy.attackPattern = null;
         enemy.attackTimer = 0.72;
@@ -2401,7 +2624,7 @@ export class DoffaGame {
     if (enemy.state === "boss-windup") {
       if (enemy.stateTimer <= 0) {
         this.fireBossPattern(enemy, enraged);
-        triggerEnemyAttack(enemy, 0.32);
+        this.cueEnemyAttack(enemy, 0.32);
         enemy.state = "idle";
         enemy.attackTimer = enraged ? 0.82 : 1.24;
       }
@@ -2418,7 +2641,7 @@ export class DoffaGame {
       enemy.aimAngle = Math.atan2(this.player.y - enemy.y, this.player.x - enemy.x);
       enemy.state = "boss-windup";
       enemy.stateTimer = enraged ? 0.48 : 0.68;
-      triggerEnemyAttack(enemy, enemy.stateTimer);
+      this.cueEnemyAttack(enemy, enemy.stateTimer);
       this.spawnParticles(enemy.x, enemy.y, "#ee7135", 18, 165);
     }
   }
@@ -2457,17 +2680,33 @@ export class DoffaGame {
   }
 
   fireEnemyProjectile(x, y, angle, speed, damage, radius) {
-    this.projectiles.push({
+    const owner = (this.enemies ?? []).find((enemy) => (
+      enemy.alive && Math.abs(enemy.x - x) < 3 && Math.abs(enemy.y - y) < 3
+    ));
+    const projectileStyle = getEnemyProjectileStyle(owner);
+    this.pushProjectile({
       x: x + Math.cos(angle) * 30,
       y: y + Math.sin(angle) * 30,
       vx: Math.cos(angle) * speed,
       vy: Math.sin(angle) * speed,
       radius,
+      ...projectileStyle,
       damage,
       friendly: false,
       age: 0,
       alive: true,
     });
+  }
+
+  pushProjectile(projectile) {
+    this.projectiles ??= [];
+    if (this.projectiles.length >= MAX_ACTIVE_PROJECTILES) {
+      const expiredIndex = this.projectiles.findIndex((candidate) => !candidate.alive);
+      if (expiredIndex >= 0) this.projectiles.splice(expiredIndex, 1);
+    }
+    if (this.projectiles.length >= MAX_ACTIVE_PROJECTILES) return false;
+    this.projectiles.push(projectile);
+    return true;
   }
 
   resolveEnemySeparation() {
@@ -2567,6 +2806,7 @@ export class DoffaGame {
           projectile.vx -= 2 * velocityDotNormal * collision.normalX;
           projectile.vy -= 2 * velocityDotNormal * collision.normalY;
           projectile.wallBounces -= 1;
+          this.onAudio?.("ricochet", { visual: projectile.visual });
         }
         this.spawnParticles(
           projectile.x,
@@ -2596,6 +2836,7 @@ export class DoffaGame {
       projectile.x = clamp(projectile.x, ARENA.left, ARENA.right);
       projectile.y = clamp(projectile.y, ARENA.top, ARENA.bottom);
       projectile.wallBounces -= 1;
+      this.onAudio?.("ricochet", { visual: projectile.visual });
       this.spawnParticles(projectile.x, projectile.y, projectile.color ?? this.player.accent, 3, 65);
     } else {
       projectile.alive = false;
@@ -2617,10 +2858,17 @@ export class DoffaGame {
         continue;
       }
 
+      const hpBefore = enemy.hp;
       projectile.hitIds.add(enemy.id);
       projectile.hitsLeft -= 1;
       const impactColor = projectile.critical ? "#fff0b0" : projectile.color;
+      if (projectile.critical) this.onAudio?.("critical", { heroId: this.hero.id, visual: projectile.visual });
       this.damageEnemy(enemy, projectile.damage, projectile.x, projectile.y, impactColor);
+      if (enemy.hp <= 0 && hpBefore > 0) {
+        this.onVoice?.(projectile.sourceWeaponSlot === "ranged" ? "rangedFinisher" : "meleeFinisher");
+      } else if (projectile.critical || projectile.damage >= enemy.maxHp * .28) {
+        this.onVoice?.("heavy");
+      }
 
       if (projectile.splashRadius > 0) {
         this.damageEnemiesAround(projectile, enemy);
@@ -2647,6 +2895,7 @@ export class DoffaGame {
       }
 
       projectile.hitIds.add(enemy.id);
+      const hpBefore = enemy.hp;
       this.damageEnemy(
         enemy,
         Math.round(projectile.damage * 0.45),
@@ -2654,6 +2903,7 @@ export class DoffaGame {
         enemy.y,
         projectile.secondary,
       );
+      if (enemy.hp <= 0 && hpBefore > 0) this.onVoice?.("rangedFinisher");
     }
   }
 
@@ -2662,13 +2912,24 @@ export class DoffaGame {
       return;
     }
 
-    enemy.hp = Math.max(0, enemy.hp - amount);
+    const maximumHit = enemy.isBoss
+      ? enemy.maxHp * 0.08
+      : enemy.isElite
+        ? enemy.maxHp * 0.24
+        : Number.POSITIVE_INFINITY;
+    const appliedDamage = Math.min(Math.max(1, amount), maximumHit);
+    enemy.hp = Math.max(0, enemy.hp - appliedDamage);
     enemy.hitFlash = enemy.isBoss ? 0.14 : enemy.isElite ? 0.13 : 0.09;
     triggerEnemyHit(enemy);
-    this.spawnCombatText(Math.max(1, Math.round(amount)), impactX, impactY - 12, color, 22);
+    this.spawnCombatText(Math.max(1, Math.round(appliedDamage)), impactX, impactY - 12, color, 22);
     this.spawnParticles(impactX, impactY, color, 6, 130);
 
     if (enemy.hp <= 0) {
+      this.onAudio?.(enemy.isBoss ? "bossDefeat" : "enemyDefeat", {
+        enemyType: enemy.type,
+        isElite: enemy.isElite,
+        isBoss: enemy.isBoss,
+      });
       const definition = getEnemyDefinition(enemy.type);
       const hasDefeatReaction = Boolean(
         definition?.art?.reactionSprite
@@ -2713,6 +2974,12 @@ export class DoffaGame {
         enemy.isBoss ? 46 : enemy.isElite ? 34 : 18,
         230,
       );
+    } else {
+      this.onAudio?.("enemyHit", {
+        enemyType: enemy.type,
+        isElite: enemy.isElite,
+        isBoss: enemy.isBoss,
+      });
     }
   }
 
@@ -2727,6 +2994,7 @@ export class DoffaGame {
     }
     destructible.hp = Math.max(0, destructible.hp - amount);
     destructible.hitFlash = 0.12;
+    this.onAudio?.("destructibleHit", { type: destructible.type });
     this.spawnCombatText(
       Math.max(1, Math.round(amount)),
       impactX,
@@ -2740,6 +3008,7 @@ export class DoffaGame {
     }
 
     destructible.alive = false;
+    this.onAudio?.("destructibleBreak", { type: destructible.type });
     this.screenShake = Math.max(this.screenShake ?? 0, 4.5);
     this.spawnCombatText(
       "BREAK",
@@ -2801,6 +3070,8 @@ export class DoffaGame {
     this.spawnParticles(this.player.x, this.player.y, "#d74232", 14, 170);
 
     if (this.player.hp <= 0) {
+      this.onAudio?.("playerDefeat", { heroId: this.hero.id });
+      this.onVoice?.("death");
       triggerPlayerDefeat(this.player);
       this.mode = "dying";
       this.pointer = null;
@@ -2808,6 +3079,9 @@ export class DoffaGame {
       for (const projectile of this.projectiles ?? []) {
         projectile.alive = false;
       }
+    } else {
+      this.onAudio?.("playerHit", { heroId: this.hero.id });
+      this.onVoice?.("hurt");
     }
   }
 
@@ -2819,6 +3093,7 @@ export class DoffaGame {
     this.player.hp = Math.min(this.player.maxHp, this.player.hp + Math.round(amount));
     const restored = this.player.hp - previousHp;
     if (restored > 0) {
+      this.onAudio?.("pickupHeal", { heroId: this.hero.id, value: restored });
       this.spawnCombatText(`+${restored}`, this.player.x, this.player.y - 42, "#8df1aa", 23);
       this.spawnParticles(this.player.x, this.player.y, "#74d692", 14, 125);
     }
@@ -2911,6 +3186,7 @@ export class DoffaGame {
       return;
     }
     this.spawnParticles(pickup.x, pickup.y, "#d8a9ff", 8, 90);
+    this.onAudio?.("pickupXp", { value: pickup.value });
     this.grantRunExperience(pickup.value);
   }
 
@@ -2919,19 +3195,24 @@ export class DoffaGame {
     this.runLevel = result.level;
     this.runXp = result.xp;
     this.runXpToNext = result.requirement;
+    if (result.levelsGained > 0) {
+      this.onAudio?.("levelUp", { level: result.level, levelsGained: result.levelsGained });
+      this.onVoice?.("levelUp");
+    }
     if (result.levelsGained <= 0 || this.room >= this.tour.rooms.length) {
       return result;
     }
 
-    this.pendingAbilityChoices += result.levelsGained;
-    if (this.mode === "running" || this.mode === "exit") {
-      this.openAbilityChoice("level", this.mode);
-    }
+    // Never interrupt a live room. XP can light up the room-clear reward,
+    // but a chamber always produces at most one ability choice.
+    this.pendingAbilityChoices = Math.min(1, this.pendingAbilityChoices + result.levelsGained);
     return result;
   }
 
   spawnParticles(x, y, color, count, speed) {
-    for (let index = 0; index < count; index += 1) {
+    const available = Math.max(0, MAX_ACTIVE_PARTICLES - this.particles.length);
+    const spawnCount = Math.min(Math.max(0, Math.floor(count)), available);
+    for (let index = 0; index < spawnCount; index += 1) {
       const angle = this.rng.next() * TAU;
       const velocity = speed * (0.35 + this.rng.next() * 0.65);
       this.particles.push({
@@ -2960,6 +3241,9 @@ export class DoffaGame {
   spawnCombatText(text, x, y, color = "#fff0c2", size = 22) {
     this.combatTexts ??= [];
     this.nextCombatTextId ??= 1;
+    if (this.combatTexts.length >= MAX_ACTIVE_COMBAT_TEXTS) {
+      this.combatTexts.splice(0, this.combatTexts.length - MAX_ACTIVE_COMBAT_TEXTS + 1);
+    }
     this.combatTexts.push({
       id: this.nextCombatTextId++,
       text: String(text),
@@ -2996,6 +3280,8 @@ export class DoffaGame {
     this.keys.clear();
     this.player.invulnerability = 0.7;
     this.spawnParticles(VIEWPORT.width / 2, ARENA.top + 22, "#e6b461", 24, 130);
+    this.onAudio?.("roomClear", { room: this.room, roomId: this.roomDefinition?.id });
+    this.onVoice?.("roomClear");
     this.syncRoomAssetWindow(this.room, { combatRoomOffset: 1 });
   }
 
@@ -3005,6 +3291,7 @@ export class DoffaGame {
     }
 
     this.roomExitOpen = false;
+    this.onAudio?.("doorExit", { room: this.room, tourId: this.tour.id });
     this.clearedRooms = Math.max(this.clearedRooms, this.room);
     if (this.room >= this.tour.rooms.length) {
       this.finishRun(true);
@@ -3013,7 +3300,8 @@ export class DoffaGame {
 
     this.pointer = null;
     this.keys.clear();
-    if (this.roomDefinition?.reward === "ability") {
+    if (this.roomDefinition?.roomType === "combat") {
+      this.pendingAbilityChoices = 0;
       this.persistActiveRunCheckpoint("checkpoint-choice");
       this.openAbilityChoice("checkpoint", "running");
       return;
@@ -3030,7 +3318,13 @@ export class DoffaGame {
     const roomsCleared = bossDefeated
       ? this.tour.rooms.length
       : Math.max(this.clearedRooms, Math.max(0, this.room - 1));
-    const beanReward = calculateRunBeanReward({ roomsCleared, bossDefeated });
+    if (bossDefeated) this.onVoice?.("bossVictory");
+    this.onAudio?.(bossDefeated ? "victory" : "defeat", {
+      heroId: this.hero.id,
+      tourId: this.tour.id,
+      roomsCleared,
+    });
+    const beanReward = calculateWagerPayout({ wager: this.wager, bossDefeated });
     const xpReward = calculateRunHeroXp({ roomsCleared, bossDefeated });
     const heroProgressBefore = this.profileStore.profile.heroProgress?.[this.hero.id];
     const heroProgressAfter = grantHeroXp(heroProgressBefore, xpReward);
@@ -3149,6 +3443,7 @@ export class DoffaGame {
   }
 
   emitHud() {
+    const selectedWeapon = getHeroWeaponDefinition(this.hero, this.player?.selectedWeaponSlot);
     this.onHud({
       room: this.room,
       totalRooms: this.tour.rooms.length,
@@ -3164,7 +3459,8 @@ export class DoffaGame {
       runLevel: this.runLevel,
       runXp: this.runXp,
       runXpToNext: this.runXpToNext,
-      weaponName: this.hero.weapon,
+      weaponName: selectedWeapon?.name ?? this.hero.weapon,
+      weaponSlot: this.player?.selectedWeaponSlot ?? "melee",
       hp: Math.ceil(this.player.hp),
       maxHp: Math.ceil(this.player.maxHp),
     });
@@ -3236,9 +3532,20 @@ export class DoffaGame {
       artVariant: this.roomDefinition?.artVariant,
     });
     const roomSprite = roomArt ? this.roomSprites.get(roomArt.sprite) : null;
+    const composite = getRoomCompositeIdentity(
+      this.roomDefinition?.id,
+      this.room,
+      environment,
+    );
 
     if (roomSprite) {
+      context.save();
+      if (composite.mirror) {
+        context.translate(VIEWPORT.width, 0);
+        context.scale(-1, 1);
+      }
       context.drawImage(roomSprite, 0, 0, VIEWPORT.width, VIEWPORT.height);
+      context.restore();
       context.save();
       const readabilityShade = context.createLinearGradient(0, ARENA.top, 0, ARENA.bottom);
       readabilityShade.addColorStop(0, "rgba(5, 3, 2, 0.11)");
@@ -3246,6 +3553,29 @@ export class DoffaGame {
       readabilityShade.addColorStop(1, "rgba(5, 3, 2, 0.16)");
       context.fillStyle = readabilityShade;
       context.fillRect(0, 0, VIEWPORT.width, VIEWPORT.height);
+      const identityLight = context.createRadialGradient(
+        VIEWPORT.width * composite.lightX,
+        VIEWPORT.height * composite.lightY,
+        10,
+        VIEWPORT.width * composite.lightX,
+        VIEWPORT.height * composite.lightY,
+        360,
+      );
+      identityLight.addColorStop(0, `${palette.accent}aa`);
+      identityLight.addColorStop(1, `${palette.accent}00`);
+      context.globalCompositeOperation = "screen";
+      context.globalAlpha = composite.tintAlpha;
+      context.fillStyle = identityLight;
+      context.fillRect(0, 0, VIEWPORT.width, VIEWPORT.height);
+      context.globalCompositeOperation = "source-over";
+      context.globalAlpha = .18;
+      context.strokeStyle = palette.accent;
+      context.lineWidth = 2;
+      context.beginPath();
+      context.moveTo(ARENA.left, composite.bandOffset);
+      context.lineTo(ARENA.right, composite.bandOffset + composite.bandSlope * 74);
+      context.stroke();
+      context.globalAlpha = 1;
       context.strokeStyle = `${palette.line}99`;
       context.lineWidth = 4;
       context.strokeRect(ARENA.left, ARENA.top, ARENA.right - ARENA.left, ARENA.bottom - ARENA.top);
@@ -3283,6 +3613,7 @@ export class DoffaGame {
       this.drawRoomFixtures(context, environment, palette);
     }
 
+    this.drawRoomIdentityOverlay(context, palette, composite);
     this.drawRoomAtmosphere(context, environment, palette);
     this.drawRoomHazards(context, palette);
     this.drawRoomObstacles(context, palette);
@@ -3318,6 +3649,178 @@ export class DoffaGame {
     context.restore();
   }
 
+  drawRoomIdentityOverlay(context, palette, identity) {
+    const arenaWidth = ARENA.right - ARENA.left;
+    const arenaHeight = ARENA.bottom - ARENA.top;
+    const toArenaPoint = (point) => ({
+      x: ARENA.left + point.x * arenaWidth,
+      y: ARENA.top + point.y * arenaHeight,
+    });
+    const landmark = toArenaPoint(identity.landmark);
+    const landmarkRadius = 52 * identity.landmarkScale;
+    const organic = identity.style === "organic";
+
+    context.save();
+    context.beginPath();
+    context.rect(ARENA.left, ARENA.top, arenaWidth, arenaHeight);
+    context.clip();
+    context.globalCompositeOperation = "screen";
+    context.lineCap = organic ? "round" : "square";
+    context.lineJoin = organic ? "round" : "bevel";
+
+    context.save();
+    context.strokeStyle = `${palette.line}42`;
+    context.lineWidth = organic ? 12 : 9;
+    context.beginPath();
+    identity.route.forEach((point, index) => {
+      const position = toArenaPoint(point);
+      if (index === 0) {
+        context.moveTo(position.x, position.y);
+      } else if (organic) {
+        const previous = toArenaPoint(identity.route[index - 1]);
+        context.quadraticCurveTo(
+          previous.x + (position.x - previous.x) * .68,
+          previous.y + (position.y - previous.y) * .18,
+          position.x,
+          position.y,
+        );
+      } else {
+        const previous = toArenaPoint(identity.route[index - 1]);
+        context.lineTo(position.x, previous.y);
+        context.lineTo(position.x, position.y);
+      }
+    });
+    context.stroke();
+    context.strokeStyle = `${palette.accent}6b`;
+    context.lineWidth = organic ? 2.4 : 2;
+    context.stroke();
+    context.restore();
+
+    context.save();
+    context.strokeStyle = `${palette.line}38`;
+    context.fillStyle = `${palette.accent}24`;
+    context.lineWidth = 2;
+    if (identity.topology === 0) {
+      for (const radius of [92, 156, 224]) {
+        context.beginPath();
+        context.arc(landmark.x, landmark.y, radius, 0, TAU);
+        context.stroke();
+      }
+    } else if (identity.topology === 1) {
+      for (let offset = -500; offset <= 500; offset += 118) {
+        context.beginPath();
+        context.moveTo(ARENA.left + offset, ARENA.bottom);
+        context.lineTo(ARENA.left + offset + arenaHeight * .62, ARENA.top);
+        context.stroke();
+      }
+    } else if (identity.topology === 2) {
+      for (const inset of [72, 142, 218]) {
+        context.strokeRect(
+          ARENA.left + inset,
+          ARENA.top + inset * .72,
+          arenaWidth - inset * 2,
+          arenaHeight - inset * 1.44,
+        );
+      }
+    } else if (identity.topology === 3) {
+      for (let y = ARENA.top + 94; y < ARENA.bottom; y += 156) {
+        context.beginPath();
+        context.moveTo(ARENA.left + 78, y + 34);
+        context.lineTo(VIEWPORT.width / 2, y - 34);
+        context.lineTo(ARENA.right - 78, y + 34);
+        context.stroke();
+      }
+    } else if (identity.topology === 4) {
+      context.beginPath();
+      context.moveTo(landmark.x, ARENA.top);
+      context.lineTo(landmark.x, ARENA.bottom);
+      context.moveTo(ARENA.left, landmark.y);
+      context.lineTo(ARENA.right, landmark.y);
+      context.stroke();
+      for (const node of identity.nodes) {
+        const position = toArenaPoint(node);
+        context.beginPath();
+        context.arc(position.x, position.y, 22, 0, TAU);
+        context.stroke();
+      }
+    } else {
+      for (const node of identity.nodes) {
+        const position = toArenaPoint(node);
+        context.beginPath();
+        context.moveTo(landmark.x, landmark.y);
+        context.lineTo(position.x, position.y);
+        context.stroke();
+      }
+    }
+    context.restore();
+
+    context.save();
+    context.translate(landmark.x, landmark.y);
+    context.rotate(((identity.seed >>> 12) % 12) * (TAU / 12));
+    context.strokeStyle = `${palette.accent}9c`;
+    context.fillStyle = `${palette.accent}48`;
+    context.lineWidth = 2.5;
+    context.beginPath();
+    context.arc(0, 0, landmarkRadius, 0, TAU);
+    context.stroke();
+    context.beginPath();
+    context.arc(0, 0, landmarkRadius * .58, 0, TAU);
+    context.stroke();
+    for (let bit = 0; bit < 16; bit += 1) {
+      const angle = (bit / 16) * TAU;
+      const active = Boolean(identity.sigilBits & (1 << bit));
+      const inner = landmarkRadius * (active ? .58 : .82);
+      const outer = landmarkRadius * (active ? 1.16 : 1.02);
+      context.beginPath();
+      context.moveTo(Math.cos(angle) * inner, Math.sin(angle) * inner);
+      context.lineTo(Math.cos(angle) * outer, Math.sin(angle) * outer);
+      context.stroke();
+      if (active) {
+        const x = Math.cos(angle) * landmarkRadius * .78;
+        const y = Math.sin(angle) * landmarkRadius * .78;
+        context.save();
+        context.translate(x, y);
+        context.rotate(angle + Math.PI / 4);
+        context.fillRect(-4.5, -4.5, 9, 9);
+        context.restore();
+      }
+    }
+    context.restore();
+
+    context.save();
+    context.strokeStyle = `${palette.accent}70`;
+    context.fillStyle = `${palette.line}4d`;
+    context.lineWidth = 2;
+    identity.nodes.forEach((node, index) => {
+      const position = toArenaPoint(node);
+      const radius = 6 + (index % 3) * 2;
+      context.beginPath();
+      if (organic) {
+        context.ellipse(position.x, position.y, radius * 1.7, radius, index * .74, 0, TAU);
+      } else {
+        context.rect(position.x - radius, position.y - radius, radius * 2, radius * 2);
+      }
+      context.fill();
+      context.stroke();
+    });
+    for (let bit = 0; bit < 8; bit += 1) {
+      if (!(identity.edgeMask & (1 << bit))) {
+        continue;
+      }
+      const y = ARENA.top + 92 + bit * (arenaHeight - 184) / 7;
+      const fromLeft = bit % 2 === 0;
+      const edgeX = fromLeft ? ARENA.left : ARENA.right;
+      const inwardX = edgeX + (fromLeft ? 34 : -34);
+      context.beginPath();
+      context.moveTo(edgeX, y);
+      context.lineTo(inwardX, y);
+      context.lineTo(inwardX + (fromLeft ? 10 : -10), y + (organic ? 18 : 0));
+      context.stroke();
+    }
+    context.restore();
+    context.restore();
+  }
+
   drawArenaDoor(context, palette) {
     const width = 150;
     const height = 86;
@@ -3337,7 +3840,7 @@ export class DoffaGame {
       light.addColorStop(0, palette.accent);
       light.addColorStop(1, "rgba(230, 180, 97, 0.08)");
       context.fillStyle = light;
-      context.shadowBlur = 34;
+      context.shadowBlur = this.reducedEffects ? 0 : 34;
       context.shadowColor = palette.accent;
       context.fillRect(x + 15, y + 17, width - 30, height - 17);
       context.fillStyle = "rgba(255, 242, 204, 0.82)";
@@ -3575,7 +4078,8 @@ export class DoffaGame {
 
     context.save();
     context.globalCompositeOperation = state.environment === "smoke" ? "source-over" : "screen";
-    for (let index = 0; index < profile.moteCount; index += 1) {
+    const moteStep = this.reducedEffects ? 2 : 1;
+    for (let index = 0; index < profile.moteCount; index += moteStep) {
       const mote = getRoomAmbientMote(state, index);
       if (!mote) {
         continue;
@@ -3588,7 +4092,9 @@ export class DoffaGame {
       context.rotate(mote.rotation);
       context.globalAlpha = mote.alpha * (isSmoke ? 0.34 : 0.7);
       context.fillStyle = mote.color;
-      context.shadowBlur = isSmoke ? 12 : state.environment === "ember" || state.environment === "heart" ? 8 : 2;
+      context.shadowBlur = this.reducedEffects
+        ? 0
+        : isSmoke ? 12 : state.environment === "ember" || state.environment === "heart" ? 8 : 2;
       context.shadowColor = mote.color;
       if (isSmoke) {
         context.beginPath();
@@ -3705,7 +4211,7 @@ export class DoffaGame {
       }
       context.globalAlpha = strength * (pressureJet ? 0.34 : 0.2) * state.strength;
       context.strokeStyle = pressureJet ? "#f3e3c8" : "#b9a7b3";
-      context.shadowBlur = pressureJet ? 18 : 12;
+      context.shadowBlur = this.reducedEffects ? 0 : pressureJet ? 18 : 12;
       context.shadowColor = context.strokeStyle;
       context.lineWidth = pressureJet ? 11 : 8;
       context.beginPath();
@@ -3840,7 +4346,7 @@ export class DoffaGame {
       const organic = ["root", "thorn", "fungal"].some((token) => obstacle.kind.includes(token));
       const radius = pillar ? 10 : 6;
       context.save();
-      context.shadowBlur = 14;
+      context.shadowBlur = this.reducedEffects ? 0 : 14;
       context.shadowColor = "rgba(0, 0, 0, 0.7)";
       const gradient = context.createLinearGradient(
         obstacle.x,
@@ -3910,7 +4416,7 @@ export class DoffaGame {
 
       context.save();
       context.translate(centerX + hitShake, centerY);
-      context.shadowBlur = 15;
+      context.shadowBlur = this.reducedEffects ? 0 : 15;
       context.shadowColor = "rgba(0, 0, 0, 0.72)";
       context.filter = destructible.hitFlash > 0
         ? "brightness(1.65) saturate(0.72)"
@@ -3993,7 +4499,7 @@ export class DoffaGame {
     context.save();
     context.translate(pickup.x, pickup.y + bob);
     context.rotate(pickup.type === "xp" ? pickup.age * 2.4 : 0);
-    context.shadowBlur = 20;
+    context.shadowBlur = this.reducedEffects ? 0 : 20;
     context.shadowColor = pickup.type === "heal" ? "#74d692" : "#c586ff";
     context.strokeStyle = pickup.type === "heal" ? "#b9ffd0" : "#f0d0ff";
     context.fillStyle = pickup.type === "heal" ? "#327c50" : "#7d43a3";
@@ -4026,16 +4532,65 @@ export class DoffaGame {
 
   drawProjectile(context, projectile) {
     context.save();
-    context.shadowBlur = projectile.friendly ? 18 : 14;
+    context.shadowBlur = this.reducedEffects ? 0 : projectile.friendly ? 18 : 14;
     context.shadowColor = projectile.friendly ? projectile.color : "#e34e2c";
     context.fillStyle = projectile.friendly
       ? projectile.critical ? "#fff2b4" : projectile.color
       : "#d84b2e";
 
     if (!projectile.friendly) {
+      const angle = Math.atan2(projectile.vy, projectile.vx);
+      context.translate(projectile.x, projectile.y);
+      context.rotate(angle);
+      context.shadowColor = projectile.primary;
+      context.fillStyle = projectile.primary;
+      context.strokeStyle = projectile.secondary;
+      context.lineWidth = Math.max(2, projectile.radius * .28);
+      context.globalAlpha = .38;
+      context.fillRect(-projectile.trail, -Math.max(1, projectile.radius * .22), projectile.trail, Math.max(2, projectile.radius * .44));
+      context.globalAlpha = 1;
       context.beginPath();
-      context.arc(projectile.x, projectile.y, projectile.radius, 0, TAU);
-      context.fill();
+      if (["needle", "thorn", "fang", "claw"].includes(projectile.shape)) {
+        context.moveTo(projectile.radius * 1.8, 0);
+        context.lineTo(-projectile.radius, -projectile.radius * .55);
+        context.lineTo(-projectile.radius * .55, 0);
+        context.lineTo(-projectile.radius, projectile.radius * .55);
+        context.closePath();
+      } else if (["shard", "petal", "cross"].includes(projectile.shape)) {
+        context.moveTo(projectile.radius * 1.4, 0);
+        context.lineTo(0, -projectile.radius);
+        context.lineTo(-projectile.radius * 1.2, 0);
+        context.lineTo(0, projectile.radius);
+        context.closePath();
+      } else if (["seed", "drop", "slug"].includes(projectile.shape)) {
+        context.ellipse(0, 0, projectile.radius * 1.45, projectile.radius * .72, 0, 0, TAU);
+      } else if (projectile.shape === "crescent") {
+        context.arc(0, 0, projectile.radius * 1.2, -.85, .85);
+      } else if (["saw", "gear", "crown", "knot"].includes(projectile.shape)) {
+        const teeth = projectile.shape === "crown" ? 5 : projectile.shape === "gear" ? 10 : 8;
+        for (let index = 0; index < teeth * 2; index += 1) {
+          const pointAngle = (index / (teeth * 2)) * TAU;
+          const pointRadius = projectile.radius * (index % 2 === 0 ? 1.35 : .72);
+          const pointX = Math.cos(pointAngle) * pointRadius;
+          const pointY = Math.sin(pointAngle) * pointRadius;
+          if (index === 0) context.moveTo(pointX, pointY);
+          else context.lineTo(pointX, pointY);
+        }
+        context.closePath();
+      } else if (projectile.shape === "hammer") {
+        context.rect(-projectile.radius * 1.15, -projectile.radius * .72, projectile.radius * 2.3, projectile.radius * 1.44);
+      } else if (projectile.shape === "wisp") {
+        context.moveTo(-projectile.radius, 0);
+        context.bezierCurveTo(projectile.radius * 1.5, -projectile.radius, projectile.radius, projectile.radius, -projectile.radius, 0);
+      } else if (projectile.shape === "spore") {
+        context.arc(0, 0, projectile.radius, 0, TAU);
+        context.moveTo(projectile.radius * .64, 0);
+        context.arc(projectile.radius * .4, 0, projectile.radius * .24, 0, TAU);
+      } else {
+        context.arc(0, 0, projectile.radius, 0, TAU);
+      }
+      if (projectile.shape === "crescent") context.stroke();
+      else { context.fill(); context.stroke(); }
       context.restore();
       return;
     }
@@ -4060,6 +4615,31 @@ export class DoffaGame {
       context.rotate(Math.PI / 4);
       context.fillRect(-projectile.radius * 0.78, -projectile.radius * 0.78, projectile.radius * 1.56, projectile.radius * 1.56);
       context.strokeRect(-projectile.radius, -projectile.radius, projectile.radius * 2, projectile.radius * 2);
+    } else if (projectile.visual === "dagger") {
+      context.fillStyle = projectile.critical ? "#fff2b4" : "#d9e3e9";
+      context.beginPath();
+      context.moveTo(projectile.radius * 2.8, 0);
+      context.lineTo(-projectile.radius * .55, -projectile.radius * .48);
+      context.lineTo(-projectile.radius * .2, 0);
+      context.lineTo(-projectile.radius * .55, projectile.radius * .48);
+      context.closePath();
+      context.fill();
+      context.fillStyle = "#c3913f";
+      context.fillRect(-projectile.radius * .85, -projectile.radius * .14, projectile.radius * 1.1, projectile.radius * .28);
+    } else if (projectile.visual === "punch") {
+      context.rotate(projectile.age * 8);
+      context.lineWidth = Math.max(4, projectile.radius * .5);
+      context.beginPath();
+      for (let index = 0; index < 12; index += 1) {
+        const angle = (index / 12) * TAU;
+        const distance = projectile.radius * (index % 2 === 0 ? 2 : .8);
+        const pointX = Math.cos(angle) * distance;
+        const pointY = Math.sin(angle) * distance;
+        if (index === 0) context.moveTo(pointX, pointY);
+        else context.lineTo(pointX, pointY);
+      }
+      context.closePath();
+      context.stroke();
     } else if (projectile.visual === "bow") {
       context.lineWidth = Math.max(2, projectile.radius * 0.42);
       context.beginPath();
@@ -4092,6 +4672,25 @@ export class DoffaGame {
       context.lineTo(-projectile.radius * 0.38, -projectile.radius * 0.38);
       context.closePath();
       context.fill();
+    } else if (projectile.visual === "gold-pistol") {
+      context.fillStyle = projectile.critical ? "#fff2b4" : "#d5a323";
+      context.beginPath();
+      context.ellipse(0, 0, projectile.radius * 2.4, projectile.radius * .62, 0, 0, TAU);
+      context.fill();
+      context.strokeStyle = "#fff0a3";
+      context.stroke();
+    } else if (projectile.visual === "cigarette-butt") {
+      context.fillStyle = "#e8d7bd";
+      context.fillRect(-projectile.radius * 1.8, -projectile.radius * .35, projectile.radius * 2.9, projectile.radius * .7);
+      context.fillStyle = "#ff6c2d";
+      context.beginPath();
+      context.arc(projectile.radius * 1.15, 0, projectile.radius * .48, 0, TAU);
+      context.fill();
+      context.strokeStyle = "rgba(220, 220, 220, 0.7)";
+      context.beginPath();
+      context.moveTo(-projectile.radius * 1.6, 0);
+      context.bezierCurveTo(-projectile.radius * 2.1, -projectile.radius, -projectile.radius * 2.7, projectile.radius, -projectile.radius * 3.4, -projectile.radius * .45);
+      context.stroke();
     } else if (projectile.visual === "coffee-rifle") {
       context.fillStyle = "#6f351f";
       context.fillRect(-projectile.radius * 2.7, -projectile.radius * 0.7, projectile.radius * 4.8, projectile.radius * 1.4);
@@ -4135,7 +4734,7 @@ export class DoffaGame {
       context.rotate(player.facing + Math.PI / 2 + pose.lean);
       context.scale(pose.scaleX, pose.scaleY);
 
-      context.shadowBlur = player.moving ? 8 : 20;
+      context.shadowBlur = this.reducedEffects ? 0 : player.moving ? 8 : 20;
       context.shadowColor = player.accent;
       context.fillStyle = "#120e0b";
       context.strokeStyle = player.accent;
@@ -4246,7 +4845,7 @@ export class DoffaGame {
     if (!sprite) {
       return false;
     }
-    const targetHeight = 170;
+    const targetHeight = HERO_COMBAT_RENDER_HEIGHT;
     const frame = this.hero.art.directionalFrames[direction] ?? { index: 0 };
     const usesAtlas = useReactionSprite
       || useSecondaryAttackSprite
@@ -4267,9 +4866,15 @@ export class DoffaGame {
         : useFullMotionSprite
           ? fullMotionFrame.rows ?? 6
           : usesAtlas ? 2 : 1;
-    const sourceWidth = sprite.width / sourceColumns;
-    const sourceHeight = sprite.height / sourceRows;
-    const targetWidth = targetHeight * (sourceWidth / sourceHeight);
+    const renderMetrics = getSpriteRenderMetrics({
+      spriteWidth: sprite.width,
+      spriteHeight: sprite.height,
+      columns: sourceColumns,
+      rows: sourceRows,
+      targetHeight,
+      anchorY: HERO_COMBAT_ANCHOR_Y,
+    });
+    const { sourceWidth, sourceHeight, targetWidth } = renderMetrics;
     const sourceIndex = useReactionSprite
       ? reactionFrame.index
       : useSecondaryAttackSprite
@@ -4291,9 +4896,9 @@ export class DoffaGame {
       ?? fullMotionFrame?.state
       ?? motionFrame?.state;
     const renderBob = authoredMotion
-      ? authoredState === "idle" ? pose.bob * 0.35 : 0
+      ? authoredState === "idle" ? pose.bob * 0.35 : authoredState === "run" ? pose.bob : 0
       : pose.bob;
-    const renderLean = authoredMotion ? 0 : pose.lean;
+    const renderLean = authoredMotion && authoredState !== "run" ? 0 : pose.lean;
     const renderScaleX = authoredMotion ? 1 : pose.scaleX;
     const renderScaleY = authoredMotion ? 1 : pose.scaleY;
 
@@ -4318,7 +4923,7 @@ export class DoffaGame {
     context.rotate(renderLean);
     context.scale((flipX ? -1 : 1) * renderScaleX, renderScaleY);
     context.imageSmoothingEnabled = false;
-    context.shadowBlur = player.moving ? 6 : 13;
+    context.shadowBlur = this.reducedEffects ? 0 : player.moving ? 6 : 13;
     context.shadowColor = player.accent;
     if (usesAtlas) {
       const selectedFrame = useReactionSprite
@@ -4338,16 +4943,16 @@ export class DoffaGame {
         sourceY,
         sourceWidth,
         sourceHeight,
-        -targetWidth / 2,
-        -targetHeight * 0.74,
+        renderMetrics.destinationX,
+        renderMetrics.destinationY,
         targetWidth,
         targetHeight,
       );
     } else {
       context.drawImage(
         sprite,
-        -targetWidth / 2,
-        -targetHeight * 0.74,
+        renderMetrics.destinationX,
+        renderMetrics.destinationY,
         targetWidth,
         targetHeight,
       );
@@ -4364,7 +4969,7 @@ export class DoffaGame {
       context.globalAlpha = 0.32 + pose.strike * 0.68;
       context.strokeStyle = player.accent;
       context.fillStyle = player.secondary;
-      context.shadowBlur = 24;
+      context.shadowBlur = this.reducedEffects ? 0 : 24;
       context.shadowColor = player.accent;
       context.lineCap = "round";
 
@@ -4386,6 +4991,16 @@ export class DoffaGame {
         context.moveTo(27, 0);
         context.lineTo(72, 0);
         context.stroke();
+      } else if (attackVisual === "dagger") {
+        context.lineWidth = 5;
+        context.beginPath();
+        context.arc(8, 0, 42, -0.6, 0.6);
+        context.stroke();
+      } else if (attackVisual === "punch") {
+        context.lineWidth = 7;
+        context.beginPath();
+        context.arc(58, 0, 10 + pose.strike * 18, 0, TAU);
+        context.stroke();
       } else if (attackVisual === "bow") {
         context.lineWidth = 4;
         context.beginPath();
@@ -4406,6 +5021,21 @@ export class DoffaGame {
           context.lineTo(65 + pose.strike * 18, offset * 92);
           context.stroke();
         }
+      } else if (attackVisual === "gold-pistol") {
+        context.lineWidth = 4;
+        context.beginPath();
+        context.moveTo(35, 0);
+        context.lineTo(88 + pose.strike * 20, 0);
+        context.stroke();
+        context.beginPath();
+        context.arc(42, 0, 5 + pose.strike * 7, 0, TAU);
+        context.fill();
+      } else if (attackVisual === "cigarette-butt") {
+        context.lineWidth = 3;
+        context.beginPath();
+        context.moveTo(32, 0);
+        context.quadraticCurveTo(58, -18, 86 + pose.strike * 18, 0);
+        context.stroke();
       } else if (attackVisual === "coffee-rifle") {
         context.lineWidth = 5;
         context.beginPath();
@@ -4442,7 +5072,7 @@ export class DoffaGame {
     context.save();
     context.globalAlpha = Math.min(1, opacity * 1.65);
     context.fillStyle = entry.color;
-    context.shadowBlur = 10;
+    context.shadowBlur = this.reducedEffects ? 0 : 10;
     context.shadowColor = "rgba(0, 0, 0, 0.9)";
     context.font = `900 ${entry.size}px Arial Narrow, sans-serif`;
     context.textAlign = "center";
@@ -4684,7 +5314,7 @@ export class DoffaGame {
     context.translate(enemy.x, enemy.y);
     const facing = Math.atan2(this.player.y - enemy.y, this.player.x - enemy.x);
     context.rotate(facing + Math.PI / 2);
-    context.shadowBlur = enemy.isBoss ? 24 : enemy.isElite ? 18 : 11;
+    context.shadowBlur = this.reducedEffects ? 0 : enemy.isBoss ? 24 : enemy.isElite ? 18 : 11;
     context.shadowColor = enemy.hitFlash > 0 ? "#fff4d0" : "#a53d25";
     context.strokeStyle = enemy.hitFlash > 0 ? "#fff4d0" : "#d56b3c";
     context.fillStyle = enemy.hitFlash > 0 ? "#e9c695" : "#27110d";
@@ -4734,7 +5364,7 @@ export class DoffaGame {
       context.fill();
     } else if (enemy.type === "brass_colossus") {
       if (enemy.state === "windup") {
-        context.shadowBlur = 32;
+        context.shadowBlur = this.reducedEffects ? 0 : 32;
         context.shadowColor = "#ef9a4a";
       }
       context.beginPath();
@@ -4904,12 +5534,16 @@ export class DoffaGame {
       return;
     }
     const targetHeight = art?.renderHeight ?? enemy.radius * 3.5;
-    const sourceWidth = directionalFrame
-      ? renderedSprite.width / atlasColumns
-      : renderedSprite.width;
-    const sourceHeight = directionalFrame ? renderedSprite.height / atlasRows : renderedSprite.height;
-    const targetWidth = targetHeight * (sourceWidth / sourceHeight);
     const anchorY = art?.anchorY ?? 0.6;
+    const renderMetrics = getSpriteRenderMetrics({
+      spriteWidth: renderedSprite.width,
+      spriteHeight: renderedSprite.height,
+      columns: directionalFrame ? atlasColumns : 1,
+      rows: directionalFrame ? atlasRows : 1,
+      targetHeight,
+      anchorY,
+    });
+    const { sourceWidth, sourceHeight, targetWidth } = renderMetrics;
     const facingLeft = Math.cos(enemy.facing ?? 0) < 0;
     const floating = enemy.type === "ember_oracle"
       || enemy.type === "smoke_revenant"
@@ -4919,7 +5553,7 @@ export class DoffaGame {
       ? motionFrame.state === "idle" && floating
         ? Math.sin(enemy.animationClock * 0.82 + enemy.id) * 2.5
         : motionFrame.state === "move"
-          ? Math.abs(Math.sin(enemy.animationClock)) * 1.5
+          ? -Math.abs(Math.sin(enemy.animationClock)) * 2.6
           : 0
       : floating ? Math.sin(enemy.phaseTimer * 2.4 + enemy.id) * 4 : 0;
 
@@ -4938,9 +5572,9 @@ export class DoffaGame {
     }
     context.scale(!directionalFrame && facingLeft ? -1 : 1, 1);
     context.imageSmoothingEnabled = false;
-    context.shadowBlur = enemy.isBoss ? 25 : enemy.isElite ? 19 : 11;
+    context.shadowBlur = this.reducedEffects ? 0 : enemy.isBoss ? 25 : enemy.isElite ? 19 : 11;
     context.shadowColor = enemy.hitFlash > 0 ? "#fff4d0" : "#a53d25";
-    if (enemy.hitFlash > 0) {
+    if (enemy.hitFlash > 0 && !this.reducedEffects) {
       context.filter = "brightness(1.75) saturate(0.5)";
     }
     if (directionalFrame) {
@@ -4956,16 +5590,16 @@ export class DoffaGame {
         sourceY,
         sourceWidth,
         sourceHeight,
-        -targetWidth / 2,
-        -targetHeight * anchorY + bob,
+        renderMetrics.destinationX,
+        renderMetrics.destinationY + bob,
         targetWidth,
         targetHeight,
       );
     } else {
       context.drawImage(
         renderedSprite,
-        -targetWidth / 2,
-        -targetHeight * anchorY + bob,
+        renderMetrics.destinationX,
+        renderMetrics.destinationY + bob,
         targetWidth,
         targetHeight,
       );

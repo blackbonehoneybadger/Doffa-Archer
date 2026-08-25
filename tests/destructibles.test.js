@@ -11,6 +11,7 @@ import {
   validateDestructibleCatalog,
 } from "../src/game/destructibles.js";
 import { DoffaGame } from "../src/game/game.js";
+import { createHeroCombatProfile, getHeroDefinition } from "../src/game/heroes.js";
 
 test("every standard combat district has one transparent runtime prop", () => {
   assert.deepEqual(validateDestructibleCatalog(), []);
@@ -126,6 +127,39 @@ test("a live prop blocks actors and projectiles, then breaks and rewards once", 
   assert.equal(game.resolveEntityObstacles(freedActor), false);
 });
 
+test("melee hits and ranged shots still break props after every enemy is defeated", () => {
+  const melee = createDestructionHarness();
+  melee.enemies = [];
+  melee.projectiles = [];
+  melee.player = createHeroCombatProfile("honey-badger");
+  melee.player.x = 5;
+  melee.player.y = 135;
+  melee.hero = getHeroDefinition("honey-badger");
+  melee.emitHud = () => {};
+  melee.onVoice = () => {};
+  assert.equal(melee.hasAttackTargets(), true);
+  assert.equal(melee.fireAtNearestEnemy(), true);
+  assert.equal(melee.projectiles.length, 0);
+  assert.ok(melee.destructibles[0].hp < 20);
+
+  const ranged = createDestructionHarness();
+  ranged.enemies = [];
+  ranged.projectiles = [];
+  ranged.player = createHeroCombatProfile("honey-badger");
+  ranged.player.x = 0;
+  ranged.player.y = 135;
+  ranged.hero = getHeroDefinition("honey-badger");
+  ranged.emitHud = () => {};
+  ranged.onVoice = () => {};
+  assert.equal(ranged.selectWeapon("ranged"), true);
+  assert.equal(ranged.fireAtNearestEnemy(), true);
+  assert.equal(ranged.projectiles.every((projectile) => projectile.visual === "shuriken"), true);
+  for (let step = 0; step < 8 && ranged.destructibles[0].alive; step += 1) {
+    ranged.updateProjectiles(.04);
+  }
+  assert.ok(ranged.destructibles[0].hp < 20);
+});
+
 function createSafeRoomHarness() {
   const game = Object.create(DoffaGame.prototype);
   game.mode = "running";
@@ -163,6 +197,7 @@ function createSafeRoomHarness() {
   game.pointer = null;
   game.ownedAbilities = [];
   game.activeAbilityChoices = new Set();
+  game.roomTradeoffIds = [];
   game.pendingAbilityChoices = 0;
   game.choiceContext = null;
   game.runLevel = 1;
@@ -186,21 +221,25 @@ test("rest and event rooms resolve safely without creating combat waves", () => 
   assert.deepEqual(event.waves, []);
 
   const game = createSafeRoomHarness();
-  game.spawnRoom(15);
-  assert.equal(game.mode, "exit");
-  assert.equal(game.roomExitOpen, true);
-  assert.equal(game.wave, 0);
-  assert.equal(game.player.hp, 70);
-
   let choices = [];
   game.onAbilityChoice = (nextChoices) => {
     choices = nextChoices;
   };
+  game.spawnRoom(15);
+  assert.equal(game.mode, "choice");
+  assert.equal(game.roomExitOpen, false);
+  assert.equal(game.wave, 0);
+  assert.equal(game.player.hp, 40);
+  assert.equal(choices.length, 2);
+  assert.equal(game.chooseAbility(choices[0].id), true);
+  assert.equal(game.mode, "exit");
+
+  choices = [];
   game.room = 25;
   game.spawnRoom(25);
   assert.equal(game.mode, "choice");
   assert.equal(game.roomExitOpen, false);
-  assert.equal(choices.length, 3);
+  assert.equal(choices.length, 2);
   assert.equal(game.chooseAbility(choices[0].id), true);
   assert.equal(game.mode, "exit");
   assert.equal(game.roomExitOpen, true);

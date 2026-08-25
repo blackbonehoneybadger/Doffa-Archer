@@ -13,7 +13,10 @@ import {
 } from "./animation-player.js";
 import { getHeroLevelMultiplier, normalizeHeroProgress } from "./progression.js";
 
-const WEAPON_VISUALS = new Set(["katana", "bat", "hammer", "bow", "shuriken", "coffee-rifle"]);
+const WEAPON_VISUALS = new Set([
+  "katana", "shuriken", "bat", "cigarette-butt", "hammer", "gold-pistol",
+  "dagger", "bow", "punch", "coffee-rifle",
+]);
 const ART_BACKDROPS = new Set(["transparent", "light-checker"]);
 const STANDARD_MOTION_FRAMES = Object.freeze({
   idle: Object.freeze([0, 1]),
@@ -107,10 +110,11 @@ export const HEROES = Object.freeze([
     monogram: "HB",
     role: "VANGUARD",
     weapon: "BLACK STEEL KATANA / SHURIKEN",
-    description: "Close-range katana fighter. Every fourth strike or distant target releases a shuriken volley.",
+    description: "Close-range katana fighter. Switch manually to a fast shuriken volley when you need distance.",
     placeholder: "REFERENCE ART READY",
     unlocked: true,
     art: {
+      portraitSprite: "/assets/heroes/portraits/honey-badger-portrait-v1.png",
       sprite: "/assets/heroes/honey-badger-lean-v3.png",
       directionalSprite: "/assets/heroes/honey-badger-directions-v3.png",
       motionSprite: "/assets/heroes/honey-badger-motion-v3.png",
@@ -168,6 +172,7 @@ export const HEROES = Object.freeze([
     placeholder: "REFERENCE ART READY",
     unlocked: true,
     art: {
+      portraitSprite: "/assets/heroes/portraits/hadida-portrait-v1.png",
       sprite: "/assets/heroes/hadida-papakha-v3.png",
       directionalSprite: "/assets/heroes/hadida-directions-v3.png",
       motionSprite: "/assets/heroes/hadida-motion-v3.png",
@@ -198,6 +203,20 @@ export const HEROES = Object.freeze([
       attackInterval: 0.64,
       splashRadius: 0,
       weaponVisual: "bat",
+      secondaryWeapon: {
+        visual: "cigarette-butt",
+        attackRange: 690,
+        projectileSpeed: 760,
+        projectileCount: 2,
+        projectileRadius: 6,
+        projectileLifetime: 0.9,
+        damageMultiplier: 0.68,
+        pierce: 0,
+        wallBounces: 0,
+        splashRadius: 38,
+        spread: 0.16,
+        every: 1,
+      },
     },
   }),
   freezeHero({
@@ -206,10 +225,11 @@ export const HEROES = Object.freeze([
     monogram: "BY",
     role: "BREAKER",
     weapon: "FOUNDRY HAMMER",
-    description: "Heavy hammer carrier. Every standing attack bursts around its target.",
+    description: "Heavy hammer carrier. Switch manually to the gold pistol for precise ranged pressure.",
     placeholder: "REFERENCE ART READY",
     unlocked: true,
     art: {
+      portraitSprite: "/assets/heroes/portraits/boy-portrait-v1.png",
       sprite: "/assets/heroes/boy-identity-v3.png",
       directionalSprite: "/assets/heroes/boy-directions-v3.png",
       motionSprite: "/assets/heroes/boy-motion-v3.png",
@@ -240,6 +260,20 @@ export const HEROES = Object.freeze([
       attackInterval: 0.78,
       splashRadius: 115,
       weaponVisual: "hammer",
+      secondaryWeapon: {
+        visual: "gold-pistol",
+        attackRange: 760,
+        projectileSpeed: 980,
+        projectileCount: 1,
+        projectileRadius: 7,
+        projectileLifetime: 0.92,
+        damageMultiplier: 0.72,
+        pierce: 1,
+        wallBounces: 0,
+        splashRadius: 0,
+        spread: 0,
+        every: 1,
+      },
     },
   }),
   freezeHero({
@@ -252,6 +286,7 @@ export const HEROES = Object.freeze([
     placeholder: "REFERENCE ART READY",
     unlocked: true,
     art: {
+      portraitSprite: "/assets/heroes/portraits/mr-kroo-portrait-v1.png",
       sprite: "/assets/heroes/mr-kroo-bow-v4.png",
       directionalSprite: "/assets/heroes/mr-kroo-directions-v4.png",
       motionSprite: "/assets/heroes/mr-kroo-motion-v4.png",
@@ -282,6 +317,20 @@ export const HEROES = Object.freeze([
       attackInterval: 0.68,
       splashRadius: 0,
       weaponVisual: "bow",
+      secondaryWeapon: {
+        visual: "bow",
+        attackRange: 820,
+        projectileSpeed: 920,
+        projectileCount: 1,
+        projectileRadius: 6,
+        projectileLifetime: 1.05,
+        damageMultiplier: 0.92,
+        pierce: 1,
+        wallBounces: 0,
+        splashRadius: 0,
+        spread: 0,
+        every: 1,
+      },
     },
   }),
   freezeHero({
@@ -294,6 +343,7 @@ export const HEROES = Object.freeze([
     placeholder: "REFERENCE ART READY",
     unlocked: true,
     art: {
+      portraitSprite: "/assets/heroes/portraits/pata-portrait-v1.png",
       sprite: "/assets/heroes/pata.png",
       directionalSprite: "/assets/heroes/pata-directions.png",
       motionSprite: "/assets/heroes/pata-motion.png",
@@ -333,6 +383,20 @@ export const HEROES = Object.freeze([
       attackInterval: 0.28,
       splashRadius: 0,
       weaponVisual: "coffee-rifle",
+      secondaryWeapon: {
+        visual: "coffee-rifle",
+        attackRange: 1_000,
+        projectileSpeed: 1_100,
+        projectileCount: 1,
+        projectileRadius: 5,
+        projectileLifetime: 0.95,
+        damageMultiplier: 0.82,
+        pierce: 0,
+        wallBounces: 0,
+        splashRadius: 0,
+        spread: 0,
+        every: 1,
+      },
     },
   }),
 ]);
@@ -380,6 +444,8 @@ export function createHeroCombatProfile(
     shadow: hero.palette.shadow,
     weaponVisual: combat.weaponVisual,
     secondaryWeapon: combat.secondaryWeapon ? { ...combat.secondaryWeapon } : null,
+    selectedWeaponSlot: "melee",
+    weaponSwitchCooldown: 0,
     x: RUN_CONFIG.playerStartX,
     y: RUN_CONFIG.playerStartY,
     radius: 24,
@@ -442,13 +508,12 @@ export function validateHeroCatalog(heroes = HEROES) {
     const secondaryWeapon = hero.combat?.secondaryWeapon;
     if (secondaryWeapon && (
       !WEAPON_VISUALS.has(secondaryWeapon.visual)
-      || secondaryWeapon.visual === hero.combat.weaponVisual
       || !Number.isFinite(secondaryWeapon.attackRange)
-      || secondaryWeapon.attackRange <= hero.combat.attackRange
+      || secondaryWeapon.attackRange <= 0
       || !Number.isInteger(secondaryWeapon.projectileCount)
       || secondaryWeapon.projectileCount < 1
       || !Number.isInteger(secondaryWeapon.every)
-      || secondaryWeapon.every < 2
+      || secondaryWeapon.every < 1
       || !Number.isFinite(secondaryWeapon.damageMultiplier)
       || secondaryWeapon.damageMultiplier <= 0
       || secondaryWeapon.damageMultiplier > 1
@@ -457,6 +522,9 @@ export function validateHeroCatalog(heroes = HEROES) {
     }
 
     if (hero.art) {
+      if (!/^\/assets\/heroes\/portraits\/[a-z0-9-]+\.png$/.test(hero.art.portraitSprite)) {
+        errors.push(`Hero ${hero.id} has an unsafe portrait sprite path`);
+      }
       if (!/^\/assets\/heroes\/[a-z0-9-]+\.png$/.test(hero.art.sprite)) {
         errors.push(`Hero ${hero.id} has an unsafe sprite path`);
       }

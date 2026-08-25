@@ -143,33 +143,23 @@ test("combat numbers rise and expire without touching gameplay state", () => {
   assert.equal(game.player.hp, 100);
 });
 
-test("run level-up choice resumes the same room instead of advancing the route", () => {
+test("run level-up never interrupts the active room", () => {
   const game = createHarness();
   game.runXp = 35;
   let choiceContext = null;
-  let offeredAbility = null;
   game.onAbilityChoice = (choices, context) => {
     choiceContext = context;
-    offeredAbility = choices[0].id;
   };
 
   const result = game.grantRunExperience(10);
   assert.equal(result.levelsGained, 1);
-  assert.equal(game.mode, "choice");
-  assert.equal(game.room, 2);
-  assert.equal(choiceContext.source, "level");
-  assert.equal(choiceContext.runLevel, 2);
-
-  const previousSpeed = game.player.speed;
-  assert.equal(game.chooseAbility("not-offered"), false);
-  assert.equal(game.chooseAbility(offeredAbility), true);
   assert.equal(game.mode, "running");
   assert.equal(game.room, 2);
-  assert.notEqual(game.ownedAbilities.length, 0);
-  assert.ok(game.player.speed >= previousSpeed);
+  assert.equal(game.pendingAbilityChoices, 1);
+  assert.equal(choiceContext, null);
 });
 
-test("multiple levels queue one ability choice per level before combat resumes", () => {
+test("multiple levels collapse into one room-clear ability choice", () => {
   const game = createHarness();
   let choiceCount = 0;
   let offeredChoices = [];
@@ -181,14 +171,16 @@ test("multiple levels queue one ability choice per level before combat resumes",
   game.grantRunExperience(115);
   assert.equal(game.runLevel, 3);
   assert.equal(game.pendingAbilityChoices, 1);
-  assert.equal(choiceCount, 1);
+  assert.equal(choiceCount, 0);
 
-  game.chooseAbility(offeredChoices[0].id);
+  game.mode = "exit";
+  game.roomDefinition = { roomType: "combat" };
+  game.clearedRooms = 1;
+  game.onAudio = () => {};
+  game.persistActiveRunCheckpoint = () => {};
+  game.handleRoomExit();
   assert.equal(game.mode, "choice");
   assert.equal(game.pendingAbilityChoices, 0);
-  assert.equal(choiceCount, 2);
-
-  game.chooseAbility(offeredChoices[0].id);
-  assert.equal(game.mode, "running");
-  assert.equal(game.room, 2);
+  assert.equal(choiceCount, 1);
+  assert.equal(offeredChoices.length, 3);
 });

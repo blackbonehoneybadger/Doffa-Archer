@@ -1,4 +1,4 @@
-import { calculateTapReward, getRunEntryCost } from "../core/economy.js";
+import { calculateTapReward, getRunEntryCost, normalizeWager } from "../core/economy.js";
 import { ProfileStore } from "../core/profile-store.js";
 import { DEFAULT_TOUR_ID } from "../config/game-config.js";
 import { TOURS } from "../game/content.js";
@@ -19,6 +19,10 @@ import {
   getUnlockedHeroes,
 } from "../game/heroes.js";
 import { getHeroXpRequirement } from "../game/progression.js";
+import { getHeroWeaponPair } from "../game/hero-weapons.js";
+import { applyLocale, translate } from "../i18n/locales.js";
+import { CombatVoice } from "../audio/combat-voice.js";
+import { GameAudio } from "../audio/game-audio.js";
 
 function requiredElement(id) {
   const element = document.getElementById(id);
@@ -58,8 +62,16 @@ export function bootstrapApp() {
   const elements = {
     home: requiredElement("home-screen"),
     game: requiredElement("game-screen"),
+    languageSelect: requiredElement("language-select"),
+    audioToggle: requiredElement("audio-toggle"),
     canvas: requiredElement("game-canvas"),
     controlHint: requiredElement("control-hint"),
+    weaponMelee: requiredElement("weapon-melee"),
+    weaponRanged: requiredElement("weapon-ranged"),
+    weaponMeleeIcon: requiredElement("weapon-melee-icon"),
+    weaponRangedIcon: requiredElement("weapon-ranged-icon"),
+    weaponMeleeName: requiredElement("weapon-melee-name"),
+    weaponRangedName: requiredElement("weapon-ranged-name"),
     beans: requiredElement("top-beans"),
     bestRoom: requiredElement("best-room"),
     bossWins: requiredElement("boss-wins"),
@@ -97,9 +109,13 @@ export function bootstrapApp() {
     closeTourSelect: requiredElement("close-tour-select"),
     tapButton: requiredElement("tap-button"),
     tapBurst: requiredElement("tap-burst"),
+    tapBeans: requiredElement("tap-beans"),
     startRun: requiredElement("start-run"),
     startRunLabel: requiredElement("start-run-label"),
     entryCost: requiredElement("entry-cost"),
+    wagerSelector: requiredElement("wager-selector"),
+    wagerInput: requiredElement("wager-input"),
+    wagerAll: requiredElement("wager-all"),
     homeNotice: requiredElement("home-notice"),
     abortRun: requiredElement("abort-run"),
     hudRoom: requiredElement("hud-room"),
@@ -140,6 +156,11 @@ export function bootstrapApp() {
   };
 
   const profileStore = new ProfileStore();
+  const combatVoice = new CombatVoice({
+    locale: () => profileStore.profile.locale,
+    heroId: () => profileStore.profile.selectedHeroId,
+  });
+  const gameAudio = new GameAudio({ voice: combatVoice });
   const savedRun = profileStore.profile.activeRun;
   let selectedHero = getHeroDefinition(savedRun?.heroId ?? profileStore.profile.selectedHeroId)
     ?? getHeroDefinition(DEFAULT_HERO_ID);
@@ -251,9 +272,14 @@ export function bootstrapApp() {
     renderInventory(profile);
     const checkpoint = profile.activeRun;
     elements.startRunLabel.textContent = checkpoint
-      ? `RESUME ${selectedTour.code} // ROOM ${checkpoint.room}`
-      : `ENTER ${selectedTour.code}`;
-    elements.entryCost.textContent = checkpoint ? "PAID" : String(getRunEntryCost());
+      ? `${translate(profile.locale, "resume")} ${selectedTour.code} // ${checkpoint.room}`
+      : `${translate(profile.locale, "enter")} ${selectedTour.code}`;
+    elements.entryCost.textContent = checkpoint ? "PAID" : String(getRunEntryCost(profile.selectedWager));
+    if (document.activeElement !== elements.wagerInput) {
+      elements.wagerInput.value = String(profile.selectedWager);
+    }
+    elements.wagerInput.disabled = Boolean(checkpoint);
+    elements.wagerAll.disabled = Boolean(checkpoint) || profile.beans < 1;
     elements.changeHero.disabled = Boolean(checkpoint);
     elements.changeTour.disabled = Boolean(checkpoint);
     elements.openInventory.disabled = Boolean(checkpoint);
@@ -265,15 +291,17 @@ export function bootstrapApp() {
     elements.selectedTourDistrict.textContent = selectedTour.district;
     elements.selectedTourRoute.textContent = formatTourRoute(selectedTour);
     const checkpoint = profileStore.profile.activeRun;
+    const locale = profileStore.profile.locale;
     elements.startRunLabel.textContent = checkpoint
-      ? `RESUME ${selectedTour.code} // ROOM ${checkpoint.room}`
-      : `ENTER ${selectedTour.code}`;
+      ? `${translate(locale, "resume")} ${selectedTour.code} // ${checkpoint.room}`
+      : `${translate(locale, "enter")} ${selectedTour.code}`;
   };
 
   const selectTour = (tour) => {
     if (!tour?.unlocked) {
       return;
     }
+    gameAudio.play("select", { tourId: tour.id });
     selectedTour = tour;
     profileStore.update((draft) => {
       draft.selectedTourId = tour.id;
@@ -353,9 +381,17 @@ export function bootstrapApp() {
     elements.selectedHeroVitality.style.setProperty("--rating", selectedHero.ratings.vitality);
     elements.selectedHeroPower.style.setProperty("--rating", selectedHero.ratings.power);
     elements.selectedHeroSpeed.style.setProperty("--rating", selectedHero.ratings.speed);
+    const weapons = getHeroWeaponPair(selectedHero);
+    if (weapons) {
+      elements.weaponMeleeIcon.src = weapons.melee.icon;
+      elements.weaponMeleeName.textContent = weapons.melee.name;
+      elements.weaponRangedIcon.src = weapons.ranged.icon;
+      elements.weaponRangedName.textContent = weapons.ranged.name;
+    }
   };
 
   const selectHero = (hero) => {
+    gameAudio.play("select", { heroId: hero.id });
     selectedHero = hero;
     profileStore.update((draft) => {
       draft.selectedHeroId = hero.id;
@@ -438,6 +474,11 @@ export function bootstrapApp() {
     canvas: elements.canvas,
     profileStore,
     onProfile: renderProfile,
+    onVoice: (event, details = {}) => gameAudio.playVoice(event, {
+      heroId: selectedHero.id,
+      ...details,
+    }),
+    onAudio: (event, details = {}) => gameAudio.play(event, details),
     onHud({
       room,
       totalRooms,
@@ -454,6 +495,7 @@ export function bootstrapApp() {
       runXp,
       runXpToNext,
       weaponName,
+      weaponSlot,
       hp,
       maxHp,
     }) {
@@ -461,6 +503,11 @@ export function bootstrapApp() {
       elements.hudRoom.textContent = `${room} / ${totalRooms}`;
       elements.hudRoomName.textContent = roomName;
       elements.hudHeroLabel.textContent = `${heroName} L${heroLevel} // ${weaponName}`;
+      for (const button of [elements.weaponMelee, elements.weaponRanged]) {
+        const selected = button.dataset.slot === weaponSlot;
+        button.classList.toggle("is-selected", selected);
+        button.setAttribute("aria-pressed", String(selected));
+      }
       elements.hudHealthText.textContent = `${hp} / ${maxHp}`;
       elements.hudHealth.style.width = `${Math.max(0, (hp / maxHp) * 100)}%`;
       const safeRoom = roomType === "rest" || roomType === "event";
@@ -497,16 +544,21 @@ export function bootstrapApp() {
         : roomType === "event"
           ? "SELECT ONE FIELD UPGRADE"
           : waveCountdown === null
-            ? "DRAG TO MOVE · RELEASE TO FIRE"
+            ? translate(profileStore.profile.locale, "move")
             : `NEXT WAVE IN ${Math.max(1, Math.ceil(waveCountdown))}`;
     },
     onAbilityChoice(choices, context = {}) {
       const levelChoice = context.source === "level";
       const eventChoice = context.source === "event";
-      elements.abilityKicker.textContent = eventChoice
+      const tradeoffChoice = context.source === "tradeoff";
+      elements.abilityKicker.textContent = tradeoffChoice
+        ? context.roomName
+        : eventChoice
         ? selectedTour.id === "rootfall-jungle" ? "ROOTFALL COVENANT" : "BROKER'S FIELD CONTRACT"
         : levelChoice ? `POWER LEVEL ${context.runLevel}` : `${selectedTour.code} INITIATION`;
-      elements.abilityDescription.textContent = eventChoice
+      elements.abilityDescription.textContent = tradeoffChoice
+        ? "Choose one benefit and accept its cost. Every safe room demands a decision."
+        : eventChoice
         ? "The room offers one free field upgrade. Choose, then leave through the upper door."
         : context.pendingChoices > 0
           ? `${context.pendingChoices + 1} upgrades earned. Choose them one at a time.`
@@ -563,7 +615,9 @@ export function bootstrapApp() {
     },
   });
 
-  elements.entryCost.textContent = profileStore.profile.activeRun ? "PAID" : String(getRunEntryCost());
+  elements.entryCost.textContent = profileStore.profile.activeRun
+    ? "PAID"
+    : String(getRunEntryCost(profileStore.profile.selectedWager));
   renderSelectedTour();
   renderTourGrid();
   renderSelectedHero();
@@ -573,8 +627,52 @@ export function bootstrapApp() {
     elements.homeNotice.textContent = "SAFE CHECKPOINT FOUND. RESUME WITHOUT ANOTHER ENTRY CHARGE.";
   }
   game.startLoop();
+  const renderAudioToggle = () => {
+    elements.audioToggle.textContent = gameAudio.muted ? "🔇" : "🔊";
+    elements.audioToggle.setAttribute("aria-pressed", String(gameAudio.muted));
+    elements.audioToggle.setAttribute("aria-label", gameAudio.muted ? "Enable game audio" : "Mute game audio");
+  };
+  renderAudioToggle();
+  elements.languageSelect.value = profileStore.profile.locale;
+  applyLocale(profileStore.profile.locale);
+
+  elements.languageSelect.addEventListener("change", () => {
+    profileStore.update((draft) => {
+      draft.locale = elements.languageSelect.value;
+    });
+    elements.languageSelect.value = profileStore.profile.locale;
+    applyLocale(profileStore.profile.locale);
+    renderSelectedTour();
+    renderProfile(profileStore.profile);
+  });
+
+  window.addEventListener("pointerdown", () => gameAudio.unlock(), { once: true, capture: true });
+  elements.audioToggle.addEventListener("click", () => {
+    gameAudio.toggleMuted();
+    renderAudioToggle();
+    if (!gameAudio.muted) gameAudio.play("uiTap");
+  });
+
+  document.addEventListener("click", (event) => {
+    const button = event.target.closest?.("button");
+    if (button && button !== elements.audioToggle && button !== elements.tapButton) {
+      gameAudio.play("uiTap");
+    }
+  });
+
+  const commitWager = (value) => {
+    gameAudio.play("wager");
+    profileStore.update((draft) => {
+      draft.selectedWager = normalizeWager(Number(value));
+    });
+    elements.wagerInput.value = String(profileStore.profile.selectedWager);
+    renderProfile(profileStore.profile);
+  };
+  elements.wagerInput.addEventListener("change", () => commitWager(elements.wagerInput.value));
+  elements.wagerAll.addEventListener("click", () => commitWager(profileStore.profile.beans));
 
   elements.tapButton.addEventListener("click", () => {
+    gameAudio.play("beanTap");
     const reward = calculateTapReward();
     profileStore.update((draft) => {
       draft.beans += reward;
@@ -588,7 +686,34 @@ export function bootstrapApp() {
     elements.tapBurst.classList.add("show");
     window.clearTimeout(burstTimer);
     burstTimer = window.setTimeout(() => elements.tapButton.classList.remove("is-tapped"), 110);
+    while (elements.tapBeans.childElementCount > 18) {
+      elements.tapBeans.firstElementChild?.remove();
+    }
+    const directions = [-132, -84, -36, 28, 76, 126];
+    for (let index = 0; index < directions.length; index += 1) {
+      const bean = document.createElement("img");
+      bean.src = "/assets/ui/ordinary-coffee-bean-v1.png";
+      bean.alt = "";
+      bean.style.setProperty("--bean-x", `${directions[index]}px`);
+      bean.style.setProperty("--bean-y", `${-58 - (index % 3) * 28}px`);
+      bean.style.setProperty("--bean-r", `${-80 + index * 31}deg`);
+      bean.addEventListener("animationend", () => bean.remove(), { once: true });
+      elements.tapBeans.append(bean);
+    }
   });
+
+  for (const button of [elements.weaponMelee, elements.weaponRanged]) {
+    button.addEventListener("pointerdown", (event) => event.stopPropagation());
+    button.addEventListener("click", () => {
+      if (game.selectWeapon(button.dataset.slot)) {
+        for (const candidate of [elements.weaponMelee, elements.weaponRanged]) {
+          const selected = candidate === button;
+          candidate.classList.toggle("is-selected", selected);
+          candidate.setAttribute("aria-pressed", String(selected));
+        }
+      }
+    });
+  }
 
   elements.startRun.addEventListener("click", () => {
     const resuming = Boolean(profileStore.profile.activeRun);
