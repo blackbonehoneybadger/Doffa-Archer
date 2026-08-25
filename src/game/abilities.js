@@ -60,6 +60,56 @@ export const ABILITIES = Object.freeze([
     player.meleeRangePct = (player.meleeRangePct ?? 0) + 0.18;
   }),
   ability("execution_pressure", "×", "EXECUTION PRESSURE", "Critical hits deal 55 percent additional critical damage.", "stat", "A", (player) => { player.critMultiplier = Math.min(3.5, (player.critMultiplier ?? 2) + 0.55); }),
+  ability("diagonal_barrage", "◇", "DIAGONAL BARRAGE", "Ranged attacks add two diagonal pressure bolts at reduced total damage.", "trajectory", "S", (player) => {
+    player.extraShotAngles ??= [];
+    player.extraShotAngles.push(-Math.PI / 4, Math.PI / 4);
+    player.damage *= 0.88;
+  }),
+  ability("brass_chain", "↝", "BRASS CHAIN", "Projectiles jump to one nearby enemy after impact.", "trajectory", "S", (player) => {
+    player.enemyRicochets = Math.min(3, (player.enemyRicochets ?? 0) + 1);
+  }),
+  ability("cold_wake", "✣", "COLD WAKE", "Defeated enemies release a freezing wave around them.", "impact", "A", (player) => {
+    player.deathFrostRadius = Math.max(player.deathFrostRadius ?? 0, 125);
+  }),
+  ability("pressure_guard", "◒", "PRESSURE GUARD", "A rotating pressure guard destroys some incoming projectiles.", "survival", "S", (player) => {
+    player.projectileBlockChance = Math.min(0.42, (player.projectileBlockChance ?? 0) + 0.22);
+  }),
+  ability("strong_heart", "♥+", "STRONG HEART", "Recovery pickups restore 28 percent more health.", "recovery", "A", (player) => {
+    player.healMultiplier = (player.healMultiplier ?? 1) * 1.28;
+  }),
+  ability("fury_coil", "⚡", "FURY COIL", "Attack faster as health falls, up to 34 percent.", "stat", "S", (player) => {
+    player.lowHealthAttackSpeedPct = Math.max(player.lowHealthAttackSpeedPct ?? 0, 0.34);
+  }),
+  ability("grace_valve", "♡", "GRACE VALVE", "Receive up to 45 percent more healing as health falls.", "recovery", "A", (player) => {
+    player.lowHealthHealPct = Math.max(player.lowHealthHealPct ?? 0, 0.45);
+  }),
+  ability("evasive_smoke", "≋", "EVASIVE SMOKE", "Gain up to 18 percent dodge chance as health falls.", "survival", "S", (player) => {
+    player.lowHealthDodgePct = Math.max(player.lowHealthDodgePct ?? 0, 0.18);
+  }),
+  ability("smart_roast", "XP", "SMART ROAST", "Collect 25 percent more run experience.", "utility", "A", (player) => {
+    player.xpMultiplier = Math.max(player.xpMultiplier ?? 1, 1.25);
+  }),
+  ability("execution_mark", "☠", "EXECUTION MARK", "Non-boss hits have a small chance to execute weakened enemies.", "stat", "S", (player) => {
+    player.executeChance = Math.min(0.12, (player.executeChance ?? 0) + 0.055);
+  }),
+  ability("sluggish_powder", "≈", "SLUGGISH POWDER", "Enemy projectiles travel 24 percent slower.", "survival", "A", (player) => {
+    player.enemyProjectileSlowPct = Math.min(0.45, (player.enemyProjectileSlowPct ?? 0) + 0.24);
+  }),
+  ability("second_ignition", "1UP", "SECOND IGNITION", "Revive once per run with 55 percent health.", "survival", "S", (player) => {
+    player.extraLives = Math.max(player.extraLives ?? 0, 1);
+  }),
+  ability("cinder_orbit", "●", "CINDER ORBIT", "A controlled fire orbit damages and ignites nearby enemies.", "aura", "A", (player) => { player.auraFire = Math.max(player.auraFire ?? 0, 0.34); }),
+  ability("frost_orbit", "○", "FROST ORBIT", "A frost orbit damages and slows nearby enemies.", "aura", "A", (player) => { player.auraFrost = Math.max(player.auraFrost ?? 0, 0.30); }),
+  ability("toxic_orbit", "◍", "TOXIC ORBIT", "A toxic orbit damages and poisons nearby enemies.", "aura", "A", (player) => { player.auraPoison = Math.max(player.auraPoison ?? 0, 0.32); }),
+  ability("volt_orbit", "◉", "VOLT ORBIT", "An electric orbit shocks nearby enemies.", "aura", "S", (player) => { player.auraVolt = Math.max(player.auraVolt ?? 0, 0.38); }),
+  ability("cinder_strike", "♨↓", "CINDER STRIKE", "Periodically call a burning strike onto the nearest enemy.", "strike", "A", (player) => { player.strikeFire = Math.max(player.strikeFire ?? 0, 0.82); }),
+  ability("frost_strike", "❄↓", "FROST STRIKE", "Periodically call a slowing frost strike onto the nearest enemy.", "strike", "A", (player) => { player.strikeFrost = Math.max(player.strikeFrost ?? 0, 0.74); }),
+  ability("toxic_strike", "☣↓", "TOXIC STRIKE", "Periodically call a poisonous strike onto the nearest enemy.", "strike", "A", (player) => { player.strikePoison = Math.max(player.strikePoison ?? 0, 0.78); }),
+  ability("volt_strike", "ϟ↓", "VOLT STRIKE", "Periodically call a chain-lightning strike onto the nearest enemy.", "strike", "S", (player) => { player.strikeVolt = Math.max(player.strikeVolt ?? 0, 0.88); }),
+  ability("meteor_crucible", "☄", "METEOR CRUCIBLE", "Periodically drop a wide blast onto a group of enemies.", "meteor", "S", (player) => {
+    player.meteorDamagePct = Math.max(player.meteorDamagePct ?? 0, 1.35);
+    player.meteorRadius = Math.max(player.meteorRadius ?? 0, 115);
+  }),
 ]);
 
 export function chooseAbilityCards(rng, count = 3, ownedIds = []) {

@@ -1415,6 +1415,7 @@ export class DoffaGame {
     }
 
     this.updateEnemies(delta);
+    this.updatePlayerAbilityEffects(delta);
     this.resolveEnemySeparation();
     this.resolveAllEnemyObstacles();
     this.updateProjectiles(delta);
@@ -1511,7 +1512,9 @@ export class DoffaGame {
       this.player.attackTimer -= delta;
       if (this.player.attackTimer <= 0 && this.hasAttackTargets()) {
         const fired = this.fireAtNearestEnemy();
-        this.player.attackTimer = fired ? this.player.attackInterval : 0.08;
+        const missingHealth = 1 - this.player.hp / Math.max(1, this.player.maxHp);
+        const furySpeed = 1 + missingHealth * (this.player.lowHealthAttackSpeedPct ?? 0);
+        this.player.attackTimer = fired ? this.player.attackInterval / furySpeed : 0.08;
       }
     }
 
@@ -1687,6 +1690,7 @@ export class DoffaGame {
           burnDamagePct: this.player.burnDamagePct ?? 0,
           frostSlowPct: this.player.frostSlowPct ?? 0,
           poisonDamagePct: this.player.poisonDamagePct ?? 0,
+          enemyRicochets: this.player.enemyRicochets ?? 0,
           hitIds: new Set(),
           sourceWeaponSlot: this.player.selectedWeaponSlot,
           age: 0,
@@ -2766,8 +2770,11 @@ export class DoffaGame {
   updateProjectiles(delta) {
     for (const projectile of this.projectiles) {
       projectile.age += delta;
-      projectile.x += projectile.vx * delta;
-      projectile.y += projectile.vy * delta;
+      const travelDelta = projectile.friendly
+        ? delta
+        : delta * (1 - Math.min(0.55, this.player.enemyProjectileSlowPct ?? 0));
+      projectile.x += projectile.vx * travelDelta;
+      projectile.y += projectile.vy * travelDelta;
       this.handleProjectileObstacles(projectile);
 
       if (!projectile.alive) {
@@ -2892,6 +2899,7 @@ export class DoffaGame {
       if (projectile.critical) this.onAudio?.("critical", { heroId: this.hero.id, visual: projectile.visual });
       this.damageEnemy(enemy, projectile.damage, projectile.x, projectile.y, impactColor);
       this.applyPlayerElementalHit(enemy, projectile.damage, projectile);
+      this.applyEnemyRicochet(enemy, projectile);
       if (enemy.hp <= 0 && hpBefore > 0) {
         this.onVoice?.(projectile.sourceWeaponSlot === "ranged" ? "rangedFinisher" : "meleeFinisher");
       } else if (projectile.critical || projectile.damage >= enemy.maxHp * .28) {
@@ -2970,6 +2978,91 @@ export class DoffaGame {
     }
   }
 
+  applyEnemyRicochet(impactEnemy, projectile) {
+    let previous = impactEnemy;
+    const visited = new Set(projectile.hitIds ?? [impactEnemy.id]);
+    const jumps = Math.max(0, Math.min(3, projectile.enemyRicochets ?? 0));
+    for (let index = 0; index < jumps; index += 1) {
+      const target = this.enemies
+        .filter((enemy) => enemy.alive && !enemy.defeated && !visited.has(enemy.id))
+        .map((enemy) => ({ enemy, distance: distanceSquared(previous, enemy) }))
+        .filter(({ distance }) => distance <= 175 * 175)
+        .sort((first, second) => first.distance - second.distance)[0]?.enemy;
+      if (!target) break;
+      visited.add(target.id);
+      this.damageEnemy(target, projectile.damage * 0.52, target.x, target.y, "#d8b36b");
+      this.spawnParticles(target.x, target.y, "#d8b36b", 4, 85);
+      previous = target;
+    }
+  }
+
+  updatePlayerAbilityEffects(delta) {
+    const activeEnemies = this.enemies.filter((enemy) => enemy.alive && !enemy.defeated);
+    if (activeEnemies.length === 0) return;
+
+    const auraPower = (this.player.auraFire ?? 0) + (this.player.auraFrost ?? 0)
+      + (this.player.auraPoison ?? 0) + (this.player.auraVolt ?? 0);
+    if (auraPower > 0) {
+      this.player.auraTimer = (this.player.auraTimer ?? 0) - delta;
+      if (this.player.auraTimer <= 0) {
+        this.player.auraTimer += 0.55;
+        for (const enemy of activeEnemies) {
+          if (distanceSquared(this.player, enemy) > 112 * 112) continue;
+          const damage = this.player.damage * auraPower * 0.34;
+          this.damageEnemy(enemy, damage, enemy.x, enemy.y, "#d8a9ff");
+          this.applyPlayerElementalHit(enemy, damage, {
+            burnDamagePct: this.player.auraFire > 0 ? 0.35 : 0,
+            frostSlowPct: this.player.auraFrost > 0 ? 0.28 : 0,
+            poisonDamagePct: this.player.auraPoison > 0 ? 0.4 : 0,
+            chainDamagePct: this.player.auraVolt > 0 ? 0.18 : 0,
+          });
+        }
+      }
+    }
+
+    const strikePower = (this.player.strikeFire ?? 0) + (this.player.strikeFrost ?? 0)
+      + (this.player.strikePoison ?? 0) + (this.player.strikeVolt ?? 0);
+    if (strikePower > 0) {
+      this.player.strikeTimer = (this.player.strikeTimer ?? 0) - delta;
+      if (this.player.strikeTimer <= 0) {
+        this.player.strikeTimer += 2.4;
+        const target = activeEnemies
+          .slice()
+          .sort((first, second) => distanceSquared(this.player, first) - distanceSquared(this.player, second))[0];
+        const damage = this.player.damage * Math.min(1.65, strikePower);
+        this.damageEnemy(target, damage, target.x, target.y, "#8eeaff");
+        this.applyPlayerElementalHit(target, damage, {
+          burnDamagePct: this.player.strikeFire > 0 ? 0.45 : 0,
+          frostSlowPct: this.player.strikeFrost > 0 ? 0.38 : 0,
+          poisonDamagePct: this.player.strikePoison > 0 ? 0.55 : 0,
+          chainDamagePct: this.player.strikeVolt > 0 ? 0.3 : 0,
+        });
+        this.spawnParticles(target.x, target.y, "#8eeaff", 11, 150);
+      }
+    }
+
+    if ((this.player.meteorDamagePct ?? 0) > 0) {
+      this.player.meteorTimer = (this.player.meteorTimer ?? 0) - delta;
+      if (this.player.meteorTimer <= 0) {
+        this.player.meteorTimer += 4.6;
+        const target = activeEnemies[Math.floor(this.rng.next() * activeEnemies.length)];
+        const radiusSquared = (this.player.meteorRadius ?? 110) ** 2;
+        for (const enemy of activeEnemies) {
+          if (distanceSquared(target, enemy) <= radiusSquared) {
+            this.damageEnemy(
+              enemy,
+              this.player.damage * this.player.meteorDamagePct,
+              enemy.x,
+              enemy.y,
+              "#ff9b55",
+            );
+          }
+        }
+        this.spawnParticles(target.x, target.y, "#ff9b55", 18, 210);
+      }
+    }
+  }
+
   updateEnemyPlayerEffects(enemy, delta) {
     if (!enemy?.alive || enemy.defeated) return;
     if ((enemy.frostTimer ?? 0) > 0) {
@@ -3023,6 +3116,12 @@ export class DoffaGame {
         : Number.POSITIVE_INFINITY;
     const appliedDamage = Math.min(Math.max(1, amount), maximumHit);
     enemy.hp = Math.max(0, enemy.hp - appliedDamage);
+    if (!enemy.isBoss
+      && enemy.hp > 0
+      && enemy.hp <= enemy.maxHp * 0.35
+      && this.rng.next() < (this.player.executeChance ?? 0)) {
+      enemy.hp = 0;
+    }
     enemy.hitFlash = enemy.isBoss ? 0.14 : enemy.isElite ? 0.13 : 0.09;
     triggerEnemyHit(enemy);
     this.spawnCombatText(Math.max(1, Math.round(appliedDamage)), impactX, impactY - 12, color, 22);
@@ -3078,6 +3177,16 @@ export class DoffaGame {
         enemy.isBoss ? 46 : enemy.isElite ? 34 : 18,
         230,
       );
+      if ((this.player.deathFrostRadius ?? 0) > 0) {
+        const frostRadiusSquared = this.player.deathFrostRadius ** 2;
+        for (const candidate of this.enemies) {
+          if (candidate === enemy || !candidate.alive || candidate.defeated) continue;
+          if (distanceSquared(enemy, candidate) <= frostRadiusSquared) {
+            this.applyPlayerElementalHit(candidate, 0, { frostSlowPct: 0.45 });
+          }
+        }
+        this.spawnParticles(enemy.x, enemy.y, "#9eeaff", 10, 135);
+      }
       if ((this.player.bloodThirstPct ?? 0) > 0) {
         this.player.hp = Math.min(
           this.player.maxHp,
@@ -3162,6 +3271,10 @@ export class DoffaGame {
     const combinedRadius = projectile.radius + this.player.radius;
     if (distanceSquared(projectile, this.player) <= combinedRadius * combinedRadius) {
       projectile.alive = false;
+      if (this.rng.next() < (this.player.projectileBlockChance ?? 0)) {
+        this.spawnParticles(projectile.x, projectile.y, "#8eeaff", 7, 110);
+        return;
+      }
       this.damagePlayer(projectile.damage);
     }
   }
@@ -3171,6 +3284,11 @@ export class DoffaGame {
       return;
     }
 
+    const missingHealth = 1 - this.player.hp / Math.max(1, this.player.maxHp);
+    if (this.rng.next() < missingHealth * (this.player.lowHealthDodgePct ?? 0)) {
+      this.spawnCombatText("DODGE", this.player.x, this.player.y - 42, "#aeefff", 21);
+      return;
+    }
     const reduction = clamp(this.player.damageReduction ?? 0, 0, 0.75);
     const appliedDamage = Math.max(1, Math.round(amount * (1 - reduction)));
     this.player.hp = Math.max(0, this.player.hp - appliedDamage);
@@ -3181,6 +3299,14 @@ export class DoffaGame {
     this.spawnParticles(this.player.x, this.player.y, "#d74232", 14, 170);
 
     if (this.player.hp <= 0) {
+      if ((this.player.extraLives ?? 0) > 0) {
+        this.player.extraLives -= 1;
+        this.player.hp = Math.max(1, Math.round(this.player.maxHp * 0.55));
+        this.player.invulnerability = 2.2;
+        this.spawnCombatText("SECOND IGNITION", this.player.x, this.player.y - 50, "#ffd27a", 24);
+        this.spawnParticles(this.player.x, this.player.y, "#ffd27a", 24, 210);
+        return;
+      }
       this.onAudio?.("playerDefeat", { heroId: this.hero.id });
       this.onVoice?.("death");
       triggerPlayerDefeat(this.player);
@@ -3201,7 +3327,10 @@ export class DoffaGame {
       return 0;
     }
     const previousHp = this.player.hp;
-    this.player.hp = Math.min(this.player.maxHp, this.player.hp + Math.round(amount));
+    const missingHealth = 1 - this.player.hp / Math.max(1, this.player.maxHp);
+    const multiplier = (this.player.healMultiplier ?? 1)
+      * (1 + missingHealth * (this.player.lowHealthHealPct ?? 0));
+    this.player.hp = Math.min(this.player.maxHp, this.player.hp + Math.round(amount * multiplier));
     const restored = this.player.hp - previousHp;
     if (restored > 0) {
       this.onAudio?.("pickupHeal", { heroId: this.hero.id, value: restored });
@@ -3302,7 +3431,8 @@ export class DoffaGame {
   }
 
   grantRunExperience(amount) {
-    const result = grantRunXp({ level: this.runLevel, xp: this.runXp }, amount);
+    const adjustedAmount = Math.max(0, Math.round(amount * (this.player?.xpMultiplier ?? 1)));
+    const result = grantRunXp({ level: this.runLevel, xp: this.runXp }, adjustedAmount);
     this.runLevel = result.level;
     this.runXp = result.xp;
     this.runXpToNext = result.requirement;

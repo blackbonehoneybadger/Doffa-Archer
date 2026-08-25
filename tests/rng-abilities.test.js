@@ -60,9 +60,9 @@ test("run-progression abilities modify pickup, recovery, defense, and impact pro
 });
 
 test("the Doffa ability pool covers Archero-style trajectories, elements, defense, and recovery", () => {
-  assert.equal(ABILITIES.length, 24);
+  assert.equal(ABILITIES.length, 45);
   assert.deepEqual(new Set(ABILITIES.map(({ tier }) => tier)), new Set(["S", "A", "B"]));
-  for (const category of ["trajectory", "element", "survival", "recovery", "melee"]) {
+  for (const category of ["trajectory", "element", "survival", "recovery", "melee", "aura", "strike", "meteor"]) {
     assert.equal(ABILITIES.some((candidate) => candidate.category === category), true, category);
   }
   const player = {
@@ -78,4 +78,22 @@ test("the Doffa ability pool covers Archero-style trajectories, elements, defens
   assert.equal(player.frostSlowPct, 0.38);
   assert.equal(player.bloodThirstPct, 0.012);
   assert.equal(player.critMultiplier, 2.55);
+});
+
+test("extended ability branches stay bounded and migrate legacy combat profiles", () => {
+  const player = { damage: 100 };
+  for (const id of [
+    "diagonal_barrage", "brass_chain", "pressure_guard", "strong_heart",
+    "fury_coil", "evasive_smoke", "smart_roast", "second_ignition",
+    "cinder_orbit", "volt_strike", "meteor_crucible",
+  ]) applyAbility(player, id);
+  assert.equal(player.extraShotAngles.length, 2);
+  assert.equal(player.enemyRicochets, 1);
+  assert.equal(player.projectileBlockChance, 0.22);
+  assert.equal(player.healMultiplier, 1.28);
+  assert.equal(player.xpMultiplier, 1.25);
+  assert.equal(player.extraLives, 1);
+  assert.equal(player.auraFire, 0.34);
+  assert.equal(player.strikeVolt, 0.88);
+  assert.equal(player.meteorRadius, 115);
 });
