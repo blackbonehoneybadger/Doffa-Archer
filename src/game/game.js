@@ -4344,9 +4344,17 @@ export class DoffaGame {
     for (const obstacle of this.roomDefinition?.obstacles ?? []) {
       const pillar = obstacle.kind === "pillar" || obstacle.kind.endsWith("-pillar");
       const organic = ["root", "thorn", "fungal"].some((token) => obstacle.kind.includes(token));
+      const fungal = obstacle.kind.includes("fungal");
+      const thorn = obstacle.kind.includes("thorn");
+      const pipe = obstacle.kind === "pipe";
+      const crate = obstacle.kind === "crate";
       const radius = pillar ? 10 : 6;
+      const x = obstacle.x;
+      const y = obstacle.y;
+      const width = obstacle.width;
+      const height = obstacle.height;
       context.save();
-      context.shadowBlur = this.reducedEffects ? 0 : 14;
+      context.shadowBlur = 9;
       context.shadowColor = "rgba(0, 0, 0, 0.7)";
       const gradient = context.createLinearGradient(
         obstacle.x,
@@ -4354,8 +4362,9 @@ export class DoffaGame {
         obstacle.x,
         obstacle.y + obstacle.height,
       );
-      gradient.addColorStop(0, obstacle.kind === "crate" ? "#6b3824" : organic ? "#3f4a2d" : "#493428");
-      gradient.addColorStop(1, organic ? "#11150d" : "#17100d");
+      gradient.addColorStop(0, crate ? "#754427" : fungal ? "#584568" : thorn ? "#344b20" : organic ? "#5a482c" : pipe ? "#604638" : "#493428");
+      gradient.addColorStop(0.55, organic ? "#252515" : "#2c201a");
+      gradient.addColorStop(1, organic ? "#0d130b" : "#100b09");
       context.fillStyle = gradient;
       context.strokeStyle = palette.accent;
       context.lineWidth = 3;
@@ -4370,9 +4379,70 @@ export class DoffaGame {
       context.fill();
       context.stroke();
       context.shadowBlur = 0;
-      context.strokeStyle = palette.accent + "88";
-      context.lineWidth = 2;
-      if (pillar) {
+      context.lineWidth = Math.max(2, Math.min(width, height) * 0.055);
+      if (organic) {
+        context.strokeStyle = fungal ? "#b789cfaa" : thorn ? "#7ba943aa" : "#9b7047bb";
+        const horizontal = width >= height;
+        const lanes = horizontal ? 3 : 2;
+        for (let lane = 0; lane < lanes; lane += 1) {
+          context.beginPath();
+          if (horizontal) {
+            const laneY = y + height * (0.28 + lane * 0.23);
+            context.moveTo(x + 5, laneY);
+            context.bezierCurveTo(x + width * .28, laneY - 11, x + width * .65, laneY + 13, x + width - 5, laneY - 3);
+          } else {
+            const laneX = x + width * (0.36 + lane * 0.28);
+            context.moveTo(laneX, y + 5);
+            context.bezierCurveTo(laneX - 12, y + height * .3, laneX + 12, y + height * .7, laneX - 3, y + height - 5);
+          }
+          context.stroke();
+        }
+        if (fungal) {
+          context.fillStyle = "#d39be8";
+          for (let index = 0; index < 4; index += 1) {
+            const capX = x + width * (.18 + index * .21);
+            const capY = y + height * (.24 + (index % 2) * .42);
+            context.beginPath();
+            context.ellipse(capX, capY, Math.max(5, width * .07), Math.max(3, height * .09), 0, Math.PI, TAU);
+            context.fill();
+          }
+        } else if (thorn) {
+          context.fillStyle = "#b7c65b";
+          for (let index = 0; index < 6; index += 1) {
+            const thornX = x + 9 + (index * (width - 18)) / 5;
+            const thornY = y + (index % 2 ? height - 5 : 5);
+            context.beginPath();
+            context.moveTo(thornX - 4, thornY);
+            context.lineTo(thornX, thornY + (index % 2 ? -11 : 11));
+            context.lineTo(thornX + 4, thornY);
+            context.fill();
+          }
+        }
+      } else if (pipe) {
+        const horizontal = width >= height;
+        context.strokeStyle = "#d28a4faa";
+        context.lineWidth = 3;
+        const bands = 4;
+        for (let index = 1; index < bands; index += 1) {
+          context.beginPath();
+          if (horizontal) {
+            const bandX = x + (width * index) / bands;
+            context.moveTo(bandX, y + 4);
+            context.lineTo(bandX, y + height - 4);
+          } else {
+            const bandY = y + (height * index) / bands;
+            context.moveTo(x + 4, bandY);
+            context.lineTo(x + width - 4, bandY);
+          }
+          context.stroke();
+        }
+        context.fillStyle = "#f0a055";
+        context.beginPath();
+        context.arc(x + width * .24, y + height * .25, 4, 0, TAU);
+        context.arc(x + width * .76, y + height * .75, 4, 0, TAU);
+        context.fill();
+      } else if (pillar) {
+        context.strokeStyle = "#d99a55bb";
         context.beginPath();
         context.ellipse(
           obstacle.x + obstacle.width / 2,
@@ -4384,13 +4454,40 @@ export class DoffaGame {
           TAU,
         );
         context.stroke();
-      } else {
         context.beginPath();
-        context.moveTo(obstacle.x + 12, obstacle.y + 10);
-        context.lineTo(obstacle.x + obstacle.width - 12, obstacle.y + obstacle.height - 10);
-        context.moveTo(obstacle.x + obstacle.width - 12, obstacle.y + 10);
-        context.lineTo(obstacle.x + 12, obstacle.y + obstacle.height - 10);
+        context.ellipse(x + width / 2, y + height * .76, width * .32, height * .18, 0, 0, TAU);
         context.stroke();
+        context.fillStyle = "#f3b35b";
+        context.beginPath();
+        context.arc(x + width / 2, y + height / 2, Math.max(5, width * .09), 0, TAU);
+        context.fill();
+      } else if (crate) {
+        context.strokeStyle = "#dda15eaa";
+        context.lineWidth = 3;
+        const slats = Math.max(2, Math.floor(width / 34));
+        for (let index = 1; index < slats; index += 1) {
+          const slatX = x + (width * index) / slats;
+          context.beginPath();
+          context.moveTo(slatX, y + 5);
+          context.lineTo(slatX, y + height - 5);
+          context.stroke();
+        }
+        context.fillStyle = "#f0a45a";
+        for (const bolt of [[8, 8], [width - 8, 8], [8, height - 8], [width - 8, height - 8]]) {
+          context.beginPath();
+          context.arc(x + bolt[0], y + bolt[1], 2.5, 0, TAU);
+          context.fill();
+        }
+      } else {
+        context.strokeStyle = "#ee984baa";
+        context.beginPath();
+        context.moveTo(x + 8, y + height * .3);
+        context.lineTo(x + width - 8, y + height * .3);
+        context.moveTo(x + 8, y + height * .7);
+        context.lineTo(x + width - 8, y + height * .7);
+        context.stroke();
+        context.fillStyle = "#ff7b31";
+        context.fillRect(x + 8, y + height * .43, width - 16, Math.max(4, height * .14));
       }
       context.restore();
     }

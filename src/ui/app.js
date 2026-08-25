@@ -20,7 +20,7 @@ import {
 } from "../game/heroes.js";
 import { getHeroXpRequirement } from "../game/progression.js";
 import { getHeroWeaponPair } from "../game/hero-weapons.js";
-import { applyLocale, translate } from "../i18n/locales.js";
+import { applyLocale, translate, translateAbility } from "../i18n/locales.js";
 import { CombatVoice } from "../audio/combat-voice.js";
 import { GameAudio } from "../audio/game-audio.js";
 
@@ -53,9 +53,9 @@ export function isRunModeActive(mode) {
     || mode === "dying";
 }
 
-function formatTourRoute(tour) {
+function formatTourRoute(tour, locale = "en") {
   const guardianCount = tour.rooms.filter((room) => room.elite).length;
-  return `${tour.rooms.length} CHAMBERS // ${guardianCount} GUARDIANS // 1 BOSS`;
+  return translate(locale, "tour_route", { n: tour.rooms.length, g: guardianCount });
 }
 
 export function bootstrapApp() {
@@ -171,6 +171,8 @@ export function bootstrapApp() {
   let deferredInstallPrompt = null;
   let burstTimer = 0;
   let flushDeferredServiceWorkerUpdate = () => {};
+  const t = (key, values) => translate(profileStore.profile.locale, key, values);
+  const localizedTourCode = (tour) => t("tour_generic", { n: tour.code.match(/\d+/)?.[0] ?? tour.code });
 
   const openInventory = () => {
     renderInventory(profileStore.profile);
@@ -499,9 +501,9 @@ export function bootstrapApp() {
       hp,
       maxHp,
     }) {
-      elements.hudTour.textContent = tourCode;
+      elements.hudTour.textContent = t("tour_generic", { n: tourCode.match(/\d+/)?.[0] ?? tourCode });
       elements.hudRoom.textContent = `${room} / ${totalRooms}`;
-      elements.hudRoomName.textContent = roomName;
+      elements.hudRoomName.textContent = profileStore.profile.locale === "en" ? roomName : t("room_generic", { n: room });
       elements.hudHeroLabel.textContent = `${heroName} L${heroLevel} // ${weaponName}`;
       for (const button of [elements.weaponMelee, elements.weaponRanged]) {
         const selected = button.dataset.slot === weaponSlot;
@@ -512,15 +514,15 @@ export function bootstrapApp() {
       elements.hudHealth.style.width = `${Math.max(0, (hp / maxHp) * 100)}%`;
       const safeRoom = roomType === "rest" || roomType === "event";
       elements.hudWave.textContent = roomType === "rest"
-        ? "RECOVERY STATION"
-        : roomType === "event" ? "FIELD CONTRACT" : `WAVE ${wave} / ${totalWaves}`;
+        ? t("recovery_station")
+        : roomType === "event" ? t("field_contract") : t("wave", { a: wave, b: totalWaves });
       elements.hudWaveCountdown.textContent = exitOpen
-        ? "EXIT OPEN"
+        ? t("exit_open")
         : roomType === "event"
-          ? "SELECT UPGRADE"
+          ? t("select_upgrade")
           : roomType === "rest"
-            ? "SYSTEM STABLE"
-            : waveCountdown === null ? "FIGHT" : `NEXT ${Math.max(1, Math.ceil(waveCountdown))}S`;
+            ? t("system_stable")
+            : waveCountdown === null ? t("fight") : t("next_seconds", { n: Math.max(1, Math.ceil(waveCountdown)) });
       const completedWaves = exitOpen
         ? totalWaves
         : waveCountdown === null ? Math.max(0, wave - 1) : wave;
@@ -531,38 +533,38 @@ export function bootstrapApp() {
       elements.hudRunLevel.textContent = String(runLevel);
       elements.hudRunXpText.textContent = runXpToNext > 0
         ? `${runXp} / ${runXpToNext} XP`
-        : "MAX LEVEL";
+        : t("max_level");
       elements.hudRunXp.style.width = runXpToNext > 0
         ? `${Math.min(100, (runXp / runXpToNext) * 100)}%`
         : "100%";
       elements.controlHint.textContent = exitOpen
         ? roomType === "rest"
-          ? "RECOVERY COMPLETE · MOVE INTO THE OPEN DOOR"
+          ? t("recovery_hint")
           : roomType === "event"
-            ? "CONTRACT ACCEPTED · MOVE INTO THE OPEN DOOR"
-            : "ROOM CLEARED · MOVE INTO THE OPEN DOOR"
+            ? t("contract_hint")
+            : t("room_cleared_hint")
         : roomType === "event"
-          ? "SELECT ONE FIELD UPGRADE"
+          ? t("select_field_upgrade")
           : waveCountdown === null
             ? translate(profileStore.profile.locale, "move")
-            : `NEXT WAVE IN ${Math.max(1, Math.ceil(waveCountdown))}`;
+            : t("next_wave", { n: Math.max(1, Math.ceil(waveCountdown)) });
     },
     onAbilityChoice(choices, context = {}) {
       const levelChoice = context.source === "level";
       const eventChoice = context.source === "event";
       const tradeoffChoice = context.source === "tradeoff";
       elements.abilityKicker.textContent = tradeoffChoice
-        ? context.roomName
+        ? t("safe_bargain")
         : eventChoice
-        ? selectedTour.id === "rootfall-jungle" ? "ROOTFALL COVENANT" : "BROKER'S FIELD CONTRACT"
-        : levelChoice ? `POWER LEVEL ${context.runLevel}` : `${selectedTour.code} INITIATION`;
+        ? t("field_contract")
+        : levelChoice ? t("power_level", { n: context.runLevel }) : localizedTourCode(selectedTour);
       elements.abilityDescription.textContent = tradeoffChoice
-        ? "Choose one benefit and accept its cost. Every safe room demands a decision."
+        ? t("tradeoff_choice")
         : eventChoice
-        ? "The room offers one free field upgrade. Choose, then leave through the upper door."
+        ? t("event_choice")
         : context.pendingChoices > 0
-          ? `${context.pendingChoices + 1} upgrades earned. Choose them one at a time.`
-          : levelChoice ? "Level secured. Choose one upgrade." : "One upgrade. No undo.";
+          ? t("pending_choices", { n: context.pendingChoices + 1 })
+          : levelChoice ? t("level_choice") : t("one_upgrade");
       elements.abilityChoices.replaceChildren();
       for (const ability of choices) {
         const button = document.createElement("button");
@@ -575,10 +577,11 @@ export function bootstrapApp() {
         glyph.textContent = ability.glyph;
         icon.append(glyph);
 
+        const localizedAbility = translateAbility(profileStore.profile.locale, ability);
         const name = document.createElement("strong");
-        name.textContent = ability.name;
+        name.textContent = localizedAbility.name;
         const description = document.createElement("small");
-        description.textContent = ability.description;
+        description.textContent = localizedAbility.description;
         button.append(icon, name, description);
         button.addEventListener("click", () => {
           if (game.chooseAbility(ability.id)) {
@@ -592,19 +595,19 @@ export function bootstrapApp() {
     onRunEnd(result) {
       elements.abilityOverlay.hidden = true;
       elements.confirmOverlay.hidden = true;
-      elements.resultKicker.textContent = result.bossDefeated ? "TOUR CLEARED" : "RUN CLOSED";
+      elements.resultKicker.textContent = result.bossDefeated ? t("tour_cleared") : t("run_closed");
       elements.resultTitle.textContent = result.bossDefeated
-        ? result.tour.id === "rootfall-jungle" ? "THE ROOT TYRANT FELL." : "THE ROASTER FELL."
-        : "THE CHAMBER WON.";
+        ? t("boss_fell")
+        : t("chamber_won");
       elements.resultRoom.textContent = String(result.roomsCleared);
       elements.resultTour.textContent = result.tour.code;
       elements.resultHero.textContent = result.hero.name;
-      elements.resultRunLevel.textContent = `LEVEL ${result.runLevel}`;
+      elements.resultRunLevel.textContent = t("level", { n: result.runLevel });
       elements.resultBeans.textContent = `+${result.beanReward}`;
       elements.resultXp.textContent = `+${result.xpReward} XP`;
       elements.resultLevel.textContent = result.levelsGained > 0
-        ? `LEVEL ${result.heroLevelBefore} → ${result.heroLevelAfter}`
-        : `LEVEL ${result.heroLevelAfter}`;
+        ? `${t("level", { n: result.heroLevelBefore })} → ${result.heroLevelAfter}`
+        : t("level", { n: result.heroLevelAfter });
       const dropDefinition = getEquipmentDefinition(result.equipmentDrop?.itemId);
       const dropRarity = getRarityDefinition(result.equipmentDrop?.rarity);
       elements.resultDrop.textContent = dropDefinition && dropRarity

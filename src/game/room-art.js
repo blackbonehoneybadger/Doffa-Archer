@@ -268,11 +268,17 @@ export function personalizeRoomLayout(layout, roomId, roomNumber = 0) {
   }
 
   const seed = hashRoomId(`layout:${roomId}:${roomNumber}`);
+  const mirror = Boolean(mixRoomSeed(seed, 27) & 1);
+  const topology = mixRoomSeed(seed, 28) % 6;
+  const laneShift = (topology - 2.5) * 13;
   return {
     ...source,
     obstacles: obstacles.map((obstacle, index) => {
-      const x = obstacle.x + getLayoutOffset(seed, 31 + index * 4, 16);
-      const y = obstacle.y + getLayoutOffset(seed, 32 + index * 4, 18);
+      const authoredX = mirror ? 720 - obstacle.x - obstacle.width : obstacle.x;
+      const stagger = index % 2 === 0 ? laneShift : -laneShift;
+      const x = authoredX + getLayoutOffset(seed, 31 + index * 4, 28) + stagger;
+      const y = obstacle.y + getLayoutOffset(seed, 32 + index * 4, 32)
+        + (topology % 2 === 0 ? stagger : -stagger);
       return {
         ...obstacle,
         x: Math.round(clampLayoutValue(x, 58, 662 - obstacle.width)),
