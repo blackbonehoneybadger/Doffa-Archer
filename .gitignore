@@ -7,6 +7,15 @@ coverage/
 dist/
 .vercel/
 
+# Unity project output (the authored project lives in unity/DOFFA-Heroes)
+unity/DOFFA-Heroes/[Ll]ibrary/
+unity/DOFFA-Heroes/[Tt]emp/
+unity/DOFFA-Heroes/[Oo]bj/
+unity/DOFFA-Heroes/[Ll]ogs/
+unity/DOFFA-Heroes/[Uu]ser[Ss]ettings/
+unity/DOFFA-Heroes/[Bb]uilds/
+unity/DOFFA-Heroes/MemoryCaptures/
+
 # Local configuration and secrets
 .env
 .env.*

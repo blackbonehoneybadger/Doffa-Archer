@@ -66,6 +66,7 @@ test("nonlethal and lethal player damage emit different sound events", () => {
   game.player = createHeroCombatProfile("hadida");
   game.projectiles = [];
   game.keys = new Set();
+  game.rng = { next: () => 0.9 };
   game.spawnCombatText = () => {};
   game.spawnParticles = () => {};
   game.onVoice = () => {};

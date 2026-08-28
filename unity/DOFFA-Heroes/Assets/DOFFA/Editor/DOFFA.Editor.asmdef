@@ -1,0 +1,13 @@
+{
+  "name": "DOFFA.Editor",
+  "rootNamespace": "Doffa.Editor",
+  "references": [
+    "DOFFA.Runtime",
+    "Unity.InputSystem",
+    "Unity.ugui"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "autoReferenced": true
+}

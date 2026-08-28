@@ -14,6 +14,7 @@
     "preview:rootfall-variants": "node scripts/build-rootfall-room-variants-preview.mjs",
     "preview:rootfall-elites": "node scripts/build-rootfall-elite-animation-preview.mjs",
     "build:higgsfield-pages": "node scripts/build-higgsfield-multiframe-pages.mjs",
+    "check:unity": "bash scripts/check-unity-project.sh",
     "check": "node scripts/check-source.mjs && node scripts/validate-images.mjs && node scripts/secret-scan.mjs && node --test",
     "test": "npm run check"
   }

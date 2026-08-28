@@ -1,0 +1,9 @@
+{
+  "name": "DOFFA.Runtime",
+  "rootNamespace": "Doffa",
+  "references": [
+    "Unity.InputSystem",
+    "Unity.ugui"
+  ],
+  "autoReferenced": true
+}
