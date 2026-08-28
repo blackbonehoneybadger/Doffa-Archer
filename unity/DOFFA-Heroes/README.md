@@ -4,6 +4,8 @@ Open this folder with Unity `6000.3.22f1` and install Android Build Support.
 
 For a batch compile/import pass, set `UNITY_EDITOR` to that editor executable and run `npm run check:unity` from the repository root. The command intentionally fails when the approved Unity editor is unavailable.
 
+For the deterministic CI smoke gate, invoke Unity with `-batchmode -quit -executeMethod Doffa.Editor.PrototypeRoomSmokeValidator.ValidateForBatch`. On a clean project the gate creates and assigns `Assets/DOFFA/Settings/Rendering/DOFFA_UniversalRenderPipeline.asset` plus its `UniversalRendererData`, then verifies the exact editor version and Input System setup, regenerates `Room_Prototype_01`, saves all generated assets, checks required objects/components and serialized references, and verifies that the scene is enabled in Build Settings. It exits with code `1` on any validation failure. Generated assets remain under `Assets/DOFFA/Scenes`, `Assets/DOFFA/Materials/Prototype`, and `Assets/DOFFA/Settings/Rendering` so the CI job can upload them. The gate also writes `Artifacts/UnitySmoke/validation.json`; CI must require `success: true` to protect against silent editor exits.
+
 The existing browser game at the repository root remains the mechanics and balance reference while the production client is rebuilt here. Do not copy browser sprites into the 3D runtime as billboard characters.
 
 ## First editor pass

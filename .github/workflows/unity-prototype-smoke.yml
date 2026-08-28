@@ -1,0 +1,114 @@
+name: Unity prototype smoke
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - codex/unity-production-foundation
+    paths:
+      - .github/workflows/unity-prototype-smoke.yml
+      - scripts/check-unity-project.sh
+      - unity/DOFFA-Heroes/**
+
+permissions:
+  contents: read
+
+concurrency:
+  group: doffa-unity-license
+  cancel-in-progress: false
+
+jobs:
+  room-prototype:
+    name: Unity 6000.3.22f1 — room prototype
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Verify Unity project marker
+        shell: bash
+        working-directory: unity/DOFFA-Heroes
+        run: |
+          test -f ProjectSettings/ProjectVersion.txt
+          grep -Fxq 'm_EditorVersion: 6000.3.22f1' ProjectSettings/ProjectVersion.txt
+
+      - name: Verify Unity license configuration
+        shell: bash
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+          UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
+          UNITY_LICENSING_SERVER: ${{ secrets.UNITY_LICENSING_SERVER }}
+        run: |
+          if [[ -n "${UNITY_LICENSING_SERVER:-}" ]]; then
+            exit 0
+          fi
+
+          missing=0
+          for secret_name in UNITY_EMAIL UNITY_PASSWORD; do
+            if [[ -z "${!secret_name:-}" ]]; then
+              echo "::error::$secret_name is not configured in GitHub Actions secrets."
+              missing=1
+            fi
+          done
+
+          if [[ -z "${UNITY_LICENSE:-}" && -z "${UNITY_SERIAL:-}" ]]; then
+            echo "::error::Configure UNITY_LICENSE for Personal or UNITY_SERIAL for Pro."
+            missing=1
+          fi
+          exit "$missing"
+
+      - name: Import, compile, build, and validate Room_Prototype_01
+        id: unity-smoke
+        uses: game-ci/unity-builder@d829bfc901f2347c8fe18898f06712b66916ef42 # v5.0.0
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+          UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
+        with:
+          projectPath: unity/DOFFA-Heroes
+          unityVersion: 6000.3.22f1
+          customImage: unityci/editor:ubuntu-6000.3.22f1-base-3.2.2@sha256:da211182d3f22ef70bc521d858b1da932197e843ffce303d99736fe251d12364
+          targetPlatform: StandaloneLinux64
+          buildMethod: Doffa.Editor.PrototypeRoomSmokeValidator.ValidateForBatch
+          manualExit: true
+          allowDirtyBuild: true
+          unityLicensingServer: ${{ secrets.UNITY_LICENSING_SERVER }}
+
+      - name: Require successful Unity validation marker
+        shell: bash
+        run: |
+          marker='unity/DOFFA-Heroes/Artifacts/UnitySmoke/validation.json'
+          test -s "$marker"
+          test -s 'unity/DOFFA-Heroes/Assets/DOFFA/Scenes/Room_Prototype_01.unity'
+          test -s 'unity/DOFFA-Heroes/Assets/DOFFA/Settings/Rendering/DOFFA_UniversalRenderPipeline.asset'
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          const markerPath = 'unity/DOFFA-Heroes/Artifacts/UnitySmoke/validation.json';
+          const marker = JSON.parse(readFileSync(markerPath, 'utf8'));
+          if (marker.success !== true || marker.version !== '6000.3.22f1') {
+            console.error('Unity validation marker is missing success or has the wrong editor version.', marker);
+            process.exit(1);
+          }
+          NODE
+
+      - name: Upload Unity validation artifacts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: unity-prototype-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            unity/DOFFA-Heroes/Artifacts/UnitySmoke
+            unity/DOFFA-Heroes/Assets/DOFFA/Materials/Prototype
+            unity/DOFFA-Heroes/Assets/DOFFA/Scenes
+            unity/DOFFA-Heroes/Assets/DOFFA/Settings/Rendering
+            unity/DOFFA-Heroes/Packages/packages-lock.json
+            unity/DOFFA-Heroes/ProjectSettings
+          if-no-files-found: warn
+          retention-days: 14

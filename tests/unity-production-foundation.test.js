@@ -121,3 +121,39 @@ test('gray-room combat has telegraphed enemies, incoming damage, clearance, rest
   assert.match(performance, /Application\.targetFrameRate = targetFrameRate/);
   assert.match(acceptance, /Десятиминутный smoke test/);
 });
+
+test('Unity batch smoke gate bootstraps URP and requires a durable success marker', async () => {
+  const validator = await readFile(
+    'unity/DOFFA-Heroes/Assets/DOFFA/Editor/PrototypeRoomSmokeValidator.cs',
+    'utf8',
+  );
+  const editorAssembly = JSON.parse(await readFile(
+    'unity/DOFFA-Heroes/Assets/DOFFA/Editor/DOFFA.Editor.asmdef',
+    'utf8',
+  ));
+  const localCheck = await readFile('scripts/check-unity-project.sh', 'utf8');
+
+  assert.match(validator, /ValidateForBatch/);
+  assert.match(validator, /UniversalRenderPipelineAsset\.Create\(rendererData\)/);
+  assert.match(validator, /GraphicsSettings\.defaultRenderPipeline = pipelineAsset/);
+  assert.match(validator, /QualitySettings\.renderPipeline = pipelineAsset/);
+  assert.match(validator, /Artifacts\/UnitySmoke/);
+  assert.match(validator, /validation\.json/);
+  assert.match(validator, /EditorApplication\.Exit\(exitCode\)/);
+  assert.ok(editorAssembly.references.includes('Unity.RenderPipelines.Core.Runtime'));
+  assert.ok(editorAssembly.references.includes('Unity.RenderPipelines.Universal.Runtime'));
+  assert.match(localCheck, /PrototypeRoomSmokeValidator\.ValidateForBatch/);
+});
+
+test('trusted-branch Unity workflow pins actions, editor image, and validation method', async () => {
+  const workflow = await readFile('.github/workflows/unity-prototype-smoke.yml', 'utf8');
+
+  assert.match(workflow, /codex\/unity-production-foundation/);
+  assert.match(workflow, /game-ci\/unity-builder@d829bfc901f2347c8fe18898f06712b66916ef42/);
+  assert.match(workflow, /ubuntu-6000\.3\.22f1-base-3\.2\.2@sha256:da211182d3f22ef70bc521d858b1da932197e843ffce303d99736fe251d12364/);
+  assert.match(workflow, /buildMethod: Doffa\.Editor\.PrototypeRoomSmokeValidator\.ValidateForBatch/);
+  assert.match(workflow, /Require successful Unity validation marker/);
+  assert.match(workflow, /UNITY_LICENSE/);
+  assert.match(workflow, /UNITY_SERIAL/);
+  assert.doesNotMatch(workflow, /pull_request_target/);
+});

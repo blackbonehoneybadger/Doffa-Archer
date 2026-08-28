@@ -24,5 +24,5 @@ fi
   -nographics \
   -quit \
   -projectPath "$project_path" \
-  -executeMethod Doffa.Editor.PrototypeRoomBuilder.Build \
+  -executeMethod Doffa.Editor.PrototypeRoomSmokeValidator.ValidateForBatch \
   -logFile -

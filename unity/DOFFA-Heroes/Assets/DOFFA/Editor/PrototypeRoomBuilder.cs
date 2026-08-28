@@ -17,6 +17,9 @@ namespace Doffa.Editor
         private const string ScenePath = SceneDirectory + "/Room_Prototype_01.unity";
         private const string MaterialDirectory = "Assets/DOFFA/Materials/Prototype";
 
+        public const string PrototypeScenePath = ScenePath;
+        public const string PrototypeMaterialDirectory = MaterialDirectory;
+
         [MenuItem("DOFFA/Prototype/Build Room Prototype 01")]
         public static void Build()
         {
