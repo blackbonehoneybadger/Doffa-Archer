@@ -28,6 +28,12 @@ Validator на чистом checkout:
 - Unity Pro: `UNITY_SERIAL`, `UNITY_EMAIL`, `UNITY_PASSWORD`.
 - Floating license: `UNITY_LICENSING_SERVER`.
 
+Если локального Unity Hub пока нет, доверенная ветка содержит одноразовый workflow
+`.github/workflows/unity-license-request.yml`. Он запускает тот же закреплённый образ Unity без сети,
+создаёт только файл запроса `Unity_6000.3.22f1.alf` и хранит artifact один день. Workflow не принимает
+пароли и не получает доступ к repository secrets. Полученный `.alf` всё равно должен быть обменян на
+`.ulf` через официальный портал Unity ID; после настройки `UNITY_LICENSE` bootstrap workflow следует удалить.
+
 Workflow не запускается из `pull_request_target` и получает только `contents: read`. Все внешние GitHub Actions закреплены полными commit SHA, а GameCI editor image — OCI digest.
 
 ## Артефакты успешного запуска

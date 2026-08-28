@@ -157,3 +157,16 @@ test('trusted-branch Unity workflow pins actions, editor image, and validation m
   assert.match(workflow, /UNITY_SERIAL/);
   assert.doesNotMatch(workflow, /pull_request_target/);
 });
+
+test('Unity Personal license bootstrap is isolated, immutable, and secret-free', async () => {
+  const workflow = await readFile('.github/workflows/unity-license-request.yml', 'utf8');
+
+  assert.match(workflow, /codex\/unity-production-foundation/);
+  assert.match(workflow, /--network none/);
+  assert.match(workflow, /-createManualActivationFile/);
+  assert.match(workflow, /Unity_6000\.3\.22f1\.alf/);
+  assert.match(workflow, /ubuntu-6000\.3\.22f1-base-3\.2\.2@sha256:da211182d3f22ef70bc521d858b1da932197e843ffce303d99736fe251d12364/);
+  assert.match(workflow, /retention-days: 1/);
+  assert.doesNotMatch(workflow, /secrets\./);
+  assert.doesNotMatch(workflow, /pull_request_target/);
+});

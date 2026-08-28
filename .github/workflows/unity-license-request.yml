@@ -1,0 +1,57 @@
+name: Unity Personal license request
+
+on:
+  push:
+    branches:
+      - codex/unity-production-foundation
+    paths:
+      - .github/workflows/unity-license-request.yml
+
+permissions:
+  contents: read
+
+jobs:
+  request:
+    name: Generate Unity 6000.3.22f1 activation request
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+
+    steps:
+      - name: Create manual activation request
+        shell: bash
+        run: |
+          set -euo pipefail
+          request_dir="$PWD/unity-license-request"
+          mkdir -p "$request_dir"
+
+          set +e
+          timeout 20m docker run --rm \
+            --network none \
+            --volume "$request_dir:/request" \
+            --workdir /request \
+            unityci/editor:ubuntu-6000.3.22f1-base-3.2.2@sha256:da211182d3f22ef70bc521d858b1da932197e843ffce303d99736fe251d12364 \
+            unity-editor \
+            -nographics \
+            -createManualActivationFile \
+            -quit \
+            -logFile /dev/stdout
+          unity_status=$?
+          set -e
+
+          activation_file="$(find "$request_dir" -maxdepth 1 -type f -name 'Unity_v*.alf' -size +0c -print -quit)"
+          if [[ -z "$activation_file" ]]; then
+            echo "::error::Unity did not create a manual activation request (editor exit $unity_status)."
+            exit 1
+          fi
+
+          mv "$activation_file" "$request_dir/Unity_6000.3.22f1.alf"
+          test -s "$request_dir/Unity_6000.3.22f1.alf"
+          echo "Unity activation request created successfully (editor exit $unity_status)."
+
+      - name: Upload activation request
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: unity-personal-activation-request-${{ github.run_id }}
+          path: unity-license-request/Unity_6000.3.22f1.alf
+          if-no-files-found: error
+          retention-days: 1
