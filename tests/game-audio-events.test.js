@@ -69,6 +69,7 @@ test("nonlethal and lethal player damage emit different sound events", () => {
   game.spawnCombatText = () => {};
   game.spawnParticles = () => {};
   game.onVoice = () => {};
+  game.rng = { next: () => 0.9 };
   game.onAudio = (event) => events.push(event);
 
   game.damagePlayer(5);

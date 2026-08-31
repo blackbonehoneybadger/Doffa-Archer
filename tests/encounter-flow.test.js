@@ -32,7 +32,7 @@ function createEncounterHarness(room = 1) {
 }
 
 test("cleared waves count down before spawning the next group", () => {
-  const game = createEncounterHarness(5);
+  const game = createEncounterHarness(4);
   game.updateEncounterState(0);
   assert.equal(game.waveCountdown, RUN_CONFIG.waveCountdownSeconds);
   assert.equal(game.projectiles.length, 0);

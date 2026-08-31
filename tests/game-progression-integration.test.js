@@ -133,10 +133,7 @@ test("a completed Rootfall run starts its own content and persists isolated tour
       bestRoom: 50,
       bossesDefeated: 1,
     });
-    assert.deepEqual(store.profile.tourProgress[DEFAULT_TOUR_ID], {
-      bestRoom: 0,
-      bossesDefeated: 0,
-    });
+    assert.equal(store.profile.tourProgress["forge-depths"], undefined);
     assert.equal(store.profile.beans, 55);
   } finally {
     globalThis.HTMLCanvasElement = previousCanvas;

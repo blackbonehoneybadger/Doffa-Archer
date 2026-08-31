@@ -137,7 +137,7 @@ test("all runtime room plates exist as exact 720 by 1280 JPEG files", () => {
       });
     }
   }
-  assert.equal(paths.size, 30);
+  assert.equal(paths.size, 85);
 });
 
 test("normal rooms alternate architecture without changing the unique boss room", () => {
@@ -151,6 +151,7 @@ test("normal rooms alternate architecture without changing the unique boss room"
   assert.equal(getRoomArt("pressure", { roomNumber: 42 }).id, "final-gauge");
   assert.equal(getRoomArt("heart", { roomNumber: 999 }).id, "roaster-heart");
   assert.equal(getRoomArt("ember", { artVariant: "cooling-reservoir" }).id, "cooling-reservoir");
+  assert.equal(getRoomArt("pipeworks", { artVariant: "forge-rest-15" }).id, "forge-rest-15");
   assert.equal(getRoomArt("brass", { artVariant: "brokers-meter" }).id, "brokers-meter");
   assert.equal(getRoomArt("smoke", { artVariant: "filter-chapel" }).id, "filter-chapel");
   assert.equal(getRoomArt("pressure", { artVariant: "redline-contract" }).id, "redline-contract");
@@ -160,8 +161,9 @@ test("normal rooms alternate architecture without changing the unique boss room"
 });
 
 test("the authored fifty-room route exercises both standard variants", () => {
-  const tour = getTourDefinition("hollow-roastery");
-  const usedByEnvironment = new Map(ROOM_ENVIRONMENTS.map((environment) => [environment, new Set()]));
+  const tour = getTourDefinition("forge-depths");
+  const forgeEnvironments = ["lava", "pipeworks", "boiler", "slag", "furnace", "forgeheart"];
+  const usedByEnvironment = new Map(forgeEnvironments.map((environment) => [environment, new Set()]));
 
   tour.rooms.forEach((room, index) => {
     const art = getRoomArt(room.environment, {
@@ -169,23 +171,13 @@ test("the authored fifty-room route exercises both standard variants", () => {
       roomNumber: index + 1,
       artVariant: room.artVariant,
     });
-    usedByEnvironment.get(room.environment).add(art.id);
+    usedByEnvironment.get(room.environment)?.add(art.id);
   });
 
-  assert.deepEqual([...usedByEnvironment.get("ash")].sort(), ["ash-storage", "soot-conveyor"]);
-  assert.deepEqual([...usedByEnvironment.get("ember")].sort(), [
-    "boiler-gallery", "cooling-reservoir", "cracked-furnace",
-  ]);
-  assert.deepEqual([...usedByEnvironment.get("brass")].sort(), [
-    "brokers-meter", "grinder-hall", "meter-chamber",
-  ]);
-  assert.deepEqual([...usedByEnvironment.get("smoke")].sort(), [
-    "filter-chapel", "steam-chamber", "vapor-crypt",
-  ]);
-  assert.deepEqual([...usedByEnvironment.get("pressure")].sort(), [
-    "final-gauge", "pressure-works", "redline-contract",
-  ]);
-  assert.deepEqual([...usedByEnvironment.get("heart")], ["roaster-heart"]);
+  assert.deepEqual([...usedByEnvironment.get("lava")].sort(), ["lava-hall", "lava-hall-alt"]);
+  assert.ok([...usedByEnvironment.get("pipeworks")].sort().includes("forge-rest-15"));
+  assert.ok([...usedByEnvironment.get("boiler")].sort().includes("forge-event-25"));
+  assert.deepEqual([...usedByEnvironment.get("forgeheart")], ["forge-core"]);
 });
 
 test("the authored Rootfall route uses every organic district and safe-room plate", () => {

@@ -72,20 +72,20 @@ test("cleared-room window releases enemies but retains visible props while prefe
 });
 
 test("the final-room asset window never crosses the tour boundary", () => {
-  const tour = getTourDefinition("hollow-roastery");
+  const tour = getTourDefinition("rootfall-jungle");
   const window = getRoomAssetWindow(tour, tour.rooms.length);
 
   assert.deepEqual(window.rooms, [tour.rooms.at(-1)]);
-  assert.deepEqual(sorted(window.enemyIds), ["hollow_roaster"]);
+  assert.deepEqual(sorted(window.enemyIds), ["rootfall_tyrant"]);
   assert.equal(window.roomSprites.size, 1);
 });
 
 test("invalid asset window requests are empty and side-effect free", () => {
   for (const [tour, roomNumber, options] of [
     [null, 1, undefined],
-    [getTourDefinition("hollow-roastery"), 0, undefined],
-    [getTourDefinition("hollow-roastery"), 1, { lookahead: -1 }],
-    [getTourDefinition("hollow-roastery"), 1, { combatRoomOffset: 2 }],
+    [getTourDefinition("rootfall-jungle"), 0, undefined],
+    [getTourDefinition("rootfall-jungle"), 1, { lookahead: -1 }],
+    [getTourDefinition("rootfall-jungle"), 1, { combatRoomOffset: 2 }],
   ]) {
     const window = getRoomAssetWindow(tour, roomNumber, options);
     assert.equal(window.rooms.length, 0);

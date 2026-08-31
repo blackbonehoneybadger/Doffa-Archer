@@ -166,12 +166,10 @@ export const ROOM_ART_CATALOG = Object.freeze({
       { id: "lava-hall-alt", sprite: "/assets/rooms/forge-depths-lava-hall-v2.jpg" },
     ]),
     specials: freezeVariants([
-      { id: "forge-rest", sprite: "/assets/rooms/forge-depths-rest-v1.jpg" },
-      { id: "forge-event", sprite: "/assets/rooms/forge-depths-event-v1.jpg" },
       { id: "forge-rest-15", sprite: "/assets/rooms/forge-depths-rest-v1.jpg" },
       { id: "forge-event-25", sprite: "/assets/rooms/forge-depths-event-v1.jpg" },
-      { id: "forge-rest-35", sprite: "/assets/rooms/forge-depths-rest-v1.jpg" },
-      { id: "forge-event-45", sprite: "/assets/rooms/forge-depths-event-v1.jpg" },
+      { id: "forge-rest-35", sprite: "/assets/rooms/forge-depths-rest-v2.jpg" },
+      { id: "forge-event-45", sprite: "/assets/rooms/forge-depths-event-v2.jpg" },
     ]),
   }),
   pipeworks: Object.freeze({
@@ -194,8 +192,8 @@ export const ROOM_ART_CATALOG = Object.freeze({
   }),
   furnace: Object.freeze({
     variants: freezeVariants([
-      { id: "furnace", sprite: "/assets/rooms/forge-depths-lava-hall-v1.jpg" },
-      { id: "furnace-alt", sprite: "/assets/rooms/forge-depths-slag-v2.jpg" },
+      { id: "furnace", sprite: "/assets/rooms/forge-depths-furnace-v1.jpg" },
+      { id: "furnace-alt", sprite: "/assets/rooms/forge-depths-furnace-v2.jpg" },
     ]),
   }),
   forgeheart: Object.freeze({
@@ -206,15 +204,13 @@ export const ROOM_ART_CATALOG = Object.freeze({
   shard: Object.freeze({
     variants: freezeVariants([
       { id: "shard-court", sprite: "/assets/rooms/crystal-caverns-shard-court-v1.jpg" },
-      { id: "shard-court-alt", sprite: "/assets/rooms/crystal-caverns-geode-v2.jpg" },
+      { id: "shard-court-alt", sprite: "/assets/rooms/crystal-caverns-shard-court-v2.jpg" },
     ]),
     specials: freezeVariants([
-      { id: "crystal-rest", sprite: "/assets/rooms/crystal-caverns-rest-v1.jpg" },
-      { id: "crystal-event", sprite: "/assets/rooms/crystal-caverns-event-v1.jpg" },
       { id: "crystal-rest-15", sprite: "/assets/rooms/crystal-caverns-rest-v1.jpg" },
       { id: "crystal-event-25", sprite: "/assets/rooms/crystal-caverns-event-v1.jpg" },
-      { id: "crystal-rest-35", sprite: "/assets/rooms/crystal-caverns-rest-v1.jpg" },
-      { id: "crystal-event-45", sprite: "/assets/rooms/crystal-caverns-event-v1.jpg" },
+      { id: "crystal-rest-35", sprite: "/assets/rooms/crystal-caverns-rest-v2.jpg" },
+      { id: "crystal-event-45", sprite: "/assets/rooms/crystal-caverns-event-v2.jpg" },
     ]),
   }),
   amethyst: Object.freeze({
@@ -246,12 +242,10 @@ export const ROOM_ART_CATALOG = Object.freeze({
       { id: "coral-alt", sprite: "/assets/rooms/sunken-ruins-coral-v2.jpg" },
     ]),
     specials: freezeVariants([
-      { id: "sunken-rest", sprite: "/assets/rooms/sunken-ruins-rest-v1.jpg" },
-      { id: "sunken-event", sprite: "/assets/rooms/sunken-ruins-event-v1.jpg" },
       { id: "sunken-rest-15", sprite: "/assets/rooms/sunken-ruins-rest-v1.jpg" },
       { id: "sunken-event-25", sprite: "/assets/rooms/sunken-ruins-event-v1.jpg" },
-      { id: "sunken-rest-35", sprite: "/assets/rooms/sunken-ruins-rest-v1.jpg" },
-      { id: "sunken-event-45", sprite: "/assets/rooms/sunken-ruins-event-v1.jpg" },
+      { id: "sunken-rest-35", sprite: "/assets/rooms/sunken-ruins-rest-v2.jpg" },
+      { id: "sunken-event-45", sprite: "/assets/rooms/sunken-ruins-event-v2.jpg" },
     ]),
   }),
   pillar: Object.freeze({
@@ -274,8 +268,8 @@ export const ROOM_ART_CATALOG = Object.freeze({
   }),
   depths: Object.freeze({
     variants: freezeVariants([
-      { id: "depths", sprite: "/assets/rooms/sunken-ruins-kelp-v1.jpg" },
-      { id: "depths-alt", sprite: "/assets/rooms/sunken-ruins-kelp-v2.jpg" },
+      { id: "depths", sprite: "/assets/rooms/sunken-ruins-depths-v1.jpg" },
+      { id: "depths-alt", sprite: "/assets/rooms/sunken-ruins-depths-v2.jpg" },
     ]),
   }),
   cinder: Object.freeze({
@@ -284,12 +278,10 @@ export const ROOM_ART_CATALOG = Object.freeze({
       { id: "cinder-alt", sprite: "/assets/rooms/ashen-wastes-cinder-v2.jpg" },
     ]),
     specials: freezeVariants([
-      { id: "ashen-rest", sprite: "/assets/rooms/ashen-wastes-rest-v1.jpg" },
-      { id: "ashen-event", sprite: "/assets/rooms/ashen-wastes-event-v1.jpg" },
       { id: "ashen-rest-15", sprite: "/assets/rooms/ashen-wastes-rest-v1.jpg" },
       { id: "ashen-event-25", sprite: "/assets/rooms/ashen-wastes-event-v1.jpg" },
-      { id: "ashen-rest-35", sprite: "/assets/rooms/ashen-wastes-rest-v1.jpg" },
-      { id: "ashen-event-45", sprite: "/assets/rooms/ashen-wastes-event-v1.jpg" },
+      { id: "ashen-rest-35", sprite: "/assets/rooms/ashen-wastes-rest-v2.jpg" },
+      { id: "ashen-event-45", sprite: "/assets/rooms/ashen-wastes-event-v2.jpg" },
     ]),
   }),
   basalt: Object.freeze({
@@ -307,7 +299,7 @@ export const ROOM_ART_CATALOG = Object.freeze({
   pyre: Object.freeze({
     variants: freezeVariants([
       { id: "pyre", sprite: "/assets/rooms/ashen-wastes-lava-cracks-v1.jpg" },
-      { id: "pyre-alt", sprite: "/assets/rooms/ashen-wastes-cinder-v2.jpg" },
+      { id: "pyre-alt", sprite: "/assets/rooms/ashen-wastes-pyre-v2.jpg" },
     ]),
   }),
   ashenheart: Object.freeze({
@@ -499,17 +491,20 @@ export function getRoomArtVariantIndex(environment, { roomId = "", roomNumber = 
 }
 
 export function getRoomArt(environment, roomIdentity = {}) {
+  if (roomIdentity.artVariant) {
+    for (const entry of Object.values(ROOM_ART_CATALOG)) {
+      const authored = [...entry.variants, ...(entry.specials ?? [])]
+        .find((variant) => variant.id === roomIdentity.artVariant);
+      if (authored) {
+        return authored;
+      }
+    }
+  }
+
   const entry = ROOM_ART_CATALOG[environment];
   const variants = entry?.variants;
   if (!variants?.length) {
     return null;
-  }
-  if (roomIdentity.artVariant) {
-    const authored = [...variants, ...(entry.specials ?? [])]
-      .find((variant) => variant.id === roomIdentity.artVariant);
-    if (authored) {
-      return authored;
-    }
   }
   return variants[getRoomArtVariantIndex(environment, roomIdentity)] ?? variants[0];
 }

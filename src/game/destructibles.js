@@ -190,7 +190,7 @@ export const DESTRUCTIBLE_CATALOG = Object.freeze({
     collision: { width: 68, height: 82 },
     debrisColor: "#ed6b32",
     art: {
-      sprite: "/assets/props/ember-canister-v1.png",
+      sprite: "/assets/props/forge-ember-canister-v1.png",
       renderWidth: 112,
       renderHeight: 126,
     },
@@ -204,7 +204,7 @@ export const DESTRUCTIBLE_CATALOG = Object.freeze({
     collision: { width: 84, height: 72 },
     debrisColor: "#ba873d",
     art: {
-      sprite: "/assets/props/brass-grinder-case-v1.png",
+      sprite: "/assets/props/forge-pipeworks-case-v1.png",
       renderWidth: 120,
       renderHeight: 120,
     },
@@ -218,7 +218,7 @@ export const DESTRUCTIBLE_CATALOG = Object.freeze({
     collision: { width: 72, height: 86 },
     debrisColor: "#8f4d2d",
     art: {
-      sprite: "/assets/props/pressure-tank-v1.png",
+      sprite: "/assets/props/forge-boiler-tank-v1.png",
       renderWidth: 118,
       renderHeight: 128,
     },
@@ -232,7 +232,7 @@ export const DESTRUCTIBLE_CATALOG = Object.freeze({
     collision: { width: 86, height: 70 },
     debrisColor: "#70412c",
     art: {
-      sprite: "/assets/props/ash-collection-crate-v1.png",
+      sprite: "/assets/props/forge-slag-crate-v1.png",
       renderWidth: 118,
       renderHeight: 118,
     },
@@ -246,7 +246,7 @@ export const DESTRUCTIBLE_CATALOG = Object.freeze({
     collision: { width: 68, height: 82 },
     debrisColor: "#766773",
     art: {
-      sprite: "/assets/props/smoke-filter-urn-v1.png",
+      sprite: "/assets/props/forge-furnace-urn-v1.png",
       renderWidth: 108,
       renderHeight: 124,
     },
@@ -260,7 +260,7 @@ export const DESTRUCTIBLE_CATALOG = Object.freeze({
     collision: { width: 72, height: 72 },
     debrisColor: "#6ec4ff",
     art: {
-      sprite: "/assets/props/mycelium-spore-bulb-v1.png",
+      sprite: "/assets/props/crystal-shard-pod-v1.png",
       renderWidth: 112,
       renderHeight: 112,
     },
@@ -274,7 +274,7 @@ export const DESTRUCTIBLE_CATALOG = Object.freeze({
     collision: { width: 72, height: 72 },
     debrisColor: "#b586ff",
     art: {
-      sprite: "/assets/props/mycelium-spore-bulb-v1.png",
+      sprite: "/assets/props/crystal-amethyst-bulb-v1.png",
       renderWidth: 112,
       renderHeight: 112,
     },
@@ -288,7 +288,7 @@ export const DESTRUCTIBLE_CATALOG = Object.freeze({
     collision: { width: 76, height: 66 },
     debrisColor: "#7ec8ff",
     art: {
-      sprite: "/assets/props/canopy-thornseed-pod-v1.png",
+      sprite: "/assets/props/crystal-geode-node-v1.png",
       renderWidth: 118,
       renderHeight: 118,
     },
@@ -302,7 +302,7 @@ export const DESTRUCTIBLE_CATALOG = Object.freeze({
     collision: { width: 76, height: 66 },
     debrisColor: "#d8a9ff",
     art: {
-      sprite: "/assets/props/rootdeep-sap-cocoon-v1.png",
+      sprite: "/assets/props/crystal-prism-cocoon-v1.png",
       renderWidth: 132,
       renderHeight: 108,
     },
@@ -316,7 +316,7 @@ export const DESTRUCTIBLE_CATALOG = Object.freeze({
     collision: { width: 72, height: 72 },
     debrisColor: "#47a7a0",
     art: {
-      sprite: "/assets/props/mire-resin-urn-v1.png",
+      sprite: "/assets/props/sunken-coral-pod-v1.png",
       renderWidth: 112,
       renderHeight: 126,
     },
@@ -330,7 +330,7 @@ export const DESTRUCTIBLE_CATALOG = Object.freeze({
     collision: { width: 68, height: 82 },
     debrisColor: "#5ec4cf",
     art: {
-      sprite: "/assets/props/smoke-filter-urn-v1.png",
+      sprite: "/assets/props/sunken-pillar-urn-v1.png",
       renderWidth: 108,
       renderHeight: 124,
     },
@@ -344,7 +344,7 @@ export const DESTRUCTIBLE_CATALOG = Object.freeze({
     collision: { width: 96, height: 70 },
     debrisColor: "#83b85f",
     art: {
-      sprite: "/assets/props/briar-heartwood-knot-v1.png",
+      sprite: "/assets/props/sunken-kelp-knot-v1.png",
       renderWidth: 132,
       renderHeight: 118,
     },
@@ -358,7 +358,7 @@ export const DESTRUCTIBLE_CATALOG = Object.freeze({
     collision: { width: 98, height: 64 },
     debrisColor: "#3aa8b5",
     art: {
-      sprite: "/assets/props/rootdeep-sap-cocoon-v1.png",
+      sprite: "/assets/props/sunken-tide-cocoon-v1.png",
       renderWidth: 132,
       renderHeight: 108,
     },
@@ -372,7 +372,7 @@ export const DESTRUCTIBLE_CATALOG = Object.freeze({
     collision: { width: 68, height: 82 },
     debrisColor: "#2d8f98",
     art: {
-      sprite: "/assets/props/mire-resin-urn-v1.png",
+      sprite: "/assets/props/sunken-depths-urn-v1.png",
       renderWidth: 112,
       renderHeight: 126,
     },
@@ -386,7 +386,7 @@ export const DESTRUCTIBLE_CATALOG = Object.freeze({
     collision: { width: 86, height: 70 },
     debrisColor: "#70412c",
     art: {
-      sprite: "/assets/props/ash-collection-crate-v1.png",
+      sprite: "/assets/props/ashen-cinder-crate-v1.png",
       renderWidth: 118,
       renderHeight: 118,
     },
@@ -400,7 +400,7 @@ export const DESTRUCTIBLE_CATALOG = Object.freeze({
     collision: { width: 84, height: 72 },
     debrisColor: "#4a342c",
     art: {
-      sprite: "/assets/props/brass-grinder-case-v1.png",
+      sprite: "/assets/props/ashen-basalt-case-v1.png",
       renderWidth: 120,
       renderHeight: 120,
     },
@@ -414,7 +414,7 @@ export const DESTRUCTIBLE_CATALOG = Object.freeze({
     collision: { width: 72, height: 86 },
     debrisColor: "#ff5c30",
     art: {
-      sprite: "/assets/props/pressure-tank-v1.png",
+      sprite: "/assets/props/ashen-magma-tank-v1.png",
       renderWidth: 118,
       renderHeight: 128,
     },
@@ -428,7 +428,7 @@ export const DESTRUCTIBLE_CATALOG = Object.freeze({
     collision: { width: 68, height: 82 },
     debrisColor: "#ed6b32",
     art: {
-      sprite: "/assets/props/ember-canister-v1.png",
+      sprite: "/assets/props/ashen-pyre-urn-v1.png",
       renderWidth: 112,
       renderHeight: 126,
     },

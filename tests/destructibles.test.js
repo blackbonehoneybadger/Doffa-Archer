@@ -15,7 +15,7 @@ import { createHeroCombatProfile, getHeroDefinition } from "../src/game/heroes.j
 
 test("every standard combat district has one transparent runtime prop", () => {
   assert.deepEqual(validateDestructibleCatalog(), []);
-  assert.equal(Object.keys(DESTRUCTIBLE_CATALOG).length, 10);
+  assert.equal(Object.keys(DESTRUCTIBLE_CATALOG).length, 28);
 
   for (const definition of Object.values(DESTRUCTIBLE_CATALOG)) {
     const path = join(process.cwd(), definition.art.sprite.slice(1));
@@ -30,7 +30,7 @@ test("every standard combat district has one transparent runtime prop", () => {
 });
 
 test("the authored combat route places destructibles in all five districts", () => {
-  const tour = getTourDefinition();
+  const tour = getTourDefinition("rootfall-jungle");
   const counts = new Map();
   for (const room of tour.rooms) {
     for (const destructible of room.destructibles) {
@@ -39,7 +39,7 @@ test("the authored combat route places destructibles in all five districts", () 
     }
   }
 
-  for (const environment of ["ash", "ember", "brass", "smoke", "pressure"]) {
+  for (const environment of ["canopy", "mire", "mycelium", "briar", "rootdeep"]) {
     assert.ok((counts.get(environment) ?? 0) >= 8, environment);
   }
   assert.equal(tour.rooms.filter((room) => room.elite && room.destructibles.length > 0).length, 0);
@@ -211,13 +211,13 @@ function createSafeRoomHarness() {
 }
 
 test("rest and event rooms resolve safely without creating combat waves", () => {
-  const rest = getRoomDefinition("hollow-roastery", 15);
-  const event = getRoomDefinition("hollow-roastery", 25);
+  const rest = getRoomDefinition("rootfall-jungle", 15);
+  const event = getRoomDefinition("rootfall-jungle", 25);
   assert.equal(rest.roomType, "rest");
-  assert.equal(rest.artVariant, "cooling-reservoir");
+  assert.equal(rest.artVariant, "clearwater-hollow");
   assert.deepEqual(rest.waves, []);
   assert.equal(event.roomType, "event");
-  assert.equal(event.artVariant, "brokers-meter");
+  assert.equal(event.artVariant, "symbiotic-shrine");
   assert.deepEqual(event.waves, []);
 
   const game = createSafeRoomHarness();

@@ -40,6 +40,7 @@ test("offline shell includes the data-driven content and progression catalogs", 
   const worker = readFileSync(join(root, "service-worker.js"), "utf8");
   assert.equal(worker.includes('"/src/core/active-run-checkpoint.js"'), true);
   assert.equal(worker.includes('"/src/game/content.js"'), true);
+  assert.equal(worker.includes('"/src/game/arena-tours.js"'), true);
   assert.equal(worker.includes('"/src/game/animation-page-cache.js"'), true);
   assert.equal(worker.includes('"/src/game/animation-player.js"'), true);
   assert.equal(worker.includes('"/src/game/asset-window.js"'), true);
@@ -124,7 +125,7 @@ test("offline shell includes the data-driven content and progression catalogs", 
   assert.equal(worker.includes('"/assets/enemies/hollow-roaster-motion-v2.png"'), true);
   assert.equal(worker.includes('"/assets/enemies/hollow-roaster-special-v1.png"'), true);
   assert.equal(worker.includes('"/assets/enemies/hollow-roaster-reactions-v1.png"'), true);
-  assert.equal(worker.includes("doffa-heroes-v0.18.6"), true);
+  assert.equal(worker.includes("doffa-heroes-v0.19.0"), true);
   assert.equal(worker.includes("const TOUR_ASSETS = ["), true);
   assert.equal(worker.includes('"/assets/rooms/rootfall-jungle-canopy-v2.jpg"'), true);
   assert.equal(worker.includes('"/assets/rooms/rootfall-jungle-mire-v2.jpg"'), true);
