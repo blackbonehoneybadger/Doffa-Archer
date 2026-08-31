@@ -135,38 +135,61 @@
         </div>
       </section>
 
-      <section id="game-screen" class="screen game-screen" hidden aria-label="Combat arena">
-        <div class="game-hud">
-          <div class="hud-block">
-            <span id="hud-tour">TOUR 01</span>
-            <strong id="hud-room">1 / 50</strong>
-            <small id="hud-room-name">ASH INTAKE</small>
-          </div>
-          <div class="health-wrap" aria-label="Hero health">
-            <div class="health-label"><span id="hud-hero-label">HONEY BADGER // BLACK STEEL KATANA / SHURIKEN</span><b id="hud-health-text">125 / 125</b></div>
-            <div class="health-track"><div id="hud-health" class="health-fill"></div></div>
-            <div class="encounter-label"><span id="hud-wave">WAVE 1 / 1</span><b id="hud-wave-countdown">FIGHT</b></div>
-            <div class="encounter-track"><i id="hud-wave-fill"></i></div>
-            <div class="run-level-label"><span>RUN LEVEL <b id="hud-run-level">1</b></span><small id="hud-run-xp-text">0 / 40 XP</small></div>
-            <div class="run-xp-track"><i id="hud-run-xp"></i></div>
-          </div>
-          <button id="abort-run" class="icon-button" type="button" aria-label="End run">×</button>
-        </div>
-        <div class="arena-shell">
-          <canvas id="game-canvas" width="720" height="1280" aria-label="DOFFA Heroes combat arena"></canvas>
-          <div class="weapon-selector" aria-label="Weapon selection">
-            <button id="weapon-melee" class="weapon-switch is-selected" type="button" data-slot="melee" aria-pressed="true">
-              <img id="weapon-melee-icon" src="/assets/ui/katana-v1.png" alt="">
-              <span data-i18n="melee">MELEE</span>
-              <small id="weapon-melee-name">KATANA</small>
+      <section id="game-screen" class="screen game-screen dofa-arena-screen" hidden aria-label="DOFA Arena combat">
+        <div class="arena-shell dofa-arena-shell">
+          <canvas id="game-canvas" width="720" height="1280" aria-label="DOFA Arena combat arena"></canvas>
+
+          <header class="dofa-arena-topbar" aria-label="Run status">
+            <button id="pause-run" class="dofa-pause-button" type="button" aria-label="Pause run">
+              <span aria-hidden="true"></span><span aria-hidden="true"></span>
             </button>
-            <button id="weapon-ranged" class="weapon-switch" type="button" data-slot="ranged" aria-pressed="false">
-              <img id="weapon-ranged-icon" src="/assets/ui/shuriken-v1.png" alt="">
-              <span data-i18n="ranged">RANGED</span>
-              <small id="weapon-ranged-name">SHURIKEN</small>
+            <div class="dofa-title-block">
+              <strong class="dofa-brand">DOFA ARENA</strong>
+              <span id="hud-tour-line" class="dofa-tour-line">TOUR 02 · ROOTFALL JUNGLE</span>
+              <div class="dofa-progress-track" aria-hidden="true"><i id="hud-tour-progress"></i></div>
+            </div>
+            <div class="dofa-room-counter" aria-label="Room progress">
+              <span id="hud-room">08 / 50</span>
+            </div>
+          </header>
+
+          <footer class="dofa-arena-controls" aria-label="Combat controls">
+            <div id="move-stick" class="dofa-move-stick" aria-hidden="true"><i id="move-knob"></i></div>
+            <div class="dofa-hero-card" aria-label="Hero status">
+              <img id="hud-hero-portrait" class="dofa-hero-portrait" src="/assets/heroes/portraits/honey-badger-portrait-v1.png" alt="">
+              <div class="dofa-hero-copy">
+                <strong id="hud-hero-name">HONEY BADGER</strong>
+                <span id="hud-hero-weapon">KATANA</span>
+                <div class="dofa-health-track"><i id="hud-health"></i></div>
+                <b id="hud-health-text">2450 / 2450</b>
+              </div>
+              <div class="dofa-weapon-icons" aria-label="Weapon selection">
+                <button id="weapon-ranged" class="dofa-weapon-icon" type="button" data-slot="ranged" aria-pressed="false" aria-label="Ranged weapon">
+                  <img id="weapon-ranged-icon" src="/assets/ui/shuriken-v1.png" alt="">
+                </button>
+                <button id="weapon-melee" class="dofa-weapon-icon is-selected" type="button" data-slot="melee" aria-pressed="true" aria-label="Melee weapon">
+                  <img id="weapon-melee-icon" src="/assets/ui/katana-v1.png" alt="">
+                </button>
+              </div>
+            </div>
+            <button id="attack-button" class="dofa-attack-button" type="button" aria-label="Attack">
+              <img id="attack-button-icon" src="/assets/ui/katana-v1.png" alt="">
             </button>
-          </div>
-          <div id="control-hint" class="control-hint" data-i18n="move">RIGHT SIDE: DRAG TO MOVE · LEFT SIDE: SWITCH WEAPON</div>
+          </footer>
+
+          <span id="hud-tour" hidden>TOUR 02</span>
+          <span id="hud-room-name" hidden>ROOTWAKE LANDING</span>
+          <span id="hud-hero-label" hidden>HONEY BADGER</span>
+          <span id="hud-wave" hidden>WAVE 1 / 1</span>
+          <span id="hud-wave-countdown" hidden>FIGHT</span>
+          <i id="hud-wave-fill" hidden></i>
+          <span id="hud-run-level" hidden>1</span>
+          <span id="hud-run-xp-text" hidden>0 / 40 XP</span>
+          <i id="hud-run-xp" hidden></i>
+          <button id="abort-run" type="button" hidden aria-label="End run">×</button>
+          <div id="control-hint" hidden></div>
+          <small id="weapon-melee-name" hidden>KATANA</small>
+          <small id="weapon-ranged-name" hidden>SHURIKEN</small>
         </div>
       </section>
 

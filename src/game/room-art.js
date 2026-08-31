@@ -11,6 +11,27 @@ export const ROOM_ENVIRONMENTS = Object.freeze([
   "briar",
   "rootdeep",
   "rootheart",
+  "lava",
+  "pipeworks",
+  "boiler",
+  "slag",
+  "furnace",
+  "forgeheart",
+  "shard",
+  "amethyst",
+  "geode",
+  "prism",
+  "crystalheart",
+  "coral",
+  "pillar",
+  "kelp",
+  "tide",
+  "depths",
+  "cinder",
+  "basalt",
+  "magma",
+  "pyre",
+  "ashenheart",
 ]);
 
 function freezeVariants(variants) {
@@ -139,6 +160,161 @@ export const ROOM_ART_CATALOG = Object.freeze({
       { id: "root-throne", sprite: "/assets/rooms/rootfall-jungle-rootheart-v1.jpg" },
     ]),
   }),
+  lava: Object.freeze({
+    variants: freezeVariants([
+      { id: "lava-hall", sprite: "/assets/rooms/forge-depths-lava-hall-v1.jpg" },
+      { id: "lava-hall-alt", sprite: "/assets/rooms/forge-depths-lava-hall-v2.jpg" },
+    ]),
+    specials: freezeVariants([
+      { id: "forge-rest", sprite: "/assets/rooms/forge-depths-rest-v1.jpg" },
+      { id: "forge-event", sprite: "/assets/rooms/forge-depths-event-v1.jpg" },
+      { id: "forge-rest-15", sprite: "/assets/rooms/forge-depths-rest-v1.jpg" },
+      { id: "forge-event-25", sprite: "/assets/rooms/forge-depths-event-v1.jpg" },
+      { id: "forge-rest-35", sprite: "/assets/rooms/forge-depths-rest-v1.jpg" },
+      { id: "forge-event-45", sprite: "/assets/rooms/forge-depths-event-v1.jpg" },
+    ]),
+  }),
+  pipeworks: Object.freeze({
+    variants: freezeVariants([
+      { id: "pipeworks", sprite: "/assets/rooms/forge-depths-pipeworks-v1.jpg" },
+      { id: "pipeworks-alt", sprite: "/assets/rooms/forge-depths-pipeworks-v2.jpg" },
+    ]),
+  }),
+  boiler: Object.freeze({
+    variants: freezeVariants([
+      { id: "boiler", sprite: "/assets/rooms/forge-depths-boiler-v1.jpg" },
+      { id: "boiler-alt", sprite: "/assets/rooms/forge-depths-boiler-v2.jpg" },
+    ]),
+  }),
+  slag: Object.freeze({
+    variants: freezeVariants([
+      { id: "slag", sprite: "/assets/rooms/forge-depths-slag-v1.jpg" },
+      { id: "slag-alt", sprite: "/assets/rooms/forge-depths-slag-v2.jpg" },
+    ]),
+  }),
+  furnace: Object.freeze({
+    variants: freezeVariants([
+      { id: "furnace", sprite: "/assets/rooms/forge-depths-lava-hall-v1.jpg" },
+      { id: "furnace-alt", sprite: "/assets/rooms/forge-depths-slag-v2.jpg" },
+    ]),
+  }),
+  forgeheart: Object.freeze({
+    variants: freezeVariants([
+      { id: "forge-core", sprite: "/assets/rooms/forge-depths-heart-v1.jpg" },
+    ]),
+  }),
+  shard: Object.freeze({
+    variants: freezeVariants([
+      { id: "shard-court", sprite: "/assets/rooms/crystal-caverns-shard-court-v1.jpg" },
+      { id: "shard-court-alt", sprite: "/assets/rooms/crystal-caverns-geode-v2.jpg" },
+    ]),
+    specials: freezeVariants([
+      { id: "crystal-rest", sprite: "/assets/rooms/crystal-caverns-rest-v1.jpg" },
+      { id: "crystal-event", sprite: "/assets/rooms/crystal-caverns-event-v1.jpg" },
+      { id: "crystal-rest-15", sprite: "/assets/rooms/crystal-caverns-rest-v1.jpg" },
+      { id: "crystal-event-25", sprite: "/assets/rooms/crystal-caverns-event-v1.jpg" },
+      { id: "crystal-rest-35", sprite: "/assets/rooms/crystal-caverns-rest-v1.jpg" },
+      { id: "crystal-event-45", sprite: "/assets/rooms/crystal-caverns-event-v1.jpg" },
+    ]),
+  }),
+  amethyst: Object.freeze({
+    variants: freezeVariants([
+      { id: "amethyst", sprite: "/assets/rooms/crystal-caverns-amethyst-v1.jpg" },
+      { id: "amethyst-alt", sprite: "/assets/rooms/crystal-caverns-amethyst-v2.jpg" },
+    ]),
+  }),
+  geode: Object.freeze({
+    variants: freezeVariants([
+      { id: "geode", sprite: "/assets/rooms/crystal-caverns-geode-v1.jpg" },
+      { id: "geode-alt", sprite: "/assets/rooms/crystal-caverns-geode-v2.jpg" },
+    ]),
+  }),
+  prism: Object.freeze({
+    variants: freezeVariants([
+      { id: "prism", sprite: "/assets/rooms/crystal-caverns-prism-v1.jpg" },
+      { id: "prism-alt", sprite: "/assets/rooms/crystal-caverns-prism-v2.jpg" },
+    ]),
+  }),
+  crystalheart: Object.freeze({
+    variants: freezeVariants([
+      { id: "crystal-throne", sprite: "/assets/rooms/crystal-caverns-heart-v1.jpg" },
+    ]),
+  }),
+  coral: Object.freeze({
+    variants: freezeVariants([
+      { id: "coral", sprite: "/assets/rooms/sunken-ruins-coral-v1.jpg" },
+      { id: "coral-alt", sprite: "/assets/rooms/sunken-ruins-coral-v2.jpg" },
+    ]),
+    specials: freezeVariants([
+      { id: "sunken-rest", sprite: "/assets/rooms/sunken-ruins-rest-v1.jpg" },
+      { id: "sunken-event", sprite: "/assets/rooms/sunken-ruins-event-v1.jpg" },
+      { id: "sunken-rest-15", sprite: "/assets/rooms/sunken-ruins-rest-v1.jpg" },
+      { id: "sunken-event-25", sprite: "/assets/rooms/sunken-ruins-event-v1.jpg" },
+      { id: "sunken-rest-35", sprite: "/assets/rooms/sunken-ruins-rest-v1.jpg" },
+      { id: "sunken-event-45", sprite: "/assets/rooms/sunken-ruins-event-v1.jpg" },
+    ]),
+  }),
+  pillar: Object.freeze({
+    variants: freezeVariants([
+      { id: "pillar", sprite: "/assets/rooms/sunken-ruins-pillar-v1.jpg" },
+      { id: "pillar-alt", sprite: "/assets/rooms/sunken-ruins-pillar-v2.jpg" },
+    ]),
+  }),
+  kelp: Object.freeze({
+    variants: freezeVariants([
+      { id: "kelp", sprite: "/assets/rooms/sunken-ruins-kelp-v1.jpg" },
+      { id: "kelp-alt", sprite: "/assets/rooms/sunken-ruins-kelp-v2.jpg" },
+    ]),
+  }),
+  tide: Object.freeze({
+    variants: freezeVariants([
+      { id: "tide", sprite: "/assets/rooms/sunken-ruins-flooded-court-v1.jpg" },
+      { id: "tide-alt", sprite: "/assets/rooms/sunken-ruins-tide-v2.jpg" },
+    ]),
+  }),
+  depths: Object.freeze({
+    variants: freezeVariants([
+      { id: "depths", sprite: "/assets/rooms/sunken-ruins-kelp-v1.jpg" },
+      { id: "depths-alt", sprite: "/assets/rooms/sunken-ruins-kelp-v2.jpg" },
+    ]),
+  }),
+  cinder: Object.freeze({
+    variants: freezeVariants([
+      { id: "cinder", sprite: "/assets/rooms/ashen-wastes-cinder-v1.jpg" },
+      { id: "cinder-alt", sprite: "/assets/rooms/ashen-wastes-cinder-v2.jpg" },
+    ]),
+    specials: freezeVariants([
+      { id: "ashen-rest", sprite: "/assets/rooms/ashen-wastes-rest-v1.jpg" },
+      { id: "ashen-event", sprite: "/assets/rooms/ashen-wastes-event-v1.jpg" },
+      { id: "ashen-rest-15", sprite: "/assets/rooms/ashen-wastes-rest-v1.jpg" },
+      { id: "ashen-event-25", sprite: "/assets/rooms/ashen-wastes-event-v1.jpg" },
+      { id: "ashen-rest-35", sprite: "/assets/rooms/ashen-wastes-rest-v1.jpg" },
+      { id: "ashen-event-45", sprite: "/assets/rooms/ashen-wastes-event-v1.jpg" },
+    ]),
+  }),
+  basalt: Object.freeze({
+    variants: freezeVariants([
+      { id: "basalt", sprite: "/assets/rooms/ashen-wastes-basalt-v1.jpg" },
+      { id: "basalt-alt", sprite: "/assets/rooms/ashen-wastes-basalt-v2.jpg" },
+    ]),
+  }),
+  magma: Object.freeze({
+    variants: freezeVariants([
+      { id: "magma", sprite: "/assets/rooms/ashen-wastes-magma-v1.jpg" },
+      { id: "magma-alt", sprite: "/assets/rooms/ashen-wastes-magma-v2.jpg" },
+    ]),
+  }),
+  pyre: Object.freeze({
+    variants: freezeVariants([
+      { id: "pyre", sprite: "/assets/rooms/ashen-wastes-lava-cracks-v1.jpg" },
+      { id: "pyre-alt", sprite: "/assets/rooms/ashen-wastes-cinder-v2.jpg" },
+    ]),
+  }),
+  ashenheart: Object.freeze({
+    variants: freezeVariants([
+      { id: "ashen-throne", sprite: "/assets/rooms/ashen-wastes-heart-v1.jpg" },
+    ]),
+  }),
 });
 
 const roomEntries = new Map();
@@ -152,6 +328,16 @@ const ORGANIC_ROOM_ENVIRONMENTS = new Set([
   "briar",
   "rootdeep",
   "rootheart",
+  "shard",
+  "amethyst",
+  "geode",
+  "prism",
+  "crystalheart",
+  "coral",
+  "pillar",
+  "kelp",
+  "tide",
+  "depths",
 ]);
 
 function hashRoomId(roomId) {

@@ -760,7 +760,7 @@ export class DoffaGame {
       }
 
       const point = this.toCanvasPoint(event);
-      if (event.pointerType !== "mouse" && point.x < VIEWPORT.width / 2) {
+      if (event.pointerType !== "mouse" && point.x >= VIEWPORT.width / 2) {
         return;
       }
       this.pointer = {
@@ -1104,6 +1104,22 @@ export class DoffaGame {
     if (!this.paused) {
       this.startLoop();
     }
+  }
+
+  requestManualAttack() {
+    if (this.mode !== "running" && this.mode !== "exit") {
+      return false;
+    }
+    if (!this.player || !this.hasAttackTargets()) {
+      return false;
+    }
+    const fired = this.fireAtNearestEnemy();
+    if (fired) {
+      const missingHealth = 1 - this.player.hp / Math.max(1, this.player.maxHp);
+      const furySpeed = 1 + missingHealth * (this.player.lowHealthAttackSpeedPct ?? 0);
+      this.player.attackTimer = this.player.attackInterval / furySpeed;
+    }
+    return fired;
   }
 
   chooseAbility(abilityId) {
@@ -1830,41 +1846,54 @@ export class DoffaGame {
         continue;
       }
 
-      if (enemy.behavior === "ash_hound") {
+      if (enemy.behavior === "ash_hound" || enemy.behavior === "slag_hound" || enemy.behavior === "cinder_hound") {
         this.updateAshHound(enemy, delta);
-      } else if (enemy.behavior === "ember_oracle") {
+      } else if (enemy.behavior === "ember_oracle" || enemy.behavior === "forge_spider"
+        || enemy.behavior === "furnace_wisp" || enemy.behavior === "ember_wraith") {
         this.updateEmberOracle(enemy, delta);
-      } else if (enemy.behavior === "brass_colossus") {
+      } else if (enemy.behavior === "brass_colossus" || enemy.behavior === "crystal_golem"
+        || enemy.behavior === "lava_golem") {
         this.updateBrassColossus(enemy, delta);
       } else if (enemy.behavior === "smoke_revenant") {
         this.updateSmokeRevenant(enemy, delta);
-      } else if (enemy.behavior === "kiln_warden") {
+      } else if (enemy.behavior === "kiln_warden" || enemy.behavior === "forge_sentinel"
+        || enemy.behavior === "cinder_warden") {
         this.updateKilnWarden(enemy, delta);
-      } else if (enemy.behavior === "pressure_widow") {
+      } else if (enemy.behavior === "pressure_widow" || enemy.behavior === "boiler_tyrant"
+        || enemy.behavior === "magma_hunter") {
         this.updatePressureWidow(enemy, delta);
-      } else if (enemy.behavior === "cinder_bishop") {
+      } else if (enemy.behavior === "cinder_bishop" || enemy.behavior === "slag_colossus"
+        || enemy.behavior === "basalt_colossus") {
         this.updateCinderBishop(enemy, delta);
-      } else if (enemy.behavior === "grinder_saint") {
+      } else if (enemy.behavior === "grinder_saint" || enemy.behavior === "furnace_overlord"
+        || enemy.behavior === "pyre_saint") {
         this.updateGrinderSaint(enemy, delta);
-      } else if (enemy.behavior === "hollow_roaster") {
+      } else if (enemy.behavior === "hollow_roaster" || enemy.behavior === "forge_core_tyrant"
+        || enemy.behavior === "ashen_titan") {
         this.updateBoss(enemy, delta);
-      } else if (enemy.behavior === "razor_mantis") {
+      } else if (enemy.behavior === "razor_mantis" || enemy.behavior === "reef_maw") {
         this.updateRazorMantis(enemy, delta);
-      } else if (enemy.behavior === "seed_spitter") {
+      } else if (enemy.behavior === "seed_spitter" || enemy.behavior === "crystal_shardling"
+        || enemy.behavior === "tide_urchin") {
         this.updateSeedSpitter(enemy, delta);
-      } else if (enemy.behavior === "root_stalker") {
+      } else if (enemy.behavior === "root_stalker" || enemy.behavior === "kelp_stalker") {
         this.updateRootStalker(enemy, delta);
-      } else if (enemy.behavior === "spore_moth") {
+      } else if (enemy.behavior === "spore_moth" || enemy.behavior === "prism_moth") {
         this.updateSporeMoth(enemy, delta);
-      } else if (enemy.behavior === "briar_jaguar") {
+      } else if (enemy.behavior === "briar_jaguar" || enemy.behavior === "geode_warden"
+        || enemy.behavior === "coral_guardian") {
         this.updateBriarJaguar(enemy, delta);
-      } else if (enemy.behavior === "mire_bellower") {
+      } else if (enemy.behavior === "mire_bellower" || enemy.behavior === "amethyst_hunter"
+        || enemy.behavior === "leviathan_brood") {
         this.updateMireBellower(enemy, delta);
-      } else if (enemy.behavior === "orchid_maw") {
+      } else if (enemy.behavior === "orchid_maw" || enemy.behavior === "shard_colossus"
+        || enemy.behavior === "abyssal_maw") {
         this.updateOrchidMaw(enemy, delta);
-      } else if (enemy.behavior === "strangler_ape") {
+      } else if (enemy.behavior === "strangler_ape" || enemy.behavior === "prism_ape"
+        || enemy.behavior === "drowned_colossus") {
         this.updateStranglerApe(enemy, delta);
-      } else if (enemy.behavior === "rootfall_tyrant") {
+      } else if (enemy.behavior === "rootfall_tyrant" || enemy.behavior === "crystal_sovereign"
+        || enemy.behavior === "sunken_leviathan") {
         this.updateRootfallTyrant(enemy, delta);
       }
 
@@ -3689,6 +3718,7 @@ export class DoffaGame {
       room: this.room,
       totalRooms: this.tour.rooms.length,
       tourCode: this.tour.code,
+      tourName: this.tour.name,
       roomName: this.roomDefinition?.name ?? "SEALED CHAMBER",
       roomType: this.roomDefinition?.roomType ?? "combat",
       wave: this.wave,

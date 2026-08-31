@@ -19,6 +19,14 @@ import {
 
 const root = process.cwd();
 
+const ARENA_TOUR_IDS = Object.freeze([
+  "rootfall-jungle",
+  "forge-depths",
+  "crystal-caverns",
+  "sunken-ruins",
+  "ashen-wastes",
+]);
+
 function createIdentityRecordingContext() {
   const operations = [];
   const context = {};
@@ -209,9 +217,9 @@ test("the authored Rootfall route uses every organic district and safe-room plat
   assert.deepEqual([...usedByEnvironment.get("rootheart")], ["root-throne"]);
 });
 
-test("all one hundred rooms receive a stable material visual fingerprint", () => {
+test("all two hundred fifty rooms receive a stable material visual fingerprint", () => {
   const identities = [];
-  for (const tourId of ["hollow-roastery", "rootfall-jungle"]) {
+  for (const tourId of ARENA_TOUR_IDS) {
     const tour = getTourDefinition(tourId);
     tour.rooms.forEach((room, index) => {
       const identity = getRoomCompositeIdentity(room.id, index + 1, room.environment);
@@ -233,8 +241,8 @@ test("all one hundred rooms receive a stable material visual fingerprint", () =>
     });
   }
 
-  assert.equal(identities.length, 100);
-  assert.equal(new Set(identities.map((identity) => identity.sigilBits)).size, 100);
+  assert.equal(identities.length, 250);
+  assert.equal(new Set(identities.map((identity) => identity.sigilBits)).size, 250);
   assert.equal(new Set(identities.map((identity) => JSON.stringify({
     topology: identity.topology,
     sigilBits: identity.sigilBits,
@@ -242,7 +250,7 @@ test("all one hundred rooms receive a stable material visual fingerprint", () =>
     route: identity.route,
     nodes: identity.nodes,
     edgeMask: identity.edgeMask,
-  }))).size, 100);
+  }))).size, 250);
   assert.deepEqual(new Set(identities.map((identity) => identity.style)), new Set([
     "industrial",
     "organic",
@@ -251,7 +259,7 @@ test("all one hundred rooms receive a stable material visual fingerprint", () =>
 
 test("all room identity overlays emit finite balanced Canvas operations", () => {
   const game = Object.create(DoffaGame.prototype);
-  for (const tourId of ["hollow-roastery", "rootfall-jungle"]) {
+  for (const tourId of ARENA_TOUR_IDS) {
     const tour = getTourDefinition(tourId);
     tour.rooms.forEach((room, index) => {
       const identity = getRoomCompositeIdentity(room.id, index + 1, room.environment);

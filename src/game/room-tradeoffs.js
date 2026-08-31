@@ -6,8 +6,11 @@ const BASE_CHOICES = Object.freeze([
 ]);
 
 const SAFE_ROOM_ORDER = Object.freeze([
-  "cooling-reservoir-15", "brokers-meter-25", "filter-chapel-35", "redline-contract-45",
   "clearwater-hollow-15", "symbiotic-shrine-25", "moondew-sanctuary-35", "bloodroot-bargain-45",
+  "forge-rest-15", "forge-event-25", "forge-rest-35", "forge-event-45",
+  "crystal-rest-15", "crystal-event-25", "crystal-rest-35", "crystal-event-45",
+  "sunken-rest-15", "sunken-event-25", "sunken-rest-35", "sunken-event-45",
+  "ashen-rest-15", "ashen-event-25", "ashen-rest-35", "ashen-event-45",
 ]);
 
 export function getRoomTradeoffs(roomId) {

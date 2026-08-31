@@ -53,13 +53,13 @@ test("every authored room has a unique visual composite identity", () => {
   const signatures = TOURS.flatMap((tour) => tour.rooms.map((room, index) => (
     JSON.stringify(getRoomCompositeIdentity(room.id, index + 1))
   )));
-  assert.equal(signatures.length, 100);
+  assert.equal(signatures.length, 250);
   assert.equal(new Set(signatures).size, signatures.length);
 });
 
 test("safe rooms always offer two choices with both a benefit and a cost", () => {
   const safeRooms = TOURS.flatMap((tour) => tour.rooms.filter((room) => room.roomType !== "combat"));
-  assert.equal(safeRooms.length, 8);
+  assert.equal(safeRooms.length, 20);
   for (const room of safeRooms) {
     const choices = getRoomTradeoffs(room.id);
     assert.equal(choices.length, 2, room.id);
@@ -72,7 +72,7 @@ test("safe rooms always offer two choices with both a benefit and a cost", () =>
 
 test("every tour boss keeps Kaprizard's exposed head but changes body and attacks", () => {
   const bosses = Object.values(ENEMY_CATALOG).filter((enemy) => enemy.boss);
-  assert.equal(bosses.length, TOURS.length);
+  assert.equal(bosses.length, TOURS.length + 1);
   for (const boss of bosses) {
     assert.equal(boss.identity, KAPRIZARD_BOSS_IDENTITY.id);
     assert.equal(boss.headIdentity, KAPRIZARD_BOSS_IDENTITY.headIdentity);

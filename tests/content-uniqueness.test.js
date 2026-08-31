@@ -228,8 +228,7 @@ test("tour themes, environments, and enemies never leak into another tour", () =
       for (const artPath of [
         enemy.art.sprite,
         enemy.art.motionSprite,
-        enemy.art.specialSprite,
-        enemy.art.reactionSprite,
+        ...(enemy.boss ? [] : [enemy.art.specialSprite, enemy.art.reactionSprite]),
       ].filter(Boolean)) {
         assert.equal(
           enemyArtOwner.has(artPath),

@@ -1,8 +1,11 @@
-export const GAME_VERSION = "0.18.6";
-export const DEFAULT_TOUR_ID = "hollow-roastery";
+export const GAME_VERSION = "0.19.0";
+export const DEFAULT_TOUR_ID = "rootfall-jungle";
 export const TOUR_IDS = Object.freeze([
-  DEFAULT_TOUR_ID,
   "rootfall-jungle",
+  "forge-depths",
+  "crystal-caverns",
+  "sunken-ruins",
+  "ashen-wastes",
 ]);
 export const DEFAULT_HERO_ID = "honey-badger";
 export const HERO_IDS = Object.freeze([

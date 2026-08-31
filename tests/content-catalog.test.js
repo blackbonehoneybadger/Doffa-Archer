@@ -15,11 +15,11 @@ import {
 
 test("the production content catalog has valid tour and boss boundaries", () => {
   assert.deepEqual(validateContentCatalog(), []);
-  assert.equal(TOURS.length, 2);
+  assert.equal(TOURS.length, 5);
 
   const tour = getTourDefinition(DEFAULT_TOUR_ID);
   assert.equal(tour.rooms.length, 50);
-  assert.equal(getRoomDefinition(DEFAULT_TOUR_ID, 1).name, "ASH INTAKE");
+  assert.equal(getRoomDefinition(DEFAULT_TOUR_ID, 1).name, "ROOTWAKE LANDING");
   assert.equal(getRoomDefinition(DEFAULT_TOUR_ID, 1).waves.length, 1);
   assert.equal(getRoomDefinition(DEFAULT_TOUR_ID, 1).enemies.length, 2);
   assert.equal(getRoomDefinition(DEFAULT_TOUR_ID, 1).reward, "ability");
@@ -48,7 +48,7 @@ test("the production content catalog has valid tour and boss boundaries", () => 
 
   const finalRoom = getRoomDefinition(DEFAULT_TOUR_ID, tour.rooms.length);
   assert.equal(finalRoom.boss, true);
-  assert.equal(finalRoom.name, "ROASTER HEART");
+  assert.equal(finalRoom.name, "ROOT THRONE");
   assert.equal(finalRoom.waves.length, 1);
   assert.equal(finalRoom.enemies.length, 1);
   assert.equal(getEnemyDefinition(finalRoom.enemies[0]).boss, true);
@@ -83,24 +83,25 @@ test("the production content catalog has valid tour and boss boundaries", () => 
 });
 
 test("Rootfall Jungle is a complete independent fifty-room tour", () => {
-  const hollow = getTourDefinition(DEFAULT_TOUR_ID);
+  const forge = getTourDefinition("forge-depths");
   const rootfall = getTourDefinition("rootfall-jungle");
   assert.ok(rootfall);
+  assert.ok(forge);
   assert.equal(rootfall.unlocked, true);
   assert.equal(rootfall.code, "TOUR 02");
   assert.equal(rootfall.rooms.length, 50);
   assert.equal(rootfall.family, "rootfall_jungle");
-  assert.notEqual(rootfall.family, hollow.family);
-  assert.notEqual(rootfall.theme, hollow.theme);
+  assert.notEqual(rootfall.family, forge.family);
+  assert.notEqual(rootfall.theme, forge.theme);
 
-  const hollowEnvironments = new Set(hollow.rooms.map((room) => room.environment));
+  const forgeEnvironments = new Set(forge.rooms.map((room) => room.environment));
   const rootfallEnvironments = new Set(rootfall.rooms.map((room) => room.environment));
   assert.deepEqual(
     [...rootfallEnvironments].sort(),
     ["briar", "canopy", "mire", "mycelium", "rootdeep", "rootheart"],
   );
   assert.deepEqual(
-    [...rootfallEnvironments].filter((environment) => hollowEnvironments.has(environment)),
+    [...rootfallEnvironments].filter((environment) => forgeEnvironments.has(environment)),
     [],
   );
 

@@ -1,4 +1,5 @@
 import { DEFAULT_TOUR_ID } from "../config/game-config.js";
+import { ARENA_TOUR_ENEMIES, ARENA_TOURS } from "./arena-tours.js";
 import {
   createRoomDestructibles,
   getDestructibleDefinition,
@@ -488,6 +489,7 @@ export const ENEMY_CATALOG = Object.freeze({
     xp: 500,
     boss: true,
   }),
+  ...ARENA_TOUR_ENEMIES,
 });
 
 const HOLLOW_TOUR_SECTORS = [
@@ -1075,25 +1077,16 @@ function createRootfallJungleRooms() {
 
 export const TOURS = Object.freeze([
   freezeTour({
-    id: "hollow-roastery",
-    code: "TOUR 01",
-    name: "THE HOLLOW ROASTERY",
-    district: "FURNACE DISTRICT",
-    theme: "coffee-industrial-roastery",
-    family: "hollow_roastery",
-    unlocked: true,
-    rooms: createHollowRoasteryRooms(),
-  }),
-  freezeTour({
     id: "rootfall-jungle",
     code: "TOUR 02",
-    name: "THE ROOTFALL JUNGLE",
+    name: "ROOTFALL JUNGLE",
     district: "THE DROWNED WILD",
     theme: "organic-rootfall-jungle",
     family: "rootfall_jungle",
     unlocked: true,
     rooms: createRootfallJungleRooms(),
   }),
+  ...ARENA_TOURS,
 ]);
 
 export { DEFAULT_TOUR_ID };

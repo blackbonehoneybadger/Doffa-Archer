@@ -118,10 +118,20 @@ export function bootstrapApp() {
     wagerAll: requiredElement("wager-all"),
     homeNotice: requiredElement("home-notice"),
     abortRun: requiredElement("abort-run"),
+    pauseRun: requiredElement("pause-run"),
+    attackButton: requiredElement("attack-button"),
+    attackButtonIcon: requiredElement("attack-button-icon"),
+    moveStick: requiredElement("move-stick"),
+    moveKnob: requiredElement("move-knob"),
     hudRoom: requiredElement("hud-room"),
     hudTour: requiredElement("hud-tour"),
+    hudTourLine: requiredElement("hud-tour-line"),
+    hudTourProgress: requiredElement("hud-tour-progress"),
     hudRoomName: requiredElement("hud-room-name"),
     hudHeroLabel: requiredElement("hud-hero-label"),
+    hudHeroPortrait: requiredElement("hud-hero-portrait"),
+    hudHeroName: requiredElement("hud-hero-name"),
+    hudHeroWeapon: requiredElement("hud-hero-weapon"),
     hudHealth: requiredElement("hud-health"),
     hudHealthText: requiredElement("hud-health-text"),
     hudWave: requiredElement("hud-wave"),
@@ -389,6 +399,8 @@ export function bootstrapApp() {
       elements.weaponMeleeName.textContent = weapons.melee.name;
       elements.weaponRangedIcon.src = weapons.ranged.icon;
       elements.weaponRangedName.textContent = weapons.ranged.name;
+      elements.hudHeroPortrait.src = `/assets/heroes/portraits/${selectedHero.id}-portrait-v1.png`;
+      elements.attackButtonIcon.src = weapons.melee.icon;
     }
   };
 
@@ -485,6 +497,7 @@ export function bootstrapApp() {
       room,
       totalRooms,
       tourCode,
+      tourName,
       roomName,
       roomType,
       wave,
@@ -501,10 +514,18 @@ export function bootstrapApp() {
       hp,
       maxHp,
     }) {
-      elements.hudTour.textContent = t("tour_generic", { n: tourCode.match(/\d+/)?.[0] ?? tourCode });
-      elements.hudRoom.textContent = `${room} / ${totalRooms}`;
+      const tourNumber = tourCode.match(/\d+/)?.[0] ?? tourCode;
+      elements.hudTour.textContent = tourCode;
+      elements.hudTourLine.textContent = `${t("tour_generic", { n: tourNumber })} · ${tourName}`;
+      elements.hudRoom.textContent = `${String(room).padStart(2, "0")} / ${totalRooms}`;
       elements.hudRoomName.textContent = profileStore.profile.locale === "en" ? roomName : t("room_generic", { n: room });
+      elements.hudTourProgress.style.width = `${Math.max(0, Math.min(100, (room / totalRooms) * 100))}%`;
+      elements.hudHeroName.textContent = heroName;
+      elements.hudHeroWeapon.textContent = weaponName.split(" ").at(-1)?.toUpperCase() ?? weaponName;
       elements.hudHeroLabel.textContent = `${heroName} L${heroLevel} // ${weaponName}`;
+      elements.attackButtonIcon.src = weaponSlot === "ranged"
+        ? elements.weaponRangedIcon.src
+        : elements.weaponMeleeIcon.src;
       for (const button of [elements.weaponMelee, elements.weaponRanged]) {
         const selected = button.dataset.slot === weaponSlot;
         button.classList.toggle("is-selected", selected);
@@ -760,6 +781,16 @@ export function bootstrapApp() {
   elements.abortRun.addEventListener("click", () => {
     game.setPaused(true);
     elements.confirmOverlay.hidden = false;
+  });
+
+  elements.pauseRun.addEventListener("click", () => {
+    game.setPaused(true);
+    elements.confirmOverlay.hidden = false;
+  });
+
+  elements.attackButton.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+    game.requestManualAttack();
   });
 
   elements.changeHero.addEventListener("click", () => {
