@@ -3750,6 +3750,7 @@ export class DoffaGame {
       );
     }
     this.drawArena(context);
+    this.drawPresenceRings(context);
 
     for (const enemy of this.enemies) {
       this.drawEnemyTelegraph(context, enemy);
@@ -3819,9 +3820,9 @@ export class DoffaGame {
       context.restore();
       context.save();
       const readabilityShade = context.createLinearGradient(0, ARENA.top, 0, ARENA.bottom);
-      readabilityShade.addColorStop(0, "rgba(5, 3, 2, 0.11)");
-      readabilityShade.addColorStop(0.45, "rgba(5, 3, 2, 0.03)");
-      readabilityShade.addColorStop(1, "rgba(5, 3, 2, 0.16)");
+      readabilityShade.addColorStop(0, "rgba(5, 3, 2, 0.04)");
+      readabilityShade.addColorStop(0.45, "rgba(5, 3, 2, 0.01)");
+      readabilityShade.addColorStop(1, "rgba(5, 3, 2, 0.07)");
       context.fillStyle = readabilityShade;
       context.fillRect(0, 0, VIEWPORT.width, VIEWPORT.height);
       const identityLight = context.createRadialGradient(
@@ -3832,10 +3833,10 @@ export class DoffaGame {
         VIEWPORT.height * composite.lightY,
         360,
       );
-      identityLight.addColorStop(0, `${palette.accent}aa`);
+      identityLight.addColorStop(0, `${palette.accent}55`);
       identityLight.addColorStop(1, `${palette.accent}00`);
       context.globalCompositeOperation = "screen";
-      context.globalAlpha = composite.tintAlpha;
+      context.globalAlpha = composite.tintAlpha * 0.45;
       context.fillStyle = identityLight;
       context.fillRect(0, 0, VIEWPORT.width, VIEWPORT.height);
       context.globalCompositeOperation = "source-over";
@@ -3892,14 +3893,6 @@ export class DoffaGame {
     this.drawArenaDoor(context, palette);
 
     context.save();
-    context.fillStyle = `${palette.accent}38`;
-    context.font = "700 54px Arial Narrow, sans-serif";
-    context.textAlign = "center";
-    context.fillText(String(Math.max(1, this.room)).padStart(2, "0"), VIEWPORT.width / 2, 92);
-    context.font = "700 15px Arial Narrow, sans-serif";
-    context.letterSpacing = "4px";
-    context.fillText(this.roomDefinition?.name ?? "SEALED CHAMBER", VIEWPORT.width / 2, 118);
-
     if (this.waveCountdown !== null) {
       context.fillStyle = "rgba(8, 5, 4, 0.78)";
       context.fillRect(VIEWPORT.width / 2 - 112, 556, 224, 112);
@@ -4931,7 +4924,21 @@ export class DoffaGame {
         context.lineTo(0, projectile.radius);
         context.closePath();
       } else if (["seed", "drop", "slug"].includes(projectile.shape)) {
-        context.ellipse(0, 0, projectile.radius * 1.45, projectile.radius * .72, 0, 0, TAU);
+        context.shadowBlur = this.reducedEffects ? 0 : 22;
+        context.shadowColor = projectile.primary ?? "#66ff55";
+        context.fillStyle = projectile.primary ?? "#8dff66";
+        context.strokeStyle = projectile.secondary ?? "#2f8f28";
+        context.lineWidth = 2;
+        context.ellipse(0, 0, projectile.radius * 1.55, projectile.radius * .78, 0, 0, TAU);
+        context.fill();
+        context.stroke();
+        context.globalAlpha = 0.45;
+        context.fillStyle = "#d6ffb8";
+        context.beginPath();
+        context.ellipse(projectile.radius * 0.15, 0, projectile.radius * .55, projectile.radius * .28, 0, 0, TAU);
+        context.fill();
+        context.restore();
+        return;
       } else if (projectile.shape === "crescent") {
         context.arc(0, 0, projectile.radius * 1.2, -.85, .85);
       } else if (["saw", "gear", "crown", "knot"].includes(projectile.shape)) {
@@ -5343,8 +5350,20 @@ export class DoffaGame {
 
       const attackVisual = player.lastAttackVisual ?? player.weaponVisual;
       if (attackVisual === "katana") {
-        // Katana motion is carried by the character pose. A long colored arc
-        // reads like a second weapon in the hand and is intentionally omitted.
+        const gradient = context.createLinearGradient(-20, -70, 90, 30);
+        gradient.addColorStop(0, "rgba(255, 245, 210, 0.95)");
+        gradient.addColorStop(0.45, "rgba(255, 180, 60, 0.82)");
+        gradient.addColorStop(1, "rgba(255, 90, 20, 0.04)");
+        context.strokeStyle = gradient;
+        context.lineWidth = 12 + pose.strike * 14;
+        context.beginPath();
+        context.arc(6, -2, 64, -1.08, 0.42);
+        context.stroke();
+        context.strokeStyle = "rgba(255, 255, 240, 0.88)";
+        context.lineWidth = 3;
+        context.beginPath();
+        context.arc(6, -2, 58, -1.02, 0.36);
+        context.stroke();
       } else if (attackVisual === "bat") {
         context.lineWidth = 12;
         context.beginPath();
@@ -5525,6 +5544,41 @@ export class DoffaGame {
     }
 
     context.restore();
+  }
+
+  drawPresenceRings(context) {
+    if (this.mode === "idle" || !this.player) {
+      return;
+    }
+
+    context.save();
+    context.lineWidth = 2.4;
+    context.shadowBlur = this.reducedEffects ? 0 : 14;
+    context.strokeStyle = "rgba(255, 150, 45, 0.88)";
+    context.shadowColor = "rgba(255, 120, 30, 0.55)";
+    context.beginPath();
+    context.ellipse(this.player.x, this.player.y + 20, 30, 11, 0, 0, TAU);
+    context.stroke();
+    context.restore();
+
+    for (const enemy of this.enemies) {
+      if (!enemy.alive || enemy.defeated) {
+        continue;
+      }
+      context.save();
+      const radiusX = enemy.isBoss ? 38 : enemy.isElite ? 32 : 26;
+      const radiusY = enemy.isBoss ? 14 : 11;
+      context.lineWidth = enemy.isBoss ? 3 : 2;
+      context.shadowBlur = this.reducedEffects ? 0 : enemy.isBoss ? 18 : 12;
+      context.strokeStyle = enemy.isBoss
+        ? "rgba(110, 255, 110, 0.95)"
+        : "rgba(72, 230, 72, 0.82)";
+      context.shadowColor = "rgba(40, 200, 40, 0.45)";
+      context.beginPath();
+      context.ellipse(enemy.x, enemy.y + enemy.radius * 0.55, radiusX, radiusY, 0, 0, TAU);
+      context.stroke();
+      context.restore();
+    }
   }
 
   drawEnemyTelegraph(context, enemy) {

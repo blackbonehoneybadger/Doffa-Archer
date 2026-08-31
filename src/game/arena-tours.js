@@ -836,7 +836,7 @@ function freezeTour(definition) {
 export const ARENA_TOURS = Object.freeze([
   freezeTour({
     id: "forge-depths",
-    code: "TOUR 03",
+    code: "TOUR 02",
     name: "FORGE DEPTHS",
     district: "THE MOLTEN FORGE",
     theme: "industrial-forge-volcanic",
@@ -868,7 +868,7 @@ export const ARENA_TOURS = Object.freeze([
   }),
   freezeTour({
     id: "crystal-caverns",
-    code: "TOUR 04",
+    code: "TOUR 03",
     name: "CRYSTAL CAVERNS",
     district: "THE FRACTURED DEEP",
     theme: "crystalline-magical-cavern",
@@ -900,7 +900,7 @@ export const ARENA_TOURS = Object.freeze([
   }),
   freezeTour({
     id: "sunken-ruins",
-    code: "TOUR 05",
+    code: "TOUR 04",
     name: "SUNKEN RUINS",
     district: "THE DROWNED TEMPLE",
     theme: "flooded-ancient-ruins",
@@ -932,7 +932,7 @@ export const ARENA_TOURS = Object.freeze([
   }),
   freezeTour({
     id: "ashen-wastes",
-    code: "TOUR 06",
+    code: "TOUR 05",
     name: "ASHEN WASTES",
     district: "THE VOLCANIC FRONT",
     theme: "hellish-volcanic-wastes",

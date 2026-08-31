@@ -88,7 +88,7 @@ test("Rootfall Jungle is a complete independent fifty-room tour", () => {
   assert.ok(rootfall);
   assert.ok(forge);
   assert.equal(rootfall.unlocked, true);
-  assert.equal(rootfall.code, "TOUR 02");
+  assert.equal(rootfall.code, "TOUR 01");
   assert.equal(rootfall.rooms.length, 50);
   assert.equal(rootfall.family, "rootfall_jungle");
   assert.notEqual(rootfall.family, forge.family);
