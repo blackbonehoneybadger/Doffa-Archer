@@ -1,0 +1,20 @@
+{
+  "name": "doffa-heroes",
+  "version": "0.19.0",
+  "private": true,
+  "type": "module",
+  "description": "DOFFA Games flagship action-roguelite vertical slice",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "serve": "node scripts/serve.mjs",
+    "preview:rooms": "node scripts/build-room-effects-preview.mjs",
+    "preview:room-variants": "node scripts/build-room-variants-preview.mjs",
+    "preview:rootfall-variants": "node scripts/build-rootfall-room-variants-preview.mjs",
+    "preview:rootfall-elites": "node scripts/build-rootfall-elite-animation-preview.mjs",
+    "build:higgsfield-pages": "node scripts/build-higgsfield-multiframe-pages.mjs",
+    "check": "node scripts/check-source.mjs && node scripts/validate-images.mjs && node scripts/secret-scan.mjs && node --test",
+    "test": "npm run check"
+  }
+}

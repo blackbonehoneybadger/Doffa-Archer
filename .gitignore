@@ -1,0 +1,23 @@
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+node_modules/
+coverage/
+dist/
+.vercel/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.jks
+*.keystore
+*.mobileprovision
+wallet*.json
+keypair*.json
+secret*.json
+secrets/

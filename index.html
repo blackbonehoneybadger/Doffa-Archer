@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+    <meta name="theme-color" content="#100b08">
+    <meta name="description" content="DOFFA Heroes — the first action-roguelite in the DOFFA Games universe.">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>DOFFA Heroes</title>
+    <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/assets/icon-192.png" sizes="192x192">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="stylesheet" href="/styles/main.css">
+    <script type="module" src="/src/main.js"></script>
+  </head>
+  <body>
+    <div class="noise" aria-hidden="true"></div>
+    <main id="app" class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="#" aria-label="DOFFA Heroes home">
+          <img src="/assets/icon.svg" alt="" width="42" height="42">
+          <span>
+            <strong>DOFFA</strong>
+            <small>HEROES // PROTOTYPE 0.19.0</small>
+          </span>
+        </a>
+        <label class="language-control" aria-label="Language">
+          <select id="language-select">
+            <option value="ru">Русский</option><option value="en">English</option>
+            <option value="es">Español</option><option value="pt-BR">Português</option>
+            <option value="de">Deutsch</option><option value="fr">Français</option>
+            <option value="it">Italiano</option><option value="tr">Türkçe</option>
+            <option value="ar">العربية</option><option value="zh-Hans">简体中文</option>
+            <option value="ja">日本語</option><option value="ko">한국어</option>
+          </select>
+        </label>
+        <button id="audio-toggle" class="audio-toggle" type="button" aria-label="Mute game audio" aria-pressed="false">🔊</button>
+        <div class="currency" aria-label="Entry beans">
+          <span class="currency-mark" aria-hidden="true"></span>
+          <strong id="top-beans">0</strong>
+          <small data-i18n="beans">BEANS</small>
+        </div>
+      </header>
+
+      <section id="home-screen" class="screen home-screen" aria-labelledby="home-title">
+        <div class="eyebrow">DOFFA GAMES // FIRST TITLE</div>
+        <h1 id="home-title" data-i18n="tagline">THE ROAST DOES NOT FORGIVE.</h1>
+        <p class="lead" data-i18n="lead">Charge the golden bean. Choose your wager. Survive every chamber and defeat Caprizord.</p>
+
+        <div class="core-panel">
+          <div class="core-rings" aria-hidden="true">
+            <span></span><span></span><span></span>
+          </div>
+          <button id="tap-button" class="roaster-core" type="button" aria-label="Tap the Roaster Core to collect one bean">
+            <img class="core-bean" src="/assets/ui/golden-coffee-bean-v1.png" alt="">
+            <span class="core-label" data-i18n="tap">TAP BEAN</span>
+          </button>
+          <div id="tap-burst" class="tap-burst" aria-hidden="true">+1</div>
+          <div id="tap-beans" class="tap-beans" aria-hidden="true"></div>
+        </div>
+
+        <div class="home-stats" aria-label="Prototype progress">
+          <div><span>BEST ROOM</span><strong id="best-room">0 / 50</strong></div>
+          <div><span>BOSSES ENDED</span><strong id="boss-wins">0</strong></div>
+          <div><span>LIFETIME BEANS</span><strong id="lifetime-beans">0</strong></div>
+        </div>
+
+        <article id="selected-hero-card" class="hero-contract" aria-label="Selected hero">
+          <div id="selected-hero-portrait" class="hero-portrait" data-hero="honey-badger" aria-hidden="true">
+            <canvas id="selected-hero-art" class="hero-art" hidden></canvas>
+            <span id="selected-hero-mark">HB</span>
+            <small>PORTRAIT LOADING</small>
+          </div>
+          <div class="hero-copy">
+            <span id="selected-hero-role">VANGUARD</span>
+            <strong id="selected-hero-name">HONEY BADGER</strong>
+            <small id="selected-hero-weapon">BLACK STEEL KATANA / SHURIKEN</small>
+            <div class="hero-progression">
+              <span>LEVEL <b id="selected-hero-level">1</b></span>
+              <span id="selected-hero-xp">0 / 100 XP</span>
+            </div>
+            <div class="hero-xp-track" aria-hidden="true"><i id="selected-hero-xp-bar"></i></div>
+            <div class="hero-ratings" aria-label="Hero ratings">
+              <span>VIT <i id="selected-hero-vitality"></i></span>
+              <span>PWR <i id="selected-hero-power"></i></span>
+              <span>SPD <i id="selected-hero-speed"></i></span>
+            </div>
+          </div>
+          <button id="change-hero" class="hero-change" type="button" data-i18n="change">CHANGE</button>
+        </article>
+
+        <article id="loadout-card" class="loadout-contract" aria-label="Equipped field loadout" hidden>
+          <div class="loadout-head">
+            <div>
+              <span>FIELD LOADOUT</span>
+              <strong>4 ACTIVE SLOTS</strong>
+            </div>
+            <button id="open-inventory" type="button">MANAGE INVENTORY</button>
+          </div>
+          <div id="loadout-slots" class="loadout-slots"></div>
+        </article>
+
+        <article class="tour-contract" aria-label="Selected tour">
+          <div class="tour-copy">
+            <span id="selected-tour-code">TOUR 01</span>
+            <strong id="selected-tour-name">THE HOLLOW ROASTERY</strong>
+            <small id="selected-tour-district">FURNACE DISTRICT</small>
+          </div>
+          <div class="tour-route">
+            <b>ACTIVE</b>
+            <span id="selected-tour-route">50 CHAMBERS // 4 GUARDIANS // 1 BOSS</span>
+          </div>
+          <button id="change-tour" class="tour-change" type="button" data-i18n="change">CHANGE</button>
+        </article>
+
+        <fieldset id="wager-selector" class="wager-selector">
+          <legend data-i18n="wager">TOUR WAGER</legend>
+          <label for="wager-input">BEANS</label>
+          <input id="wager-input" type="number" inputmode="numeric" min="1" step="1" value="25" aria-label="Bean wager">
+          <button id="wager-all" type="button">ALL</button>
+          <small data-i18n="rule">COMPLETE THE TOUR: ×2 · DEFEAT: WAGER BURNS</small>
+        </fieldset>
+
+        <button id="start-run" class="primary-action" type="button">
+          <span id="start-run-label">ENTER TOUR 01</span>
+          <small><b id="entry-cost">25</b> BEANS</small>
+        </button>
+        <p id="home-notice" class="notice" role="status" aria-live="polite"></p>
+
+        <div class="prototype-note">
+          <strong>NO TOKEN CONNECTED</strong>
+          <span>Local gameplay prototype. No wallet, mint, transfer, or real reward.</span>
+        </div>
+      </section>
+
+      <section id="game-screen" class="screen game-screen dofa-arena-screen" hidden aria-label="DOFA Arena combat">
+        <div class="arena-shell dofa-arena-shell">
+          <canvas id="game-canvas" width="720" height="1280" aria-label="DOFA Arena combat arena"></canvas>
+
+          <header class="dofa-arena-topbar" aria-label="Run status">
+            <button id="pause-run" class="dofa-pause-button" type="button" aria-label="Pause run">
+              <span aria-hidden="true"></span><span aria-hidden="true"></span>
+            </button>
+            <div class="dofa-title-block">
+              <strong class="dofa-brand">DOFA ARENA</strong>
+              <span id="hud-tour-line" class="dofa-tour-line">TOUR 02 · ROOTFALL JUNGLE</span>
+              <div class="dofa-progress-track" aria-hidden="true"><i id="hud-tour-progress"></i></div>
+            </div>
+            <div class="dofa-room-counter" aria-label="Room progress">
+              <span id="hud-room">08 / 50</span>
+            </div>
+          </header>
+
+          <footer class="dofa-arena-controls" aria-label="Combat controls">
+            <div id="move-stick" class="dofa-move-stick" aria-hidden="true"><i id="move-knob"></i></div>
+            <div class="dofa-hero-card" aria-label="Hero status">
+              <img id="hud-hero-portrait" class="dofa-hero-portrait" src="/assets/heroes/portraits/honey-badger-portrait-v1.png" alt="">
+              <div class="dofa-hero-copy">
+                <strong id="hud-hero-name">HONEY BADGER</strong>
+                <span id="hud-hero-weapon">KATANA</span>
+                <div class="dofa-health-track"><i id="hud-health"></i></div>
+                <b id="hud-health-text">2450 / 2450</b>
+              </div>
+              <div class="dofa-weapon-icons" aria-label="Weapon selection">
+                <button id="weapon-ranged" class="dofa-weapon-icon" type="button" data-slot="ranged" aria-pressed="false" aria-label="Ranged weapon">
+                  <img id="weapon-ranged-icon" src="/assets/ui/shuriken-v1.png" alt="">
+                </button>
+                <button id="weapon-melee" class="dofa-weapon-icon is-selected" type="button" data-slot="melee" aria-pressed="true" aria-label="Melee weapon">
+                  <img id="weapon-melee-icon" src="/assets/ui/katana-v1.png" alt="">
+                </button>
+              </div>
+            </div>
+            <button id="attack-button" class="dofa-attack-button" type="button" aria-label="Attack">
+              <img id="attack-button-icon" src="/assets/ui/katana-v1.png" alt="">
+            </button>
+          </footer>
+
+          <span id="hud-tour" hidden>TOUR 02</span>
+          <span id="hud-room-name" hidden>ROOTWAKE LANDING</span>
+          <span id="hud-hero-label" hidden>HONEY BADGER</span>
+          <span id="hud-wave" hidden>WAVE 1 / 1</span>
+          <span id="hud-wave-countdown" hidden>FIGHT</span>
+          <i id="hud-wave-fill" hidden></i>
+          <span id="hud-run-level" hidden>1</span>
+          <span id="hud-run-xp-text" hidden>0 / 40 XP</span>
+          <i id="hud-run-xp" hidden></i>
+          <button id="abort-run" type="button" hidden aria-label="End run">×</button>
+          <div id="control-hint" hidden></div>
+          <small id="weapon-melee-name" hidden>KATANA</small>
+          <small id="weapon-ranged-name" hidden>SHURIKEN</small>
+        </div>
+      </section>
+
+      <section id="hero-overlay" class="modal-layer" hidden aria-labelledby="hero-select-title">
+        <div class="modal-card hero-modal">
+          <div class="hero-modal-head">
+            <div>
+              <div class="eyebrow">DOFFA OPERATIVE ROSTER</div>
+              <h2 id="hero-select-title" data-i18n="heroes">SELECT YOUR HERO</h2>
+            </div>
+            <button id="close-hero-select" class="icon-button" type="button" aria-label="Close hero selection">×</button>
+          </div>
+          <p>Each operative has a different weapon profile, range, health, and attack rhythm.</p>
+          <div id="hero-grid" class="hero-grid"></div>
+          <small class="art-warning">APPROVED PORTRAIT SET // CONSISTENT SHOULDER-TO-CHEST FRAMING</small>
+        </div>
+      </section>
+
+      <section id="tour-overlay" class="modal-layer" hidden aria-labelledby="tour-select-title">
+        <div class="modal-card tour-modal">
+          <div class="hero-modal-head">
+            <div>
+              <div class="eyebrow">DOFFA EXPEDITION MAP</div>
+              <h2 id="tour-select-title" data-i18n="tours">SELECT YOUR TOUR</h2>
+            </div>
+            <button id="close-tour-select" class="icon-button" type="button" aria-label="Close tour selection">×</button>
+          </div>
+          <p>Each tour has its own rooms, enemy family, guardians, and final boss.</p>
+          <div id="tour-grid" class="tour-grid"></div>
+          <small class="art-warning">TOUR RECORDS ARE SAVED SEPARATELY ON THIS DEVICE</small>
+        </div>
+      </section>
+
+      <section id="equipment-overlay" class="modal-layer" hidden aria-labelledby="equipment-title">
+        <div class="modal-card equipment-modal">
+          <div class="hero-modal-head">
+            <div>
+              <div class="eyebrow">DOFFA FIELD ARMORY</div>
+              <h2 id="equipment-title">BUILD YOUR LOADOUT</h2>
+            </div>
+            <button id="close-inventory" class="icon-button" type="button" aria-label="Close inventory">×</button>
+          </div>
+          <p>Equip one item in each slot. Rarity and item level determine the active combat bonus.</p>
+          <div class="inventory-meta">
+            <span>RECOVERED ITEMS</span>
+            <strong id="inventory-count">0 / 100</strong>
+          </div>
+          <div id="inventory-grid" class="inventory-grid"></div>
+          <small class="art-warning">LOCAL PROTOTYPE LOOT // NO TOKEN VALUE // BROWSER STORAGE IS UNTRUSTED</small>
+        </div>
+      </section>
+
+      <section id="ability-overlay" class="modal-layer" hidden aria-labelledby="ability-title">
+        <div class="modal-card ability-modal">
+          <div id="ability-kicker" class="eyebrow">TOUR INITIATION</div>
+          <h2 id="ability-title" data-i18n="choose_upgrade">CHOOSE YOUR PRESSURE</h2>
+          <p id="ability-description" data-i18n="one_upgrade">One upgrade. No undo.</p>
+          <div id="ability-choices" class="ability-grid"></div>
+        </div>
+      </section>
+
+      <section id="result-overlay" class="modal-layer" hidden aria-labelledby="result-title">
+        <div class="modal-card result-modal">
+          <div id="result-kicker" class="eyebrow">RUN CLOSED</div>
+          <h2 id="result-title">THE CHAMBER WON.</h2>
+          <div class="result-seal" aria-hidden="true"><span id="result-room">0</span><small>ROOMS</small></div>
+          <dl class="result-list">
+            <div><dt>Tour</dt><dd id="result-tour">—</dd></div>
+            <div><dt>Hero</dt><dd id="result-hero">—</dd></div>
+            <div><dt>Run level</dt><dd id="result-run-level">LEVEL 1</dd></div>
+            <div><dt>Beans recovered</dt><dd id="result-beans">0</dd></div>
+            <div><dt>Hero experience</dt><dd id="result-xp">0 XP</dd></div>
+            <div><dt>Hero level</dt><dd id="result-level">LEVEL 1</dd></div>
+            <div hidden><dt>Item recovered</dt><dd id="result-drop">NONE</dd></div>
+            <div><dt>Test receipt</dt><dd id="result-receipt">—</dd></div>
+            <div><dt>Token claim</dt><dd>DISABLED</dd></div>
+          </dl>
+          <button id="return-home" class="primary-action" type="button"><span>RETURN TO CORE</span></button>
+        </div>
+      </section>
+
+      <section id="confirm-overlay" class="modal-layer" hidden aria-labelledby="confirm-title">
+        <div class="modal-card confirm-modal">
+          <div class="eyebrow">RUN IN PROGRESS</div>
+          <h2 id="confirm-title">END THE RUN?</h2>
+          <p>You will keep only the reward from chambers already cleared.</p>
+          <div class="confirm-actions">
+            <button id="continue-run" class="secondary-action" type="button">CONTINUE FIGHTING</button>
+            <button id="confirm-abort" class="danger-action" type="button">END RUN</button>
+          </div>
+        </div>
+      </section>
+
+      <aside id="update-banner" class="update-banner" hidden aria-live="polite">
+        <span>A new build is ready.</span>
+        <button id="apply-update" type="button">UPDATE NOW</button>
+      </aside>
+
+      <footer class="footer">
+        <span>ORIGINAL DOFFA VERTICAL SLICE</span>
+        <button id="install-app" type="button" hidden>INSTALL APP</button>
+      </footer>
+    </main>
+    <noscript>DOFFA Heroes requires JavaScript.</noscript>
+  </body>
+</html>

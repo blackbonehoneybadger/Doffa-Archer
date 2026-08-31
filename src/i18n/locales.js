@@ -1,0 +1,137 @@
+export const SUPPORTED_LOCALES = Object.freeze([
+  ["ru", "Русский"], ["en", "English"], ["es", "Español"], ["pt-BR", "Português"],
+  ["de", "Deutsch"], ["fr", "Français"], ["it", "Italiano"], ["tr", "Türkçe"],
+  ["ar", "العربية"], ["zh-Hans", "简体中文"], ["ja", "日本語"], ["ko", "한국어"],
+]);
+
+const COPY = {
+  en: { tagline: "THE ROAST DOES NOT FORGIVE.", lead: "Charge the golden bean. Choose your wager. Survive every chamber and defeat Caprizord.", tap: "TAP BEAN", beans: "BEANS", change: "CHANGE", wager: "TOUR WAGER", rule: "COMPLETE THE TOUR: ×2 · DEFEAT: WAGER BURNS", melee: "MELEE", ranged: "RANGED", move: "RIGHT SIDE: DRAG TO MOVE · LEFT SIDE: SWITCH WEAPON", heroes: "SELECT YOUR HERO", tours: "SELECT YOUR TOUR", enter: "ENTER", resume: "RESUME" },
+  ru: { tagline: "ОБЖАРКА НЕ ПРОЩАЕТ.", lead: "Заряди золотое зерно. Выбери ставку. Пройди все комнаты и победи Капризорда.", tap: "ЖМИ НА ЗЕРНО", beans: "ЗЁРНА", change: "СМЕНИТЬ", wager: "СТАВКА НА ТУР", rule: "ПРОШЁЛ ТУР: ×2 · ПОРАЖЕНИЕ: СТАВКА СГОРАЕТ", melee: "БЛИЖНИЙ", ranged: "ДАЛЬНИЙ", move: "СПРАВА: ДВИЖЕНИЕ · СЛЕВА: СМЕНА ОРУЖИЯ", heroes: "ВЫБЕРИ ГЕРОЯ", tours: "ВЫБЕРИ ТУР", enter: "НАЧАТЬ", resume: "ПРОДОЛЖИТЬ" },
+  es: { tagline: "EL TUESTE NO PERDONA.", lead: "Carga el grano dorado, elige tu apuesta y derrota a Caprizord.", tap: "TOCA EL GRANO", beans: "GRANOS", change: "CAMBIAR", wager: "APUESTA", rule: "COMPLETA: ×2 · DERROTA: PIERDES LA APUESTA", melee: "CUERPO A CUERPO", ranged: "DISTANCIA", move: "DERECHA: MOVER · IZQUIERDA: ARMA", heroes: "ELIGE HÉROE", tours: "ELIGE GIRA", enter: "ENTRAR", resume: "CONTINUAR" },
+  "pt-BR": { tagline: "A TORRA NÃO PERDOA.", lead: "Carregue o grão dourado, escolha a aposta e derrote Caprizord.", tap: "TOQUE NO GRÃO", beans: "GRÃOS", change: "TROCAR", wager: "APOSTA", rule: "CONCLUA: ×2 · DERROTA: APOSTA PERDIDA", melee: "CORPO A CORPO", ranged: "DISTÂNCIA", move: "DIREITA: MOVER · ESQUERDA: ARMA", heroes: "ESCOLHA O HERÓI", tours: "ESCOLHA A TURNÊ", enter: "ENTRAR", resume: "CONTINUAR" },
+  de: { tagline: "DIE RÖSTUNG VERGIBT NICHT.", lead: "Lade die goldene Bohne, wähle deinen Einsatz und besiege Caprizord.", tap: "BOHNE ANTIPPEN", beans: "BOHNEN", change: "WECHSELN", wager: "TOUR-EINSATZ", rule: "TOUR SCHAFFEN: ×2 · NIEDERLAGE: EINSATZ WEG", melee: "NAHKAMPF", ranged: "FERNKAMPF", move: "RECHTS: BEWEGEN · LINKS: WAFFE", heroes: "HELD WÄHLEN", tours: "TOUR WÄHLEN", enter: "STARTEN", resume: "FORTSETZEN" },
+  fr: { tagline: "LA TORRÉFACTION NE PARDONNE PAS.", lead: "Chargez le grain doré, choisissez votre mise et battez Caprizord.", tap: "TOUCHER LE GRAIN", beans: "GRAINS", change: "CHANGER", wager: "MISE DU TOUR", rule: "TOUR TERMINÉ : ×2 · DÉFAITE : MISE PERDUE", melee: "MÊLÉE", ranged: "DISTANCE", move: "DROITE : BOUGER · GAUCHE : ARME", heroes: "CHOISISSEZ UN HÉROS", tours: "CHOISISSEZ UN TOUR", enter: "ENTRER", resume: "REPRENDRE" },
+  it: { tagline: "LA TOSTATURA NON PERDONA.", lead: "Carica il chicco dorato, scegli la puntata e sconfiggi Caprizord.", tap: "TOCCA IL CHICCO", beans: "CHICCHI", change: "CAMBIA", wager: "PUNTATA", rule: "COMPLETA: ×2 · SCONFITTA: PUNTATA PERSA", melee: "MISCHIA", ranged: "DISTANZA", move: "DESTRA: MUOVI · SINISTRA: ARMA", heroes: "SCEGLI EROE", tours: "SCEGLI TOUR", enter: "ENTRA", resume: "CONTINUA" },
+  tr: { tagline: "KAVURMA AFFETMEZ.", lead: "Altın çekirdeği yükle, bahsini seç ve Caprizord'u yen.", tap: "ÇEKİRDEĞE DOKUN", beans: "ÇEKİRDEK", change: "DEĞİŞTİR", wager: "TUR BAHİSİ", rule: "TURU BİTİR: ×2 · YENİLGİ: BAHİS YANAR", melee: "YAKIN", ranged: "UZAK", move: "SAĞ: HAREKET · SOL: SİLAH", heroes: "KAHRAMAN SEÇ", tours: "TUR SEÇ", enter: "GİR", resume: "DEVAM" },
+  ar: { tagline: "التحميص لا يرحم.", lead: "اشحن الحبة الذهبية واختر الرهان واهزم كابريزورد.", tap: "اضغط الحبة", beans: "حبوب", change: "تغيير", wager: "رهان الجولة", rule: "إكمال الجولة: ×2 · الهزيمة: خسارة الرهان", melee: "قريب", ranged: "بعيد", move: "اليمين: حركة · اليسار: سلاح", heroes: "اختر بطلك", tours: "اختر الجولة", enter: "ابدأ", resume: "متابعة" },
+  "zh-Hans": { tagline: "烘焙绝不宽恕。", lead: "为金色咖啡豆充能，选择赌注，击败卡普里佐德。", tap: "点击咖啡豆", beans: "咖啡豆", change: "更换", wager: "巡回赌注", rule: "通关：×2 · 失败：赌注清零", melee: "近战", ranged: "远程", move: "右侧：移动 · 左侧：换武器", heroes: "选择英雄", tours: "选择巡回", enter: "开始", resume: "继续" },
+  ja: { tagline: "焙煎は容赦しない。", lead: "黄金の豆をチャージし、賭けを選び、カプリゾードを倒せ。", tap: "豆をタップ", beans: "豆", change: "変更", wager: "ツアーの賭け", rule: "クリア：×2 · 敗北：賭けは消滅", melee: "近接", ranged: "遠距離", move: "右：移動 · 左：武器切替", heroes: "ヒーローを選択", tours: "ツアーを選択", enter: "開始", resume: "続ける" },
+  ko: { tagline: "로스팅은 용서하지 않는다.", lead: "황금 원두를 충전하고 판돈을 정해 카프리조드를 쓰러뜨리세요.", tap: "원두 탭", beans: "원두", change: "변경", wager: "투어 판돈", rule: "완주: ×2 · 패배: 판돈 소멸", melee: "근접", ranged: "원거리", move: "오른쪽: 이동 · 왼쪽: 무기", heroes: "영웅 선택", tours: "투어 선택", enter: "입장", resume: "계속" },
+};
+
+const SYSTEM_KEYS = ["choose_upgrade","one_upgrade","power_level","level_choice","pending_choices","field_contract","event_choice","safe_bargain","tradeoff_choice","wave","fight","next_seconds","exit_open","select_upgrade","recovery_station","system_stable","room_cleared_hint","contract_hint","recovery_hint","select_field_upgrade","next_wave","max_level","tour_cleared","run_closed","boss_fell","chamber_won","level","paid","active","available","locked","best_record","tour_route","room_generic","tour_generic"];
+const SYSTEM = {
+  en: ["CHOOSE YOUR PRESSURE","One upgrade. No undo.","POWER LEVEL {n}","Level secured. Choose one upgrade.","{n} upgrades earned. Choose them one at a time.","FIELD CONTRACT","The room offers one free field upgrade. Choose, then leave through the upper door.","SAFE-ROOM BARGAIN","Choose one benefit and accept its cost.","WAVE {a} / {b}","FIGHT","NEXT {n}S","EXIT OPEN","SELECT UPGRADE","RECOVERY STATION","SYSTEM STABLE","ROOM CLEARED · MOVE INTO THE OPEN DOOR","CONTRACT ACCEPTED · MOVE INTO THE OPEN DOOR","RECOVERY COMPLETE · MOVE INTO THE OPEN DOOR","SELECT ONE FIELD UPGRADE","NEXT WAVE IN {n}","MAX LEVEL","TOUR CLEARED","RUN CLOSED","THE BOSS FELL.","THE CHAMBER WON.","LEVEL {n}","PAID","ACTIVE","AVAILABLE","LOCKED","BEST {a} / {b} · BOSSES {n}","{n} CHAMBERS · {g} GUARDIANS · 1 BOSS","ROOM {n}","TOUR {n}"],
+  ru: ["ВЫБЕРИ УСИЛЕНИЕ","Одно улучшение. Отменить нельзя.","УРОВЕНЬ СИЛЫ {n}","Уровень получен. Выбери одно улучшение.","Получено улучшений: {n}. Выбирай по одному.","ПОЛЕВОЙ КОНТРАКТ","Комната даёт одно бесплатное улучшение. Выбери его и выйди через верхнюю дверь.","СДЕЛКА В БЕЗОПАСНОЙ КОМНАТЕ","Выбери пользу и прими цену.","ВОЛНА {a} / {b}","БОЙ","ДАЛЬШЕ {n} С","ВЫХОД ОТКРЫТ","ВЫБЕРИ УЛУЧШЕНИЕ","СТАНЦИЯ ВОССТАНОВЛЕНИЯ","СИСТЕМА СТАБИЛЬНА","КОМНАТА ЗАЧИЩЕНА · ИДИ К ОТКРЫТОЙ ДВЕРИ","КОНТРАКТ ПРИНЯТ · ИДИ К ОТКРЫТОЙ ДВЕРИ","ВОССТАНОВЛЕНИЕ ЗАВЕРШЕНО · ИДИ К ОТКРЫТОЙ ДВЕРИ","ВЫБЕРИ ОДНО ПОЛЕВОЕ УЛУЧШЕНИЕ","СЛЕДУЮЩАЯ ВОЛНА ЧЕРЕЗ {n}","МАКС. УРОВЕНЬ","ТУР ПРОЙДЕН","ЗАБЕГ ЗАВЕРШЁН","БОСС ПОВЕРЖЕН.","КОМНАТА ПРОЙДЕНА.","УРОВЕНЬ {n}","ОПЛАЧЕНО","АКТИВЕН","ДОСТУПЕН","ЗАКРЫТ","ЛУЧШЕЕ {a} / {b} · БОССЫ {n}","КОМНАТ: {n} · СТРАЖЕЙ: {g} · БОСС: 1","КОМНАТА {n}","ТУР {n}"],
+  es: ["ELIGE UNA MEJORA","Una mejora. Sin vuelta atrás.","NIVEL DE PODER {n}","Nivel asegurado. Elige una mejora.","Ganaste {n} mejoras. Elige una por una.","CONTRATO DE CAMPO","La sala ofrece una mejora gratis. Elige y sal por la puerta superior.","TRATO DE SALA SEGURA","Elige un beneficio y acepta su coste.","OLEADA {a} / {b}","LUCHA","SIGUIENTE {n}S","SALIDA ABIERTA","ELIGE MEJORA","ESTACIÓN DE CURACIÓN","SISTEMA ESTABLE","SALA SUPERADA · VE A LA PUERTA","CONTRATO ACEPTADO · VE A LA PUERTA","CURACIÓN COMPLETA · VE A LA PUERTA","ELIGE UNA MEJORA","SIGUIENTE OLEADA EN {n}","NIVEL MÁXIMO","GIRA SUPERADA","PARTIDA TERMINADA","EL JEFE CAYÓ.","SALA SUPERADA.","NIVEL {n}","PAGADO","ACTIVA","DISPONIBLE","BLOQUEADA","MEJOR {a} / {b} · JEFES {n}","{n} SALAS · {g} GUARDIANES · 1 JEFE","SALA {n}","GIRA {n}"],
+  "pt-BR": ["ESCOLHA UMA MELHORIA","Uma melhoria. Sem desfazer.","NÍVEL DE PODER {n}","Nível garantido. Escolha uma melhoria.","Você ganhou {n} melhorias. Escolha uma por vez.","CONTRATO DE CAMPO","A sala oferece uma melhoria grátis. Escolha e saia pela porta superior.","ACORDO DA SALA SEGURA","Escolha um benefício e aceite o custo.","ONDA {a} / {b}","LUTE","PRÓXIMA {n}S","SAÍDA ABERTA","ESCOLHA MELHORIA","ESTAÇÃO DE RECUPERAÇÃO","SISTEMA ESTÁVEL","SALA LIMPA · VÁ À PORTA","CONTRATO ACEITO · VÁ À PORTA","RECUPERAÇÃO COMPLETA · VÁ À PORTA","ESCOLHA UMA MELHORIA","PRÓXIMA ONDA EM {n}","NÍVEL MÁXIMO","TURNÊ CONCLUÍDA","PARTIDA ENCERRADA","O CHEFE CAIU.","SALA VENCIDA.","NÍVEL {n}","PAGO","ATIVA","DISPONÍVEL","BLOQUEADA","MELHOR {a} / {b} · CHEFES {n}","{n} SALAS · {g} GUARDIÕES · 1 CHEFE","SALA {n}","TURNÊ {n}"],
+  de: ["VERSTÄRKUNG WÄHLEN","Eine Verbesserung. Kein Zurück.","KRAFTSTUFE {n}","Stufe erreicht. Wähle eine Verbesserung.","{n} Verbesserungen verdient. Wähle einzeln.","FELDVERTRAG","Der Raum bietet eine freie Verbesserung. Wähle und gehe durch die obere Tür.","HANDEL IM SCHUTZRAUM","Wähle einen Vorteil und akzeptiere den Preis.","WELLE {a} / {b}","KAMPF","WEITER {n}S","AUSGANG OFFEN","VERBESSERUNG WÄHLEN","HEILSTATION","SYSTEM STABIL","RAUM GESÄUBERT · ZUR TÜR","VERTRAG ANGENOMMEN · ZUR TÜR","HEILUNG BEENDET · ZUR TÜR","EINE VERBESSERUNG WÄHLEN","NÄCHSTE WELLE IN {n}","MAXIMALE STUFE","TOUR GESCHAFFT","LAUF BEENDET","DER BOSS FIEL.","RAUM GESCHAFFT.","STUFE {n}","BEZAHLT","AKTIV","VERFÜGBAR","GESPERRT","BESTE {a} / {b} · BOSSE {n}","{n} RÄUME · {g} WÄCHTER · 1 BOSS","RAUM {n}","TOUR {n}"],
+  fr: ["CHOISISSEZ UNE AMÉLIORATION","Une amélioration. Aucun retour.","NIVEAU DE PUISSANCE {n}","Niveau acquis. Choisissez une amélioration.","{n} améliorations gagnées. Choisissez-les une à une.","CONTRAT DE TERRAIN","La salle offre une amélioration gratuite. Choisissez puis sortez par la porte du haut.","MARCHÉ DE LA SALLE SÛRE","Choisissez un avantage et acceptez son coût.","VAGUE {a} / {b}","COMBAT","SUITE {n}S","SORTIE OUVERTE","CHOISISSEZ","STATION DE SOINS","SYSTÈME STABLE","SALLE NETTOYÉE · ALLEZ À LA PORTE","CONTRAT ACCEPTÉ · ALLEZ À LA PORTE","SOINS TERMINÉS · ALLEZ À LA PORTE","CHOISISSEZ UNE AMÉLIORATION","PROCHAINE VAGUE DANS {n}","NIVEAU MAXIMUM","TOUR TERMINÉ","PARTIE TERMINÉE","LE BOSS EST TOMBÉ.","SALLE VAINCUE.","NIVEAU {n}","PAYÉ","ACTIF","DISPONIBLE","VERROUILLÉ","MEILLEUR {a} / {b} · BOSS {n}","{n} SALLES · {g} GARDIENS · 1 BOSS","SALLE {n}","TOUR {n}"],
+  it: ["SCEGLI IL POTENZIAMENTO","Un potenziamento. Nessun ripensamento.","LIVELLO POTENZA {n}","Livello ottenuto. Scegli un potenziamento.","Hai ottenuto {n} potenziamenti. Scegline uno alla volta.","CONTRATTO SUL CAMPO","La stanza offre un potenziamento gratis. Scegli e usa la porta in alto.","PATTO DELLA STANZA SICURA","Scegli un beneficio e accettane il costo.","ONDATA {a} / {b}","COMBATTI","PROSSIMA {n}S","USCITA APERTA","SCEGLI POTENZIAMENTO","STAZIONE DI CURA","SISTEMA STABILE","STANZA LIBERA · VAI ALLA PORTA","CONTRATTO ACCETTATO · VAI ALLA PORTA","CURA COMPLETA · VAI ALLA PORTA","SCEGLI UN POTENZIAMENTO","PROSSIMA ONDATA TRA {n}","LIVELLO MASSIMO","TOUR COMPLETATO","PARTITA FINITA","IL BOSS È CADUTO.","STANZA SUPERATA.","LIVELLO {n}","PAGATO","ATTIVO","DISPONIBILE","BLOCCATO","MIGLIORE {a} / {b} · BOSS {n}","{n} STANZE · {g} GUARDIANI · 1 BOSS","STANZA {n}","TOUR {n}"],
+  tr: ["GÜÇLENDİRME SEÇ","Bir geliştirme. Geri dönüş yok.","GÜÇ SEVİYESİ {n}","Seviye alındı. Bir geliştirme seç.","{n} geliştirme kazandın. Tek tek seç.","SAHA SÖZLEŞMESİ","Oda ücretsiz bir geliştirme sunuyor. Seç ve üst kapıdan çık.","GÜVENLİ ODA PAZARLIĞI","Bir fayda seç ve bedelini kabul et.","DALGA {a} / {b}","SAVAŞ","SONRAKİ {n}SN","ÇIKIŞ AÇIK","GELİŞTİRME SEÇ","İYİLEŞME İSTASYONU","SİSTEM KARARLI","ODA TEMİZ · KAPIYA GİT","SÖZLEŞME KABUL · KAPIYA GİT","İYİLEŞME TAMAM · KAPIYA GİT","BİR GELİŞTİRME SEÇ","SONRAKİ DALGA {n}","AZAMİ SEVİYE","TUR TAMAMLANDI","KOŞU BİTTİ","BOSS DÜŞTÜ.","ODA KAZANILDI.","SEVİYE {n}","ÖDENDİ","AKTİF","UYGUN","KİLİTLİ","EN İYİ {a} / {b} · BOSS {n}","{n} ODA · {g} MUHAFIZ · 1 BOSS","ODA {n}","TUR {n}"],
+  ar: ["اختر ترقية","ترقية واحدة بلا تراجع.","مستوى القوة {n}","تم بلوغ المستوى. اختر ترقية.","حصلت على {n} ترقيات. اخترها واحدة تلو الأخرى.","عقد ميداني","تقدم الغرفة ترقية مجانية. اختر ثم اخرج من الباب العلوي.","صفقة الغرفة الآمنة","اختر فائدة واقبل تكلفتها.","الموجة {a} / {b}","قاتل","التالي {n}ث","المخرج مفتوح","اختر ترقية","محطة التعافي","النظام مستقر","تم تطهير الغرفة · توجه إلى الباب","تم قبول العقد · توجه إلى الباب","اكتمل التعافي · توجه إلى الباب","اختر ترقية ميدانية","الموجة التالية خلال {n}","أقصى مستوى","اكتملت الجولة","انتهت المحاولة","سقط الزعيم.","تم اجتياز الغرفة.","المستوى {n}","مدفوع","نشط","متاح","مغلق","الأفضل {a} / {b} · الزعماء {n}","{n} غرف · {g} حراس · زعيم واحد","الغرفة {n}","الجولة {n}"],
+  "zh-Hans": ["选择强化","一次强化，无法撤销。","力量等级 {n}","等级已提升。选择一项强化。","获得 {n} 项强化，请逐一选择。","战地契约","房间提供一次免费强化。选择后从上方出口离开。","安全屋交易","选择收益并承担代价。","波次 {a} / {b}","战斗","下波 {n}秒","出口已开启","选择强化","恢复站","系统稳定","房间已清理 · 前往出口","契约已接受 · 前往出口","恢复完成 · 前往出口","选择一项战地强化","下一波还有 {n}","最高等级","巡回完成","本局结束","首领已倒下。","房间已通过。","等级 {n}","已支付","启用","可用","锁定","最佳 {a} / {b} · 首领 {n}","{n} 个房间 · {g} 名守卫 · 1 名首领","房间 {n}","巡回 {n}"],
+  ja: ["強化を選択","強化は1つ。やり直し不可。","パワーレベル {n}","レベル獲得。強化を1つ選択。","強化を{n}個獲得。1つずつ選択。","フィールド契約","無料強化を1つ選び、上の扉へ。","安全室の取引","利益を選び、代償を受け入れる。","ウェーブ {a} / {b}","戦闘","次まで {n}秒","出口開放","強化を選択","回復ステーション","システム安定","部屋クリア · 出口へ","契約成立 · 出口へ","回復完了 · 出口へ","強化を1つ選択","次のウェーブまで {n}","最大レベル","ツアークリア","ラン終了","ボス撃破。","部屋クリア。","レベル {n}","支払済み","選択中","利用可能","ロック中","最高 {a} / {b} · ボス {n}","{n}部屋 · 守護者{g}体 · ボス1体","部屋 {n}","ツアー {n}"],
+  ko: ["강화 선택","강화 하나. 되돌릴 수 없습니다.","전투 레벨 {n}","레벨 달성. 강화를 하나 고르세요.","강화 {n}개 획득. 하나씩 고르세요.","현장 계약","무료 강화 하나를 선택하고 위쪽 문으로 나가세요.","안전실 거래","혜택을 고르고 대가를 받아들이세요.","웨이브 {a} / {b}","전투","다음 {n}초","출구 열림","강화 선택","회복소","시스템 안정","방 정리 완료 · 출구로 이동","계약 수락 · 출구로 이동","회복 완료 · 출구로 이동","현장 강화 하나 선택","다음 웨이브까지 {n}","최고 레벨","투어 완료","도전 종료","보스 처치.","방 돌파.","레벨 {n}","지불 완료","활성","이용 가능","잠김","최고 {a} / {b} · 보스 {n}","방 {n}개 · 수호자 {g}명 · 보스 1명","방 {n}","투어 {n}"],
+};
+
+for (const [locale] of SUPPORTED_LOCALES) {
+  Object.assign(COPY[locale], Object.fromEntries(SYSTEM_KEYS.map((key, index) => [key, SYSTEM[locale][index]])));
+}
+
+const ABILITY_IDS = ["black_volley","pressure_bore","cinder_step","black_steel","deadeye","roaster_core","brass_return","void_pressure","magnetic_draft","recovery_drip","pressure_shell","deep_roast"];
+const EN_ABILITIES = ["Black Volley|Fire one additional projectile. Each projectile deals slightly less damage.","Pressure Bore|Projectiles penetrate one additional target.","Cinder Step|Increase movement speed by 18 percent.","Black Steel|Increase maximum health by 25 and restore 25 health.","Deadeye|Gain 15 percent critical-hit chance.","Roaster Core|Attack 20 percent faster while standing still.","Brass Return|Projectiles ricochet once from chamber walls.","Void Pressure|Increase all projectile damage by 32 percent.","Magnetic Draft|Collect shards and recovery charges from farther away and faster.","Recovery Drip|Restore five percent maximum health whenever a chamber is cleared.","Pressure Shell|Reduce incoming damage by twelve percent.","Deep Roast|Fire larger impact rounds with a wider blast at slightly reduced direct damage."];
+const RU_ABILITIES = ["Чёрный залп|Выпускает дополнительный снаряд. Урон каждого снаряда немного снижен.","Напорный пробой|Снаряды пробивают ещё одну цель.","Шаг по углям|Скорость движения увеличивается на 18 процентов.","Чёрная сталь|Максимальное здоровье увеличивается на 25 и восстанавливается 25 здоровья.","Меткий глаз|Шанс критического удара увеличивается на 15 процентов.","Сердце жаровни|Стоя на месте, герой атакует на 20 процентов быстрее.","Латунный рикошет|Снаряды один раз отскакивают от стен комнаты.","Давление пустоты|Урон всех снарядов увеличивается на 32 процента.","Магнитная тяга|Осколки и заряды лечения притягиваются дальше и быстрее.","Капля восстановления|После зачистки комнаты восстанавливается 5 процентов максимального здоровья.","Защитная оболочка|Получаемый урон снижается на 12 процентов.","Глубокая обжарка|Увеличивает снаряды и радиус взрыва, немного снижая прямой урон."];
+const GENERIC_ABILITY = {
+  es: ["MEJORA","Mejora de combate aplicada al héroe."], "pt-BR": ["MELHORIA","Melhoria de combate aplicada ao herói."], de: ["VERBESSERUNG","Kampfverbesserung für den Helden."], fr: ["AMÉLIORATION","Amélioration de combat appliquée au héros."], it: ["POTENZIAMENTO","Potenziamento da combattimento applicato all'eroe."], tr: ["GELİŞTİRME","Kahramana savaş geliştirmesi uygular."], ar: ["ترقية","تطبق ترقية قتالية على البطل."], "zh-Hans": ["强化","为英雄应用战斗强化。"], ja: ["強化","ヒーローに戦闘強化を適用。"], ko: ["강화","영웅에게 전투 강화를 적용합니다."],
+};
+const TRADEOFF_RU = {
+  "vital-pressure": ["Жизненное давление", "Восстановить 35% здоровья, но потерять 8% урона."],
+  "glass-boiler": ["Стеклянный котёл", "Получить 18% урона, но потерять 12% максимального здоровья."],
+  "predator-focus": ["Фокус хищника", "Получить 10% шанса критического удара, но потерять 10% скорости."],
+  "redline-step": ["Шаг на пределе", "Получить 15% скорости, но потерять 10% урона."],
+};
+const EXTRA_ABILITY_RU = {
+  cross_pressure: ["Перекрёстный огонь", "Дальняя атака выпускает два боковых снаряда. Общий урон немного снижен."],
+  rear_guard: ["Защита тыла", "Дальняя атака выпускает дополнительный снаряд назад."],
+  chain_arc: ["Цепная молния", "Попадание поражает ближайших врагов молнией на 32% урона."],
+  cinder_coat: ["Обжигающее покрытие", "Атаки поджигают врага и наносят 45% урона за две секунды."],
+  frost_lock: ["Морозный захват", "Атаки замедляют врагов на 38% в течение двух секунд."],
+  toxic_roast: ["Ядовитая обжарка", "Атаки отравляют врага на 60% урона за четыре секунды."],
+  death_burst: ["Посмертный взрыв", "Побеждённые враги взрываются и наносят 70% урона атаки."],
+  guardian_discs: ["Диски стража", "Каждые десять секунд герой получает две секунды неуязвимости."],
+  blood_thirst: ["Жажда крови", "Победа над врагом восстанавливает 1,2% максимального здоровья."],
+  rage_boiler: ["Котёл ярости", "Чем меньше здоровья, тем выше урон — вплоть до 38%."],
+  tempered_edge: ["Закалённое лезвие", "Урон ближнего боя повышается на 22%, а дальность удара — на 18%."],
+  execution_pressure: ["Давление казни", "Критические удары получают ещё 55% критического урона."],
+  diagonal_barrage: ["Диагональный залп", "Дальняя атака выпускает два диагональных снаряда с небольшим снижением общего урона."],
+  brass_chain: ["Латунная цепь", "После попадания снаряд перескакивает на ближайшего врага."],
+  cold_wake: ["Холодный след", "Побеждённый враг выпускает вокруг себя замораживающую волну."],
+  pressure_guard: ["Страж давления", "Вращающийся щит уничтожает часть вражеских снарядов."],
+  strong_heart: ["Сильное сердце", "Лечебные заряды восстанавливают на 28% больше здоровья."],
+  fury_coil: ["Катушка бешенства", "Чем меньше здоровья, тем выше скорость атаки — вплоть до 34%."],
+  grace_valve: ["Клапан благодати", "При низком здоровье эффективность лечения повышается вплоть до 45%."],
+  evasive_smoke: ["Ускользающий дым", "При низком здоровье шанс уклонения повышается вплоть до 18%."],
+  smart_roast: ["Умная обжарка", "Герой получает на 25% больше опыта текущего забега."],
+  execution_mark: ["Метка палача", "Попадание может мгновенно добить ослабленного обычного врага."],
+  sluggish_powder: ["Медленный порох", "Вражеские снаряды движутся на 24% медленнее."],
+  second_ignition: ["Второе зажигание", "Один раз за забег герой возрождается с 55% здоровья."],
+  cinder_orbit: ["Орбита углей", "Огненная сфера поражает и поджигает ближайших врагов."],
+  frost_orbit: ["Морозная орбита", "Ледяная сфера поражает и замедляет ближайших врагов."],
+  toxic_orbit: ["Ядовитая орбита", "Токсичная сфера поражает и отравляет ближайших врагов."],
+  volt_orbit: ["Вольтовая орбита", "Электрическая сфера поражает ближайших врагов молнией."],
+  cinder_strike: ["Удар углей", "Периодически обрушивает горящий удар на ближайшего врага."],
+  frost_strike: ["Морозный удар", "Периодически обрушивает замедляющий удар на ближайшего врага."],
+  toxic_strike: ["Ядовитый удар", "Периодически обрушивает отравляющий удар на ближайшего врага."],
+  volt_strike: ["Вольтовый удар", "Периодически поражает ближайшего врага цепной молнией."],
+  meteor_crucible: ["Метеор плавильни", "Периодически обрушивает мощный взрыв на группу врагов."],
+};
+for (const [locale] of SUPPORTED_LOCALES) {
+  const rows = locale === "en" ? EN_ABILITIES : locale === "ru" ? RU_ABILITIES : ABILITY_IDS.map((_, index) => `${GENERIC_ABILITY[locale][0]} ${index + 1}|${GENERIC_ABILITY[locale][1]}`);
+  rows.forEach((row, index) => {
+    const [name, description] = row.split("|");
+    COPY[locale][`ability.${ABILITY_IDS[index]}.name`] = name;
+    COPY[locale][`ability.${ABILITY_IDS[index]}.description`] = description;
+  });
+  Object.freeze(COPY[locale]);
+}
+Object.freeze(COPY);
+
+export function normalizeLocale(locale) {
+  return SUPPORTED_LOCALES.some(([code]) => code === locale) ? locale : "ru";
+}
+
+export function translate(locale, key, values = {}) {
+  const template = COPY[normalizeLocale(locale)]?.[key] ?? COPY.en[key] ?? key;
+  return Object.entries(values).reduce((text, [name, value]) => text.replaceAll(`{${name}}`, String(value)), template);
+}
+
+export function translateAbility(locale, ability) {
+  const tradeoffId = String(ability.id).split(":").at(-1);
+  if (locale === "ru" && TRADEOFF_RU[tradeoffId]) {
+    return { ...ability, name: TRADEOFF_RU[tradeoffId][0], description: TRADEOFF_RU[tradeoffId][1] };
+  }
+  if (String(ability.id).includes(":") && locale !== "en") {
+    return { ...ability, name: GENERIC_ABILITY[normalizeLocale(locale)][0], description: GENERIC_ABILITY[normalizeLocale(locale)][1] };
+  }
+  if (locale === "ru" && EXTRA_ABILITY_RU[ability.id]) {
+    return { ...ability, name: EXTRA_ABILITY_RU[ability.id][0], description: EXTRA_ABILITY_RU[ability.id][1] };
+  }
+  if (!ABILITY_IDS.includes(ability.id)) {
+    if (locale === "en") return { ...ability };
+    return { ...ability, name: GENERIC_ABILITY[normalizeLocale(locale)][0], description: GENERIC_ABILITY[normalizeLocale(locale)][1] };
+  }
+  return { ...ability, name: translate(locale, `ability.${ability.id}.name`), description: translate(locale, `ability.${ability.id}.description`) };
+}
+
+export function applyLocale(locale, root = document) {
+  const normalized = normalizeLocale(locale);
+  root.documentElement.lang = normalized;
+  root.documentElement.dir = normalized === "ar" ? "rtl" : "ltr";
+  for (const element of root.querySelectorAll("[data-i18n]")) element.textContent = translate(normalized, element.dataset.i18n);
+  return normalized;
+}
+
+export function hasOwnTranslation(locale, key) {
+  return Object.hasOwn(COPY[normalizeLocale(locale)] ?? {}, key);
+}
