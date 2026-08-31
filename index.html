@@ -67,7 +67,7 @@
           <div><span>LIFETIME BEANS</span><strong id="lifetime-beans">0</strong></div>
         </div>
 
-        <article id="selected-hero-card" class="hero-contract" aria-label="Selected hero">
+        <article id="selected-hero-card" class="hero-contract hero-contract-selectable" aria-label="Selected hero" role="button" tabindex="0">
           <div id="selected-hero-portrait" class="hero-portrait" data-hero="honey-badger" aria-hidden="true">
             <canvas id="selected-hero-art" class="hero-art" hidden></canvas>
             <span id="selected-hero-mark">HB</span>
@@ -102,11 +102,11 @@
           <div id="loadout-slots" class="loadout-slots"></div>
         </article>
 
-        <article class="tour-contract" aria-label="Selected tour">
+        <article id="selected-tour-card" class="tour-contract tour-contract-selectable" aria-label="Selected tour" role="button" tabindex="0">
           <div class="tour-copy">
             <span id="selected-tour-code">TOUR 01</span>
-            <strong id="selected-tour-name">THE HOLLOW ROASTERY</strong>
-            <small id="selected-tour-district">FURNACE DISTRICT</small>
+            <strong id="selected-tour-name">ROOTFALL JUNGLE</strong>
+            <small id="selected-tour-district">CANOPY DISTRICT</small>
           </div>
           <div class="tour-route">
             <b>ACTIVE</b>
@@ -126,6 +126,9 @@
         <button id="start-run" class="primary-action" type="button">
           <span id="start-run-label">ENTER TOUR 01</span>
           <small><b id="entry-cost">25</b> BEANS</small>
+        </button>
+        <button id="abandon-checkpoint" class="secondary-action abandon-checkpoint" type="button" hidden>
+          СБРОСИТЬ СОХРАНЁННЫЙ ЗАБЕГ · ВЫБРАТЬ ГЕРОЯ И ТУР
         </button>
         <p id="home-notice" class="notice" role="status" aria-live="polite"></p>
 

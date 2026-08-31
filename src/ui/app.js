@@ -104,6 +104,7 @@ export function bootstrapApp() {
     selectedTourDistrict: requiredElement("selected-tour-district"),
     selectedTourRoute: requiredElement("selected-tour-route"),
     changeTour: requiredElement("change-tour"),
+    selectedTourCard: requiredElement("selected-tour-card"),
     tourOverlay: requiredElement("tour-overlay"),
     tourGrid: requiredElement("tour-grid"),
     closeTourSelect: requiredElement("close-tour-select"),
@@ -117,6 +118,7 @@ export function bootstrapApp() {
     wagerInput: requiredElement("wager-input"),
     wagerAll: requiredElement("wager-all"),
     homeNotice: requiredElement("home-notice"),
+    abandonCheckpoint: requiredElement("abandon-checkpoint"),
     abortRun: requiredElement("abort-run"),
     pauseRun: requiredElement("pause-run"),
     attackButton: requiredElement("attack-button"),
@@ -295,6 +297,57 @@ export function bootstrapApp() {
     elements.changeHero.disabled = Boolean(checkpoint);
     elements.changeTour.disabled = Boolean(checkpoint);
     elements.openInventory.disabled = Boolean(checkpoint);
+    elements.selectedHeroCard.classList.toggle("is-locked", Boolean(checkpoint));
+    elements.selectedTourCard.classList.toggle("is-locked", Boolean(checkpoint));
+    elements.abandonCheckpoint.hidden = !checkpoint;
+  };
+
+  const ensureSelectionUnlocked = () => {
+    if (!profileStore.profile.activeRun) {
+      return true;
+    }
+    const confirmed = window.confirm(
+      "Сбросить сохранённый забег, чтобы выбрать другого героя или тур?",
+    );
+    if (!confirmed) {
+      elements.homeNotice.textContent = "Сохранённый забег не сброшен. Нажмите «Сбросить сохранённый забег» ниже.";
+      elements.abandonCheckpoint.classList.add("is-highlighted");
+      window.setTimeout(() => elements.abandonCheckpoint.classList.remove("is-highlighted"), 2400);
+      return false;
+    }
+    abandonSavedRun();
+    return true;
+  };
+
+  const openHeroSelect = () => {
+    if (!ensureSelectionUnlocked()) {
+      return;
+    }
+    renderHeroGrid();
+    elements.tourOverlay.hidden = true;
+    elements.equipmentOverlay.hidden = true;
+    elements.heroOverlay.hidden = false;
+  };
+
+  const openTourSelect = () => {
+    if (!ensureSelectionUnlocked()) {
+      return;
+    }
+    renderTourGrid();
+    elements.heroOverlay.hidden = true;
+    elements.equipmentOverlay.hidden = true;
+    elements.tourOverlay.hidden = false;
+  };
+
+  const abandonSavedRun = () => {
+    if (!profileStore.profile.activeRun) {
+      return;
+    }
+    profileStore.update((draft) => {
+      draft.activeRun = null;
+    });
+    elements.homeNotice.textContent = "Сохранённый забег сброшен. Выберите героя и тур.";
+    renderProfile(profileStore.profile);
   };
 
   const renderSelectedTour = () => {
@@ -653,7 +706,7 @@ export function bootstrapApp() {
   renderHeroGrid();
   renderProfile(profileStore.profile);
   if (profileStore.profile.activeRun) {
-    elements.homeNotice.textContent = "SAFE CHECKPOINT FOUND. RESUME WITHOUT ANOTHER ENTRY CHARGE.";
+    elements.homeNotice.textContent = "Найден сохранённый забег. Продолжите или сбросьте, чтобы выбрать другого героя и тур.";
   }
   game.startLoop();
   const renderAudioToggle = () => {
@@ -797,27 +850,41 @@ export function bootstrapApp() {
     game.requestManualAttack();
   });
 
-  elements.changeHero.addEventListener("click", () => {
-    renderHeroGrid();
-    elements.tourOverlay.hidden = true;
-    elements.equipmentOverlay.hidden = true;
-    elements.heroOverlay.hidden = false;
+  elements.changeHero.addEventListener("click", (event) => {
+    event.stopPropagation();
+    openHeroSelect();
+  });
+
+  elements.selectedHeroCard.addEventListener("click", openHeroSelect);
+  elements.selectedHeroCard.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      openHeroSelect();
+    }
   });
 
   elements.closeHeroSelect.addEventListener("click", () => {
     elements.heroOverlay.hidden = true;
   });
 
-  elements.changeTour.addEventListener("click", () => {
-    renderTourGrid();
-    elements.heroOverlay.hidden = true;
-    elements.equipmentOverlay.hidden = true;
-    elements.tourOverlay.hidden = false;
+  elements.changeTour.addEventListener("click", (event) => {
+    event.stopPropagation();
+    openTourSelect();
+  });
+
+  elements.selectedTourCard.addEventListener("click", openTourSelect);
+  elements.selectedTourCard.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      openTourSelect();
+    }
   });
 
   elements.closeTourSelect.addEventListener("click", () => {
     elements.tourOverlay.hidden = true;
   });
+
+  elements.abandonCheckpoint.addEventListener("click", abandonSavedRun);
 
   elements.openInventory.addEventListener("click", openInventory);
 

@@ -3780,7 +3780,6 @@ export class DoffaGame {
 
     if (this.mode !== "idle") {
       this.drawPlayer(context);
-      this.drawJoystick(context);
     } else {
       this.drawIdleSeal(context);
     }
@@ -3848,9 +3847,6 @@ export class DoffaGame {
       context.lineTo(ARENA.right, composite.bandOffset + composite.bandSlope * 74);
       context.stroke();
       context.globalAlpha = 1;
-      context.strokeStyle = `${palette.line}99`;
-      context.lineWidth = 4;
-      context.strokeRect(ARENA.left, ARENA.top, ARENA.right - ARENA.left, ARENA.bottom - ARENA.top);
       context.restore();
     } else {
       const gradient = context.createLinearGradient(0, 0, 0, VIEWPORT.height);
@@ -3885,12 +3881,14 @@ export class DoffaGame {
       this.drawRoomFixtures(context, environment, palette);
     }
 
-    this.drawRoomIdentityOverlay(context, palette, composite);
-    this.drawRoomAtmosphere(context, environment, palette);
-    this.drawRoomHazards(context, palette);
-    this.drawRoomObstacles(context, palette);
-    this.drawRoomDestructibles(context, palette);
-    this.drawArenaDoor(context, palette);
+    if (!roomSprite) {
+      this.drawRoomIdentityOverlay(context, palette, composite);
+      this.drawRoomAtmosphere(context, environment, palette);
+      this.drawRoomHazards(context, palette);
+      this.drawRoomObstacles(context, palette);
+      this.drawRoomDestructibles(context, palette);
+      this.drawArenaDoor(context, palette);
+    }
 
     context.save();
     if (this.waveCountdown !== null) {

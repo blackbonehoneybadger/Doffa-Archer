@@ -103,6 +103,29 @@ export function removeConnectedMagentaBackdrop(imageData, width, height, extraSe
   );
 }
 
+function shouldStripLightBackdrop(context, width, height) {
+  if (width < 4 || height < 4 || typeof context.getImageData !== "function") {
+    return false;
+  }
+  const pixels = context.getImageData(0, 0, width, height).data;
+  const samplePoints = [
+    [0, 0],
+    [width - 1, 0],
+    [0, height - 1],
+    [width - 1, height - 1],
+    [Math.floor(width / 2), 0],
+    [Math.floor(width / 2), height - 1],
+  ];
+  let lightSamples = 0;
+  for (const [x, y] of samplePoints) {
+    const offset = (y * width + x) * 4;
+    if (isLightNeutralPixel(pixels, offset)) {
+      lightSamples += 1;
+    }
+  }
+  return lightSamples >= 3;
+}
+
 function loadImage(source) {
   return new Promise((resolve, reject) => {
     const image = new Image();
@@ -141,6 +164,10 @@ async function createSpriteCanvas(art) {
       ? removeConnectedMagentaBackdrop
       : removeConnectedLightBackdrop;
     processor(pixels, canvas.width, canvas.height, art.backdropSeeds ?? []);
+    context.putImageData(pixels, 0, 0);
+  } else if (shouldStripLightBackdrop(context, canvas.width, canvas.height)) {
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
+    removeConnectedLightBackdrop(pixels, canvas.width, canvas.height, art.backdropSeeds ?? []);
     context.putImageData(pixels, 0, 0);
   }
 

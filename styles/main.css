@@ -588,6 +588,42 @@ h1 span {
   background: var(--hero-accent);
 }
 
+.hero-contract-selectable,
+.tour-contract-selectable {
+  cursor: pointer;
+  transition: border-color 160ms ease, transform 160ms ease;
+}
+
+.hero-contract-selectable:hover,
+.tour-contract-selectable:hover,
+.hero-contract-selectable:focus-visible,
+.tour-contract-selectable:focus-visible {
+  border-color: var(--gold);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.hero-contract-selectable.is-locked,
+.tour-contract-selectable.is-locked {
+  opacity: 0.72;
+}
+
+.abandon-checkpoint {
+  width: min(100%, 440px);
+  margin: 0 0 10px;
+}
+
+.abandon-checkpoint.is-highlighted {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px rgba(230, 180, 97, 0.35), 0 0 28px rgba(228, 81, 34, 0.25);
+  animation: abandon-pulse 680ms ease-in-out 2;
+}
+
+@keyframes abandon-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
 .hero-change {
   align-self: stretch;
   padding: 0 9px;
@@ -1132,7 +1168,7 @@ h1 span {
 .modal-layer {
   position: fixed;
   inset: 0;
-  z-index: 10;
+  z-index: 60;
   display: grid;
   place-items: center;
   padding: calc(20px + var(--safe-top)) 18px calc(20px + var(--safe-bottom));
@@ -1646,7 +1682,7 @@ h1 span {
 
 .update-banner {
   position: fixed;
-  z-index: 30;
+  z-index: 55;
   left: 50%;
   bottom: calc(18px + var(--safe-bottom));
   width: min(calc(100% - 28px), 520px);
@@ -1939,7 +1975,7 @@ body.arena-active .noise {
   right: 0;
   bottom: 0;
   display: grid;
-  grid-template-columns: 1fr minmax(0, 1.45fr) 1fr;
+  grid-template-columns: minmax(108px, 1fr) minmax(0, 1.55fr) minmax(108px, 1fr);
   gap: 10px;
   align-items: end;
   padding: 10px 10px calc(10px + var(--safe-bottom));
@@ -1999,12 +2035,12 @@ body.arena-active .noise {
 
 .dofa-hero-copy strong {
   display: block;
-  overflow: hidden;
+  overflow: visible;
   color: var(--gold);
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-size: 0.66rem;
+  letter-spacing: 0.05em;
+  white-space: normal;
+  line-height: 1.15;
 }
 
 .dofa-hero-copy span {
