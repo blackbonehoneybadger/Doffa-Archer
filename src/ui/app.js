@@ -471,6 +471,8 @@ export function bootstrapApp() {
   };
 
   const showHome = () => {
+    document.documentElement.classList.remove("arena-active");
+    document.body.classList.remove("arena-active");
     elements.home.hidden = false;
     elements.game.hidden = true;
     elements.abilityOverlay.hidden = true;
@@ -773,6 +775,8 @@ export function bootstrapApp() {
     selectedHero = result.hero ?? selectedHero;
     renderSelectedTour();
     renderSelectedHero();
+    document.documentElement.classList.add("arena-active");
+    document.body.classList.add("arena-active");
     elements.home.hidden = true;
     elements.game.hidden = false;
     elements.homeNotice.textContent = "";

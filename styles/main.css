@@ -1796,31 +1796,51 @@ h1 span {
 }
 
 /* DOFA Arena reference HUD */
+html.arena-active,
+body.arena-active {
+  overflow: hidden;
+  height: 100%;
+}
+
+body.arena-active .app-shell {
+  width: 100%;
+  max-width: none;
+  min-height: 0;
+  height: 100dvh;
+  padding: 0;
+}
+
+body.arena-active .topbar,
+body.arena-active .footer,
+body.arena-active .update-banner,
+body.arena-active .noise {
+  display: none !important;
+}
+
 .dofa-arena-screen {
   position: fixed;
   inset: 0;
-  z-index: 20;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   min-height: 0;
   padding: 0;
   background: #050403;
 }
 
-.dofa-arena-screen .topbar,
-.dofa-arena-screen .footer {
-  display: none;
-}
-
 .dofa-arena-shell {
   position: relative;
-  width: 100%;
-  height: 100dvh;
-  max-width: none;
-  max-height: none;
+  width: min(100vw, calc(100dvh * 9 / 16));
+  height: min(100dvh, calc(100vw * 16 / 9));
+  max-width: 100vw;
+  max-height: 100dvh;
   margin: 0;
-  aspect-ratio: auto;
+  aspect-ratio: 9 / 16;
   border: none;
   box-shadow: none;
   background: #050403;
+  overflow: hidden;
 }
 
 .dofa-arena-topbar {
@@ -2049,6 +2069,40 @@ h1 span {
   height: 52px;
   object-fit: contain;
   filter: drop-shadow(0 0 10px rgba(230, 180, 97, 0.35));
+}
+
+@media (max-height: 740px), (max-width: 380px) {
+  .dofa-arena-controls {
+    gap: 6px;
+    padding: 0 8px;
+    bottom: calc(4px + var(--safe-bottom));
+  }
+
+  .dofa-move-stick,
+  .dofa-attack-button {
+    width: 96px;
+    height: 96px;
+  }
+
+  .dofa-move-stick i {
+    width: 36px;
+    height: 36px;
+    margin: 30px;
+  }
+
+  .dofa-hero-card {
+    padding: 6px 8px;
+  }
+
+  .dofa-hero-portrait {
+    width: 44px;
+    height: 44px;
+  }
+
+  .dofa-attack-button img {
+    width: 44px;
+    height: 44px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
