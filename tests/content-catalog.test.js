@@ -23,7 +23,7 @@ test("the production content catalog has valid tour and boss boundaries", () => 
   assert.equal(getRoomDefinition(DEFAULT_TOUR_ID, 1).waves.length, 1);
   assert.equal(getRoomDefinition(DEFAULT_TOUR_ID, 1).enemies.length, 2);
   assert.equal(getRoomDefinition(DEFAULT_TOUR_ID, 1).reward, "ability");
-  assert.equal(getRoomDefinition(DEFAULT_TOUR_ID, 5).waves.length, 2);
+  assert.equal(getRoomDefinition(DEFAULT_TOUR_ID, 4).waves.length, 2);
   assert.equal(tour.rooms.filter((room) => room.reward === "ability").length, 1);
   assert.equal(Object.isFrozen(getRoomDefinition(DEFAULT_TOUR_ID, 1).waves[0]), true);
   assert.equal(Object.isFrozen(getRoomDefinition(DEFAULT_TOUR_ID, 1).obstacles[0]), true);
