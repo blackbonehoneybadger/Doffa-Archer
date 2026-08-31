@@ -30,12 +30,18 @@ function freezeRoom(definition) {
 }
 
 function freezeEnemy(id, definition) {
+  const art = { backdrop: "transparent", ...definition.art };
+  for (const rowKey of ["motionStateRows", "specialStateRows", "reactionStateRows"]) {
+    if (art[rowKey]) {
+      art[rowKey] = Object.freeze({ ...art[rowKey] });
+    }
+  }
   return Object.freeze({
     id,
     elite: false,
     boss: false,
     ...definition,
-    art: Object.freeze({ backdrop: "transparent", ...definition.art }),
+    art: Object.freeze(art),
   });
 }
 
