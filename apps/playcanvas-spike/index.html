@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+    <meta name="theme-color" content="#090704">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>DOFFA Heroes — PlayCanvas Room</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <main class="experience" data-testid="playcanvas-spike">
+      <canvas id="doffa-3d" aria-label="DOFFA Heroes 3D control room"></canvas>
+
+      <header class="hud hud--top">
+        <button id="back-link" class="icon-button" type="button" aria-label="Вернуться в основную игру">‹</button>
+        <div class="room-copy">
+          <strong>DOFFA ARENA</strong>
+          <span>TOUR 01 · CONTROL ROOM</span>
+        </div>
+        <div class="room-count"><b>01</b><span>/ 50</span></div>
+      </header>
+
+      <section class="health-panel" aria-label="Здоровье Honey Badger">
+        <div class="portrait-wrap"><img id="hero-portrait" alt="Honey Badger"></div>
+        <div class="health-copy">
+          <div><strong>HONEY BADGER</strong><span id="health-label">2450 / 2450</span></div>
+          <div class="health-track"><i id="health-fill"></i></div>
+          <small>BLACK STEEL KATANA · IDENTITY LOCKED</small>
+        </div>
+      </section>
+
+      <div id="status-pill" class="status-pill">ЗАГРУЗКА 3D-КОМНАТЫ</div>
+      <div id="performance-pill" class="performance-pill">WEBGL2 · -- FPS</div>
+
+      <section class="controls" aria-label="Мобильное управление">
+        <div id="joystick" class="joystick" aria-hidden="true"><i></i></div>
+        <div class="weapon-switches" role="group" aria-label="Оружие Honey Badger">
+          <button class="weapon-button is-active" type="button" data-weapon="katana" aria-label="Выбрать катану">刀</button>
+          <button class="weapon-button" type="button" data-weapon="shuriken" aria-label="Выбрать сюрикены">✦</button>
+        </div>
+        <button id="reset-room" class="reset-button" type="button">ЗАНОВО</button>
+        <div class="attack-button" aria-hidden="true"><span id="attack-icon">刀</span><small id="attack-label">КАТАНА · АВТО</small></div>
+      </section>
+
+      <div id="loading" class="loading">
+        <div class="crest">D</div>
+        <strong>DOFFA 3D</strong>
+        <span>PLAYCANVAS MOBILE ROOM</span>
+      </div>
+    </main>
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>

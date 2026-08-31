@@ -52,6 +52,8 @@
 
 ## Phase 2 — Production foundation
 
+- Validate the isolated PlayCanvas mobile control room at `/next/` on a real iPhone and Samsung before replacing any production Canvas rendering path.
+- Keep GitHub as the source of truth and preserve deterministic combat/content modules while PlayCanvas replaces only presentation, touch and 3D scene rendering.
 - Add account service, server-created run sessions, event validation, and anti-replay storage.
 - Add deterministic combat telemetry suitable for cheat analysis.
 - Extend the prototype equipment and hero-level catalogs with upgrades, dismantling, room modifiers, and versioned server balance tables.

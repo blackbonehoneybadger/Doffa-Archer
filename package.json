@@ -9,6 +9,9 @@
   },
   "scripts": {
     "serve": "node scripts/serve.mjs",
+    "dev:next": "vite --config vite.playcanvas.config.js",
+    "build": "node scripts/build-web.mjs",
+    "serve:production": "npm run build && STATIC_ROOT=dist node scripts/serve.mjs",
     "preview:rooms": "node scripts/build-room-effects-preview.mjs",
     "preview:room-variants": "node scripts/build-room-variants-preview.mjs",
     "preview:rootfall-variants": "node scripts/build-rootfall-room-variants-preview.mjs",
@@ -17,5 +20,11 @@
     "check:unity": "bash scripts/check-unity-project.sh",
     "check": "node scripts/check-source.mjs && node scripts/validate-images.mjs && node scripts/secret-scan.mjs && node --test",
     "test": "npm run check"
+  },
+  "dependencies": {
+    "playcanvas": "2.21.4"
+  },
+  "devDependencies": {
+    "vite": "8.2.2"
   }
 }

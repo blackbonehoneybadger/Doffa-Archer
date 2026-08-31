@@ -2,6 +2,10 @@
 
 The first flagship game in the DOFFA Games universe: a portrait action-roguelite built for browser and mobile.
 
+## Next renderer
+
+The production visual migration now uses the open-source PlayCanvas Engine instead of requiring Unity Hub. The current Canvas2D/PWA game remains the behavioral baseline at `/`, while an isolated mobile 3D control room is built at `/next/`. See the [Russian PlayCanvas mobile production plan](docs/PLAYCANVAS_MOBILE_PRODUCTION_PLAN_RU.md).
+
 ## Current milestone
 
 Version `0.16.6` adds production PWA install icons while retaining the bounded mobile asset lifecycle, deterministic Higgsfield page assembler, production multi-frame runtime, safe PWA/update lifecycle, resumable active runs, two complete tours, and the oversized Kaprizard-faced bosses:
