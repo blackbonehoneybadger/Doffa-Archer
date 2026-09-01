@@ -40,18 +40,20 @@ const engine = new Engine(canvas, true, {
 engine.setHardwareScalingLevel(Math.min(1, window.devicePixelRatio > 2 ? 1.15 : 1));
 
 const scene = new Scene(engine);
+// Archero / Unity top-down action camera: steep beta, hero in lower third, look toward enemies (-Z).
 const actionCamera = new ArcRotateCamera(
   "actionCam",
-  -Math.PI / 2,
-  1.05,
-  13.2,
-  new Vector3(0, 0.4, 1.4),
+  0,
+  0.4,
+  17.5,
+  new Vector3(0, 0.15, 0.8),
   scene,
 );
-actionCamera.lowerRadiusLimit = 9;
-actionCamera.upperRadiusLimit = 16;
-actionCamera.lowerBetaLimit = 0.85;
-actionCamera.upperBetaLimit = 1.2;
+actionCamera.lowerRadiusLimit = 12;
+actionCamera.upperRadiusLimit = 22;
+actionCamera.lowerBetaLimit = 0.32;
+actionCamera.upperBetaLimit = 0.65;
+actionCamera.fov = 0.68;
 actionCamera.panningSensibility = 0;
 actionCamera.attachControl(canvas, false);
 actionCamera.inputs.removeByType("ArcRotateCameraKeyboardInput");
@@ -61,9 +63,9 @@ actionCamera.inputs.removeByType("ArcRotateCameraMouseWheelInput");
 let orbitMode = false;
 const orbitCamera = new ArcRotateCamera(
   "orbitCam",
-  -Math.PI / 2.4,
-  1.05,
-  16,
+  0.6,
+  0.85,
+  14,
   new Vector3(0, 1, 0),
   scene,
 );
@@ -123,9 +125,9 @@ function toggleOrbit(force) {
   orbitMode = typeof force === "boolean" ? force : !orbitMode;
   if (orbitMode) {
     orbitCamera.setTarget(state.hero?.root.position.clone() ?? Vector3.Zero());
-    orbitCamera.alpha = -Math.PI / 2.6;
-    orbitCamera.beta = 1.15;
-    orbitCamera.radius = 12;
+    orbitCamera.alpha = 0.75;
+    orbitCamera.beta = 0.9;
+    orbitCamera.radius = 11;
     scene.activeCamera = orbitCamera;
     orbitCamera.attachControl(canvas, true);
     hud.pauseOverlay.hidden = true;
@@ -229,6 +231,20 @@ async function boot() {
       return data;
     },
     setOrbit: toggleOrbit,
+    setOrbitPose: ({ alpha = 0.85, beta = 0.95, radius = 12 } = {}) => {
+      if (!orbitMode) toggleOrbit(true);
+      orbitCamera.alpha = alpha;
+      orbitCamera.beta = beta;
+      orbitCamera.radius = radius;
+      if (state.hero?.root) {
+        orbitCamera.setTarget(state.hero.root.position.clone());
+      }
+    },
+    resetHeroPose: () => {
+      if (!state.hero) return;
+      state.hero.setPosition(0, 3.15);
+      state.hero.setFacing(Math.PI);
+    },
   };
 
   engine.runRenderLoop(() => {
@@ -352,9 +368,11 @@ async function boot() {
       }
       state.projectiles = state.projectiles.filter((p) => p.alive);
 
-      actionCamera.setTarget(new Vector3(pos.x, 0.55, pos.z + 1.8));
-      actionCamera.alpha = -Math.PI / 2;
-      actionCamera.radius = 13.2;
+      // Keep Archero framing: camera south of hero, look slightly ahead toward enemy pack.
+      actionCamera.setTarget(new Vector3(pos.x, 0.15, pos.z - 2.6));
+      actionCamera.alpha = 0;
+      actionCamera.beta = 0.4;
+      actionCamera.radius = 17.5;
       updateHud();
     }
 

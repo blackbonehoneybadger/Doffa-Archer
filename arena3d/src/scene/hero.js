@@ -78,16 +78,18 @@ function makeChestTattooTexture(scene) {
 
 export function createHoneyBadger(scene, shadow) {
   const root = new TransformNode("honeyBadger", scene);
-  root.position = new Vector3(0, 0, 2.8);
+  // Archero layout: hero near bottom, facing enemies toward -Z.
+  root.position = new Vector3(0, 0, 3.15);
+  root.rotation.y = Math.PI;
 
   const skin = mat(scene, "hbSkin", new Color3(0.55, 0.4, 0.3), { roughness: 0.7 });
   const pants = mat(scene, "hbPants", new Color3(0.08, 0.09, 0.1), { roughness: 0.85 });
   const shoe = mat(scene, "hbShoe", new Color3(0.05, 0.05, 0.06), { roughness: 0.55, metallic: 0.2 });
   const steel = mat(scene, "hbSteel", new Color3(0.05, 0.05, 0.06), { roughness: 0.28, metallic: 0.95 });
-  const glowEdge = mat(scene, "hbGlow", new Color3(0.2, 0.08, 0.01), {
-    emissive: new Color3(1, 0.45, 0.08),
-    emissiveIntensity: 2.2,
-    roughness: 0.35,
+  const glowEdge = mat(scene, "hbGlow", new Color3(0.25, 0.1, 0.02), {
+    emissive: new Color3(1, 0.55, 0.1),
+    emissiveIntensity: 3.4,
+    roughness: 0.3,
   });
 
   // Rig bones as TransformNodes (animation targets).
@@ -248,15 +250,28 @@ export function createHoneyBadger(scene, shadow) {
   guard.material = steel;
 
   const trail = MeshBuilder.CreateTorus("slashTrail", {
-    diameter: 1.1,
-    thickness: 0.04,
-    tessellation: 20,
+    diameter: 1.4,
+    thickness: 0.06,
+    tessellation: 28,
   }, scene);
   trail.parent = root;
-  trail.position = new Vector3(0, 1.1, 0.4);
+  trail.position = new Vector3(0, 1.05, -0.35);
   trail.rotation.x = Math.PI / 2;
   trail.material = glowEdge;
   trail.isVisible = false;
+
+  const heroRing = MeshBuilder.CreateTorus("heroRing", {
+    diameter: 1.75,
+    thickness: 0.07,
+    tessellation: 40,
+  }, scene);
+  heroRing.parent = root;
+  heroRing.position.y = 0.04;
+  heroRing.material = mat(scene, "heroRingMat", new Color3(0.35, 0.12, 0.02), {
+    emissive: new Color3(1.0, 0.45, 0.08),
+    emissiveIntensity: 2.6,
+    roughness: 0.4,
+  });
 
   // Lightweight Babylon Skeleton metadata for "skinned/rigged" proof in diagnostics.
   const skeleton = new Skeleton("honeyBadgerSkeleton", "hbSkel", scene);

@@ -31,58 +31,63 @@ function pbr(scene, name, opts = {}) {
 }
 
 export async function buildRootfallRoom(scene) {
-  scene.clearColor = new Color4(0.02, 0.04, 0.03, 1);
-  scene.ambientColor = new Color3(0.08, 0.12, 0.09);
+  scene.clearColor = new Color4(0.01, 0.025, 0.018, 1);
+  scene.ambientColor = new Color3(0.04, 0.07, 0.05);
   scene.fogMode = Scene.FOGMODE_EXP2;
-  scene.fogDensity = 0.035;
-  scene.fogColor = new Color3(0.03, 0.06, 0.04);
+  scene.fogDensity = 0.048;
+  scene.fogColor = new Color3(0.015, 0.04, 0.025);
 
-  const hemi = new HemisphericLight("hemi", new Vector3(0.15, 1, 0.2), scene);
-  hemi.intensity = 0.35;
-  hemi.groundColor = new Color3(0.04, 0.08, 0.05);
+  const hemi = new HemisphericLight("hemi", new Vector3(0.1, 1, 0.15), scene);
+  hemi.intensity = 0.22;
+  hemi.groundColor = new Color3(0.02, 0.05, 0.03);
 
-  const sun = new DirectionalLight("sun", new Vector3(-0.35, -1, 0.25), scene);
-  sun.position = new Vector3(4, 12, -3);
-  sun.intensity = 0.55;
+  const sun = new DirectionalLight("sun", new Vector3(-0.25, -1, 0.35), scene);
+  sun.position = new Vector3(3, 14, -4);
+  sun.intensity = 0.42;
 
-  const torchL = new PointLight("torchL", new Vector3(-5.2, 2.4, 1.5), scene);
-  torchL.diffuse = new Color3(1, 0.45, 0.12);
-  torchL.intensity = 18;
-  torchL.range = 11;
+  const torchL = new PointLight("torchL", new Vector3(-4.6, 2.6, 0.8), scene);
+  torchL.diffuse = new Color3(1, 0.48, 0.12);
+  torchL.intensity = 28;
+  torchL.range = 12;
 
-  const torchR = new PointLight("torchR", new Vector3(5.2, 2.4, 1.2), scene);
+  const torchR = new PointLight("torchR", new Vector3(4.6, 2.6, 0.6), scene);
   torchR.diffuse = new Color3(1, 0.42, 0.1);
-  torchR.intensity = 18;
-  torchR.range = 11;
+  torchR.intensity = 28;
+  torchR.range = 12;
+
+  const venomFill = new PointLight("venomFill", new Vector3(0, 3.2, -2.2), scene);
+  venomFill.diffuse = new Color3(0.2, 1.0, 0.35);
+  venomFill.intensity = 9;
+  venomFill.range = 11;
 
   const shadow = new ShadowGenerator(1024, sun);
   shadow.useBlurExponentialShadowMap = true;
   shadow.blurKernel = 16;
 
   const stone = pbr(scene, "stone", {
-    albedo: new Color3(0.07, 0.09, 0.07),
-    roughness: 0.9,
+    albedo: new Color3(0.045, 0.06, 0.05),
+    roughness: 0.93,
     metallic: 0.02,
   });
   const moss = pbr(scene, "moss", {
-    albedo: new Color3(0.05, 0.16, 0.06),
+    albedo: new Color3(0.04, 0.14, 0.05),
     roughness: 0.95,
-    emissive: new Color3(0.04, 0.45, 0.1),
-    emissiveIntensity: 1.1,
+    emissive: new Color3(0.05, 0.55, 0.12),
+    emissiveIntensity: 1.7,
   });
   const bark = pbr(scene, "bark", {
-    albedo: new Color3(0.12, 0.08, 0.05),
-    roughness: 0.92,
+    albedo: new Color3(0.09, 0.05, 0.03),
+    roughness: 0.94,
   });
   const leaf = pbr(scene, "leaf", {
-    albedo: new Color3(0.05, 0.14, 0.06),
-    roughness: 0.8,
+    albedo: new Color3(0.03, 0.11, 0.045),
+    roughness: 0.85,
   });
   const ember = pbr(scene, "ember", {
-    albedo: new Color3(0.4, 0.12, 0.02),
-    emissive: new Color3(1, 0.35, 0.05),
-    emissiveIntensity: 2.4,
-    roughness: 0.4,
+    albedo: new Color3(0.35, 0.1, 0.02),
+    emissive: new Color3(1, 0.4, 0.05),
+    emissiveIntensity: 3.2,
+    roughness: 0.35,
   });
 
   const root = new TransformNode("rootfallRoom", scene);

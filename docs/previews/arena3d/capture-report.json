@@ -1,13 +1,13 @@
 {
-  "capturedAt": "2026-09-01T20:58:54.698Z",
-  "origin": "http://127.0.0.1:40359",
+  "capturedAt": "2026-09-01T21:32:41.988Z",
+  "origin": "http://127.0.0.1:46069",
   "engine": "babylon.js",
   "note": "In-engine captures. Concept quality-bar JPEG was not used as a scene texture.",
   "stats": {
     "fps": 24,
-    "meshes": 405,
-    "materials": 33,
-    "vertices": 17663,
+    "meshes": 409,
+    "materials": 34,
+    "vertices": 20145,
     "usedGltfFloor": true,
     "skeletonBones": 3,
     "strongRootsLocked": true,
@@ -15,7 +15,7 @@
     "orbitMode": true,
     "hp": 2450,
     "enemiesAlive": 5,
-    "jsHeapMB": 40
+    "jsHeapMB": 37
   },
   "files": [
     "rootfall-08-action-camera.png",

@@ -58,18 +58,20 @@ async function main() {
 
     await page.goto(`${origin}/arena3d/`, { waitUntil: "networkidle", timeout: 120_000 });
     await waitForSlice(page);
+    await page.evaluate(() => {
+      window.__DOFA_ARENA3D__.resetHeroPose?.();
+      window.__DOFA_ARENA3D__.setOrbit?.(false);
+    });
+    await page.waitForTimeout(700);
 
     const actionPath = resolve(outDir, "rootfall-08-action-camera.png");
     await page.screenshot({ path: actionPath, type: "png" });
 
-    await page.evaluate(() => window.__DOFA_ARENA3D__.setOrbit(true));
-    await page.waitForTimeout(800);
-    // Orbit a bit to prove depth (not a flat billboard).
-    await page.mouse.move(360, 640);
-    await page.mouse.down();
-    await page.mouse.move(520, 520, { steps: 12 });
-    await page.mouse.up();
-    await page.waitForTimeout(400);
+    // Deterministic 3/4 orbit pose — proves real depth without burying the camera underground.
+    await page.evaluate(() => {
+      window.__DOFA_ARENA3D__.setOrbitPose({ alpha: 0.95, beta: 1.05, radius: 11.5 });
+    });
+    await page.waitForTimeout(600);
 
     const orbitPath = resolve(outDir, "rootfall-08-orbit-depth-proof.png");
     await page.screenshot({ path: orbitPath, type: "png" });

@@ -41,32 +41,51 @@ function createInsectElite(scene, shadow, position) {
     emissive: new Color3(0.05, 0.35, 0.08),
     emissiveIntensity: 0.6,
   });
-  const body = MeshBuilder.CreateSphere("insectBody", { diameter: 0.9, segments: 10 }, scene);
+  const body = MeshBuilder.CreateSphere("insectBody", { diameter: 1.05, segments: 12 }, scene);
   body.parent = root;
-  body.position.y = 0.7;
-  body.scaling = new Vector3(1, 0.7, 1.3);
+  body.position.y = 0.85;
+  body.scaling = new Vector3(0.95, 0.65, 1.45);
   body.material = bodyMat;
   body.castShadow = true;
   if (shadow) shadow.addShadowCaster(body);
 
+  const head = MeshBuilder.CreateSphere("insectHead", { diameter: 0.45, segments: 8 }, scene);
+  head.parent = root;
+  head.position = new Vector3(0, 1.05, 0.55);
+  head.material = bodyMat;
+
+  for (const side of [-1, 1]) {
+    const scythe = MeshBuilder.CreateCylinder(`scythe${side}`, {
+      height: 1.1,
+      diameterTop: 0.04,
+      diameterBottom: 0.12,
+      tessellation: 6,
+    }, scene);
+    scythe.parent = root;
+    scythe.position = new Vector3(side * 0.55, 1.0, 0.35);
+    scythe.rotation.z = side * 1.1;
+    scythe.rotation.x = -0.5;
+    scythe.material = bodyMat;
+  }
+
   for (let i = 0; i < 6; i += 1) {
     const leg = MeshBuilder.CreateCylinder(`insectLeg${i}`, {
-      height: 0.7,
-      diameter: 0.06,
+      height: 0.85,
+      diameter: 0.07,
       tessellation: 5,
     }, scene);
     leg.parent = root;
     const ang = (i / 6) * Math.PI * 2;
-    leg.position = new Vector3(Math.cos(ang) * 0.45, 0.35, Math.sin(ang) * 0.45);
-    leg.rotation.z = Math.cos(ang) * 0.7;
-    leg.rotation.x = Math.sin(ang) * 0.4;
+    leg.position = new Vector3(Math.cos(ang) * 0.5, 0.4, Math.sin(ang) * 0.45);
+    leg.rotation.z = Math.cos(ang) * 0.75;
+    leg.rotation.x = Math.sin(ang) * 0.45;
     leg.material = bodyMat;
   }
 
   for (const side of [-1, 1]) {
-    const wing = MeshBuilder.CreatePlane(`wing${side}`, { width: 0.7, height: 0.35 }, scene);
+    const wing = MeshBuilder.CreatePlane(`wing${side}`, { width: 0.85, height: 0.4 }, scene);
     wing.parent = root;
-    wing.position = new Vector3(side * 0.25, 0.95, -0.1);
+    wing.position = new Vector3(side * 0.28, 1.15, -0.15);
     wing.rotation.y = side * 0.4;
     wing.material = mat(scene, `wingMat${side}`, new Color3(0.4, 0.9, 0.5), {
       emissive: new Color3(0.1, 0.4, 0.15),
@@ -191,12 +210,13 @@ function createWoodHumanoid(scene, shadow, position, id) {
 }
 
 export function createEnemySet(scene, shadow) {
+  // Archero / reference layout: elite top-center, turrets mid flanks, wood units lower flanks.
   const enemies = [
-    createInsectElite(scene, shadow, new Vector3(0, 0, -3.2)),
-    createPlantTurret(scene, shadow, new Vector3(-3.2, 0, -0.6), "plant_turret_l"),
-    createPlantTurret(scene, shadow, new Vector3(3.2, 0, -0.4), "plant_turret_r"),
-    createWoodHumanoid(scene, shadow, new Vector3(-2.4, 0, 1.8), "wood_humanoid_l"),
-    createWoodHumanoid(scene, shadow, new Vector3(2.5, 0, 1.6), "wood_humanoid_r"),
+    createInsectElite(scene, shadow, new Vector3(0, 0, -3.6)),
+    createPlantTurret(scene, shadow, new Vector3(-2.8, 0, -1.1), "plant_turret_l"),
+    createPlantTurret(scene, shadow, new Vector3(2.8, 0, -1.0), "plant_turret_r"),
+    createWoodHumanoid(scene, shadow, new Vector3(-2.2, 0, 0.9), "wood_humanoid_l"),
+    createWoodHumanoid(scene, shadow, new Vector3(2.2, 0, 0.8), "wood_humanoid_r"),
   ];
   return enemies;
 }
