@@ -7,6 +7,12 @@ import {
 export const PLAYER_ATTACK_ANIMATION_SECONDS = 0.22;
 export const PLAYER_HIT_ANIMATION_SECONDS = 0.2;
 export const PLAYER_DEFEAT_ANIMATION_SECONDS = 0.72;
+export const PLAYER_MELEE_ATTACK_VARIANTS = 3;
+export const PLAYER_MELEE_ATTACK_CLIPS = Object.freeze([
+  "attack",
+  "attack2",
+  "attack3",
+]);
 export const PLAYER_ANIMATION_STATES = Object.freeze([
   "idle",
   "run",
@@ -54,11 +60,32 @@ export function getPlayerAnimationState(player = {}) {
   return player.moving ? "run" : "idle";
 }
 
+export function getPlayerMeleeAttackClip(player = {}) {
+  const raw = Number.isInteger(player.meleeAttackVariant)
+    ? player.meleeAttackVariant
+    : 0;
+  const variant = ((raw % PLAYER_MELEE_ATTACK_VARIANTS) + PLAYER_MELEE_ATTACK_VARIANTS)
+    % PLAYER_MELEE_ATTACK_VARIANTS;
+  return PLAYER_MELEE_ATTACK_CLIPS[variant];
+}
+
+export function getPlayerAttackMotionClip(player = {}) {
+  if (player.attackWeaponSlot === "ranged") {
+    return "rangedAttack";
+  }
+  return getPlayerMeleeAttackClip(player);
+}
+
 export function getPlayerAnimationFrame(player = {}, framesByState = {}) {
   const state = getPlayerAnimationState(player);
-  const frames = Array.isArray(framesByState[state]) && framesByState[state].length > 0
-    ? framesByState[state]
-    : [0];
+  const clip = state === "attack"
+    ? getPlayerAttackMotionClip(player)
+    : state;
+  const frames = Array.isArray(framesByState[clip]) && framesByState[clip].length > 0
+    ? framesByState[clip]
+    : Array.isArray(framesByState[state]) && framesByState[state].length > 0
+      ? framesByState[state]
+      : [0];
   let sequenceIndex = 0;
 
   if (state === "attack") {
@@ -91,17 +118,44 @@ export function getPlayerAnimationFrame(player = {}, framesByState = {}) {
 export function getPlayerFullMotionFrame(player = {}, stateRows = {}, animationAtlas = null) {
   const state = getPlayerAnimationState(player);
   const direction = getPlayerFacingDirection(player);
+  const motionClip = state === "attack"
+    ? getPlayerAttackMotionClip(player)
+    : state;
+  const atlasState = motionClip === "rangedAttack" ? "attack" : motionClip;
   const animatedFrame = getDirectionalAnimationFrame(
     player,
-    state,
+    atlasState,
     direction,
     animationAtlas,
   );
   if (animatedFrame) {
+    if (state === "attack") {
+      return Object.freeze({
+        ...animatedFrame,
+        state: motionClip === "rangedAttack" ? "attack" : animatedFrame.state,
+        clip: motionClip,
+      });
+    }
     return animatedFrame;
   }
 
-  let row = stateRows && typeof stateRows === "object" ? stateRows[state] : undefined;
+  let lookupState = state;
+  if (state === "attack") {
+    if (motionClip === "rangedAttack") {
+      // Ranged release prefers the dedicated secondary atlas. Only fall through
+      // when a sheet explicitly authors a rangedAttack row.
+      if (!stateRows || !Number.isInteger(stateRows.rangedAttack)) {
+        return null;
+      }
+      lookupState = "rangedAttack";
+    } else if (stateRows && Number.isInteger(stateRows[motionClip])) {
+      lookupState = motionClip;
+    } else {
+      lookupState = "attack";
+    }
+  }
+
+  let row = stateRows && typeof stateRows === "object" ? stateRows[lookupState] : undefined;
   // Legacy full-direction sheets contain one planted pose and one stride pose
   // per direction. Alternating those authored cells makes the feet visibly
   // plant and push instead of sliding a frozen run pose across the floor.
@@ -120,9 +174,10 @@ export function getPlayerFullMotionFrame(player = {}, stateRows = {}, animationA
     return null;
   }
   return Object.freeze({
-    state,
+    state: state === "attack" ? "attack" : lookupState,
     direction,
     index: row * 4 + directionIndex,
+    ...(state === "attack" ? { clip: motionClip } : {}),
   });
 }
 
@@ -145,11 +200,19 @@ export function advancePlayerAnimation(player, delta, moving = false) {
   return player;
 }
 
-export function triggerPlayerAttack(player) {
-  if (player) {
-    player.attackAnimation = PLAYER_ATTACK_ANIMATION_SECONDS;
-    restartAnimationTimeline(player, "attack", getPlayerFacingDirection(player));
+export function triggerPlayerAttack(player, { weaponSlot = "melee" } = {}) {
+  if (!player) {
+    return player;
   }
+  player.attackAnimation = PLAYER_ATTACK_ANIMATION_SECONDS;
+  player.attackWeaponSlot = weaponSlot === "ranged" ? "ranged" : "melee";
+  if (player.attackWeaponSlot === "melee") {
+    const nextCount = player.meleeAttackCount ?? 0;
+    player.meleeAttackVariant = nextCount % PLAYER_MELEE_ATTACK_VARIANTS;
+    player.meleeAttackCount = nextCount + 1;
+  }
+  restartAnimationTimeline(player, "attack", getPlayerFacingDirection(player));
+  return player;
 }
 
 export function triggerPlayerHit(player) {

@@ -1648,7 +1648,9 @@ export class DoffaGame {
 
     const baseAngle = Math.atan2(target.y - this.player.y, target.x - this.player.x);
     this.player.facing = baseAngle;
-    triggerPlayerAttack(this.player);
+    triggerPlayerAttack(this.player, {
+      weaponSlot: this.player.selectedWeaponSlot === "ranged" ? "ranged" : "melee",
+    });
     const nextAttackSequence = (this.player.attackSequence ?? 0) + 1;
     const useSecondary = Boolean(weapon);
     this.player.attackSequence = nextAttackSequence;
@@ -5232,7 +5234,7 @@ export class DoffaGame {
       : useSecondaryAttackSprite
         ? 2
         : useFullMotionSprite
-          ? fullMotionFrame.rows ?? 6
+          ? fullMotionFrame.rows ?? 10
           : usesAtlas ? 2 : 1;
     const renderMetrics = getSpriteRenderMetrics({
       spriteWidth: sprite.width,

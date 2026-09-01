@@ -84,6 +84,10 @@ test("offline shell includes the data-driven content and progression catalogs", 
   assert.equal(worker.includes('"/assets/heroes/honey-badger-motion-v3.png"'), true);
   assert.equal(worker.includes('"/assets/heroes/honey-badger-full-motion-v3.png"'), true);
   assert.equal(worker.includes('"/assets/heroes/honey-badger-shuriken-attack-v1.png"'), true);
+  assert.equal(worker.includes('"/assets/heroes/hadida-cigarette-attack-v1.png"'), true);
+  assert.equal(worker.includes('"/assets/heroes/boy-gold-pistol-attack-v1.png"'), true);
+  assert.equal(worker.includes('"/assets/heroes/mr-kroo-bow-attack-v1.png"'), true);
+  assert.equal(worker.includes('"/assets/heroes/pata-coffee-rifle-attack-v1.png"'), true);
   assert.equal(worker.includes('"/assets/heroes/honey-badger-reactions-v2.png"'), true);
   assert.equal(worker.includes('"/assets/heroes/boy-full-motion-v3.png"'), true);
   assert.equal(worker.includes('"/assets/heroes/boy-reactions-v2.png"'), true);

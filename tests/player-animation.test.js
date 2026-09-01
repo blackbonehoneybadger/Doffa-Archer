@@ -10,6 +10,7 @@ import {
   advancePlayerAnimation,
   getPlayerAnimationFrame,
   getPlayerAnimationState,
+  getPlayerAttackMotionClip,
   getPlayerFacingDirection,
   getPlayerFullMotionFrame,
   getPlayerAnimationPose,
@@ -95,10 +96,52 @@ test("full-direction motion maps state rows and facing sectors to one atlas cell
   );
   assert.deepEqual(
     getPlayerFullMotionFrame({ hp: 100, attackAnimation: 0.1, facing: -Math.PI / 4 }, stateRows),
-    { state: "attack", direction: "north-east", index: 23 },
+    { state: "attack", direction: "north-east", index: 23, clip: "attack" },
   );
   assert.equal(getPlayerFullMotionFrame({ hp: 100, hitAnimation: 0.1 }, stateRows), null);
   assert.equal(getPlayerFullMotionFrame({ hp: 100 }, null), null);
+});
+
+test("melee attacks cycle three full-motion clips while ranged uses a dedicated clip", () => {
+  const stateRows = {
+    idle: 0,
+    run: 2,
+    attack: 4,
+    attack2: 6,
+    attack3: 8,
+  };
+  const player = {
+    hp: 100,
+    facing: 0,
+    meleeAttackCount: 0,
+    meleeAttackVariant: 0,
+  };
+
+  triggerPlayerAttack(player, { weaponSlot: "melee" });
+  assert.equal(player.meleeAttackVariant, 0);
+  assert.deepEqual(
+    getPlayerFullMotionFrame(player, stateRows),
+    { state: "attack", direction: "east", index: 16, clip: "attack" },
+  );
+
+  triggerPlayerAttack(player, { weaponSlot: "melee" });
+  assert.equal(player.meleeAttackVariant, 1);
+  assert.deepEqual(
+    getPlayerFullMotionFrame(player, stateRows),
+    { state: "attack", direction: "east", index: 24, clip: "attack2" },
+  );
+
+  triggerPlayerAttack(player, { weaponSlot: "melee" });
+  assert.equal(player.meleeAttackVariant, 2);
+  assert.deepEqual(
+    getPlayerFullMotionFrame(player, stateRows),
+    { state: "attack", direction: "east", index: 32, clip: "attack3" },
+  );
+
+  triggerPlayerAttack(player, { weaponSlot: "ranged" });
+  assert.equal(player.attackWeaponSlot, "ranged");
+  assert.equal(getPlayerAttackMotionClip(player), "rangedAttack");
+  assert.equal(getPlayerFullMotionFrame(player, stateRows), null);
 });
 
 test("legacy run sheets alternate planted and stride poses so feet do not slide", () => {
