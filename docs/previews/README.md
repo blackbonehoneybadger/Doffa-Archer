@@ -12,6 +12,7 @@ These files communicate the approved visual target for the first playable tour.
 - `tour01-room30-pressure-elite.jpg` shows an elite encounter with a radial pressure pattern.
 - `tour01-room50-hollow-roaster.jpg` shows Pata fighting the final boss with the pressure coffee rifle.
 - `tour02-room08-rootfall-jungle.jpg` is the approved visual-separation target for the now-playable Rootfall Jungle: roots, wet stone, mantises, seed-spitters, and root stalkers instead of reused Roastery machines. It remains a design composite rather than a live browser capture.
+- `arena3d-rootfall-08-combat.png` and `arena3d-rootfall-08-orbit.png` are in-engine Babylon.js captures of the parallel true-3D slice (combat camera and orbit proof). They are not the concept JPEG reused as a background.
 - `rootfall-jungle-room-variants-v1.jpg` compares the exact ten standard-district Rootfall plates used by the runtime after 0.16.1: two Higgsfield-authored architectures per organic district. The four safe rooms and unique Root Throne remain separate plates.
 - `rootfall-elite-complete-animation-v1.jpg` shows the exact 0.16.2 secondary windup/release and hit/defeat runtime atlases for Briar Jaguar, Mire Bellower, Orchid Maw, and Strangler Ape. Higgsfield authored the four cardinal source poses; diagonal runtime sectors intentionally reuse the nearest cardinal rather than being described as separately authored views.
 - `hero-eight-direction-runtime.jpg` shows the exact E/SE/S/SW/W/NW/N/NE still-frame selection now wired into live combat for all five heroes.

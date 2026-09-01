@@ -34,6 +34,15 @@ test("Replit server exposes the game shell, icons, and service-worker scope secu
     assert.equal(worker.status, 200);
     assert.equal(worker.headers.get("service-worker-allowed"), "/");
     assert.match(worker.headers.get("cache-control") ?? "", /must-revalidate/);
+
+    const arena3d = await fetch(`${origin}/arena3d/`);
+    assert.equal(arena3d.status, 200);
+    const arenaHtml = await arena3d.text();
+    assert.match(arenaHtml, /DOFA ARENA/);
+    assert.match(arenaHtml, /ROOTFALL JUNGLE/);
+    assert.match(arenaHtml, /id="arena3d"/);
+    assert.doesNotMatch(arenaHtml, /TAP BEAN/);
+    assert.doesNotMatch(arenaHtml, /v01-dofa-arena-rootfall-08/);
   } finally {
     await new Promise((resolve) => server.close(resolve));
   }

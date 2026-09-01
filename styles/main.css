@@ -895,6 +895,25 @@ h1 span {
   letter-spacing: 0.08em;
 }
 
+.arena3d-entry {
+  width: min(100%, 440px);
+  display: grid;
+  gap: 4px;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(230, 180, 97, 0.4);
+  background: linear-gradient(180deg, rgba(36, 24, 14, 0.92), rgba(16, 11, 8, 0.94));
+  color: var(--gold);
+  text-decoration: none;
+  letter-spacing: 0.08em;
+}
+
+.arena3d-entry small {
+  color: var(--muted);
+  font-size: 0.58rem;
+  letter-spacing: 0.06em;
+}
+
 .game-screen {
   min-height: 0;
   padding-top: 10px;

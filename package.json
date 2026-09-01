@@ -9,6 +9,10 @@
   },
   "scripts": {
     "serve": "node scripts/serve.mjs",
+    "dev:3d": "vite --config arena3d/vite.config.js",
+    "build:3d": "vite build --config arena3d/vite.config.js",
+    "preview:3d": "vite preview --config arena3d/vite.config.js --host",
+    "capture:3d": "node scripts/capture-arena3d.mjs",
     "preview:rooms": "node scripts/build-room-effects-preview.mjs",
     "preview:room-variants": "node scripts/build-room-variants-preview.mjs",
     "preview:rootfall-variants": "node scripts/build-rootfall-room-variants-preview.mjs",
@@ -16,5 +20,11 @@
     "build:higgsfield-pages": "node scripts/build-higgsfield-multiframe-pages.mjs",
     "check": "node scripts/check-source.mjs && node scripts/validate-images.mjs && node scripts/secret-scan.mjs && node --test",
     "test": "npm run check"
+  },
+  "dependencies": {
+    "@babylonjs/core": "^7.54.3"
+  },
+  "devDependencies": {
+    "vite": "^6.3.5"
   }
 }
