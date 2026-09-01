@@ -25,6 +25,7 @@ import { createControls } from "./scene/controls.js";
 import { createEnemySet, createSeedProjectile } from "./scene/enemies.js";
 import { createHoneyBadger } from "./scene/hero.js";
 import { assertNoConceptBillboard, buildRootfallRoom, resolveWallPush } from "./scene/room.js";
+import { createWorldHud } from "./scene/worldHud.js";
 
 const canvas = document.getElementById("render-canvas");
 const appRoot = document.getElementById("app");
@@ -199,6 +200,23 @@ async function boot() {
   state.enemies = createEnemySet(scene, state.room.shadow);
   syncEnemyTransforms();
   assertNoConceptBillboard(scene);
+
+  function makeHudAnchor(parent, name, y = 1.65) {
+    const anchor = MeshBuilder.CreateBox(name, { size: 0.05 }, scene);
+    anchor.parent = parent;
+    anchor.position.y = y;
+    anchor.isVisible = false;
+    anchor.isPickable = false;
+    return anchor;
+  }
+
+  state.hero.hudAnchor = makeHudAnchor(state.hero.root, "heroHudAnchor", 1.7);
+  for (const enemy of state.enemies) {
+    enemy.hudAnchor = makeHudAnchor(enemy.root, `enemyHud_${enemy.id}`, 1.35);
+    enemy.maxHp = enemy.maxHp ?? enemy.hp;
+  }
+  state.worldHud = createWorldHud(scene);
+
   updateHud();
 
   // Expose diagnostics for capture scripts / honest FPS reporting.
@@ -298,13 +316,41 @@ async function boot() {
         for (const id of hits) {
           const enemy = state.enemies.find((e) => e.id === id);
           if (!enemy || !enemy.alive) continue;
+          const before = enemy.hp;
           Object.assign(enemy, damageEnemy(enemy, SLICE.attackDamage));
+          const dealt = Math.max(0, before - enemy.hp);
+          if (dealt > 0 && enemy.hudAnchor) {
+            state.worldHud.spawnDamageNumber(enemy.hudAnchor, dealt);
+          }
+          if (enemy.hudAnchor) {
+            state.worldHud.setBar(enemy.id, enemy.hudAnchor, enemy.hp, enemy.maxHp || before, { showValue: false });
+          }
           enemy.root.scaling.setAll(enemy.alive ? 1 : 0.01);
-          if (!enemy.alive) enemy.root.setEnabled(false);
+          if (!enemy.alive) {
+            enemy.root.setEnabled(false);
+            state.worldHud.hideBar(enemy.id);
+          }
         }
       }
       state.attackCd = applyAttackCooldown(state.attackCd, dt, fired);
       state.hero.update(dt, moved.moving);
+
+      // Archero-feel floating HP bars
+      if (state.hero.hudAnchor) {
+        state.worldHud.setBar("hero", state.hero.hudAnchor, state.hp, SLICE.heroMaxHp, {
+          friendly: true,
+          showValue: true,
+        });
+      }
+      for (const enemy of state.enemies) {
+        if (!enemy.hudAnchor) continue;
+        if (!enemy.alive) {
+          state.worldHud.hideBar(enemy.id);
+          continue;
+        }
+        state.worldHud.setBar(enemy.id, enemy.hudAnchor, enemy.hp, enemy.maxHp || enemy.hp);
+      }
+      state.worldHud.update(dt);
 
       // Enemy AI
       syncEnemyTransforms();
@@ -376,6 +422,9 @@ async function boot() {
       updateHud();
     }
 
+    if (state.paused || orbitMode) {
+      state.worldHud?.update(dt);
+    }
     scene.render();
   });
 

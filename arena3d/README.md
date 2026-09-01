@@ -39,6 +39,7 @@ npm test                     # 2D check + 3D slice tests
 ### Ready
 - Parallel Vite + Babylon.js entry at `/arena3d/`
 - Portrait action camera HUD: pause · DOFA ARENA · TOUR 02 · ROOTFALL JUNGLE · 08/50 · Honey Badger · KATANA · HP · left stick · right attack
+- Archero-feel world HUD: mesh-linked floating HP bars + damage numbers (feel refs in `docs/references/archero-feel/`, not Habby IP)
 - Real 3D Rootfall room meshes (stone tiles, roots, foliage, torches, moss/glow veins) + optional glTF PBR floor tile
 - Rigged Honey Badger hierarchy + katana swing VFX; placeholder head labeled; STRONG ROOTS decal non-mirrored
 - Enemy set: insect elite, 2 plant turrets, 2 wood humanoids; plant shots use telegraph-before-damage
