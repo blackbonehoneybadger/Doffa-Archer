@@ -5,13 +5,16 @@ import { dirname, extname, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const STATIC_ROOT = process.env.STATIC_ROOT
+  ? resolve(PROJECT_ROOT, process.env.STATIC_ROOT)
+  : PROJECT_ROOT;
 const DEFAULT_PORT = 4173;
 const PUBLIC_ROOT_FILES = new Set([
   "/index.html",
   "/manifest.webmanifest",
   "/service-worker.js",
 ]);
-const PUBLIC_PATH_PREFIXES = ["/assets/", "/src/", "/styles/"];
+const PUBLIC_PATH_PREFIXES = ["/assets/", "/next/", "/src/", "/styles/"];
 const SECURITY_HEADERS = Object.freeze({
   "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests",
   "Referrer-Policy": "no-referrer",
@@ -143,7 +146,7 @@ export function createStaticServer({ root = PROJECT_ROOT } = {}) {
 async function start() {
   const port = parsePort(process.env.PORT);
   const host = process.env.HOST || "0.0.0.0";
-  const server = createStaticServer();
+  const server = createStaticServer({ root: STATIC_ROOT });
   await new Promise((resolveListen, rejectListen) => {
     server.once("error", rejectListen);
     server.listen(port, host, resolveListen);
