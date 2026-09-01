@@ -1,4 +1,4 @@
-import { createReadStream } from "node:fs";
+import { createReadStream, existsSync } from "node:fs";
 import { stat } from "node:fs/promises";
 import { createServer } from "node:http";
 import { dirname, extname, resolve, sep } from "node:path";
@@ -11,7 +11,7 @@ const PUBLIC_ROOT_FILES = new Set([
   "/manifest.webmanifest",
   "/service-worker.js",
 ]);
-const PUBLIC_PATH_PREFIXES = ["/assets/", "/src/", "/styles/"];
+const PUBLIC_PATH_PREFIXES = ["/assets/", "/src/", "/styles/", "/arena3d/"];
 const SECURITY_HEADERS = Object.freeze({
   "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests",
   "Referrer-Policy": "no-referrer",
@@ -32,6 +32,9 @@ const CONTENT_TYPES = Object.freeze({
   ".mjs": "text/javascript; charset=utf-8",
   ".png": "image/png",
   ".svg": "image/svg+xml; charset=utf-8",
+  ".wasm": "application/wasm",
+  ".gltf": "model/gltf+json",
+  ".bin": "application/octet-stream",
   ".webmanifest": "application/manifest+json; charset=utf-8",
 });
 
@@ -53,7 +56,17 @@ function resolveRequestFile(root, requestUrl) {
   if (pathname.includes("\0")) {
     return { error: 400 };
   }
-  const publicPath = pathname === "/" ? "/index.html" : pathname;
+  const publicPath = pathname === "/" ? "/index.html" : pathname === "/arena3d" ? "/arena3d/" : pathname;
+  if (publicPath === "/arena3d/" || publicPath.startsWith("/arena3d/")) {
+    const rest = publicPath.slice("/arena3d/".length) || "index.html";
+    const distPath = resolve(root, "dist/arena3d", rest);
+    const sourcePath = resolve(root, "arena3d", rest);
+    const chosen = existsSync(distPath) ? distPath : sourcePath;
+    if (chosen !== root && !chosen.startsWith(`${root}${sep}`)) {
+      return { error: 403 };
+    }
+    return { filePath: chosen, pathname: publicPath };
+  }
   const publicPrefix = PUBLIC_PATH_PREFIXES.find((prefix) => publicPath.startsWith(prefix));
   if (!PUBLIC_ROOT_FILES.has(publicPath) && !publicPrefix) {
     return { error: 404 };

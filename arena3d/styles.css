@@ -1,0 +1,323 @@
+:root {
+  --gold: #e6b461;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: #050403;
+  color: #f3dfbd;
+  font-family: Palatino, "Palatino Linotype", "Times New Roman", serif;
+  user-select: none;
+  touch-action: none;
+}
+
+.slice-shell {
+  position: relative;
+  width: min(100vw, calc(100dvh * 9 / 16));
+  height: 100dvh;
+  margin: 0 auto;
+  overflow: hidden;
+  background: #050403;
+}
+
+#arena3d {
+  display: block;
+  width: 100%;
+  height: 100%;
+  outline: none;
+}
+
+.topbar {
+  position: absolute;
+  z-index: 5;
+  top: calc(8px + var(--safe-top));
+  left: 10px;
+  right: 10px;
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  gap: 10px;
+  align-items: start;
+  pointer-events: none;
+}
+
+.pause,
+.controls,
+.hero-card button,
+.attack {
+  pointer-events: auto;
+}
+
+.pause {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  grid-auto-flow: column;
+  gap: 5px;
+  place-content: center;
+  border: 1px solid rgba(230, 180, 97, 0.45);
+  border-radius: 10px;
+  background: rgba(12, 9, 7, 0.82);
+}
+
+.pause span {
+  width: 4px;
+  height: 16px;
+  border-radius: 2px;
+  background: var(--gold);
+}
+
+.title-block {
+  text-align: center;
+}
+
+.title-block strong {
+  display: block;
+  color: var(--gold);
+  font-size: 1.05rem;
+  letter-spacing: 0.14em;
+}
+
+.title-block span {
+  display: block;
+  margin-top: 2px;
+  color: rgba(243, 223, 189, 0.72);
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+}
+
+.progress {
+  height: 4px;
+  margin-top: 6px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.progress i {
+  display: block;
+  width: 16%;
+  height: 100%;
+  background: linear-gradient(90deg, #3fbf46, #7dff66);
+  box-shadow: 0 0 10px rgba(125, 255, 102, 0.45);
+}
+
+.room {
+  min-width: 58px;
+  color: var(--gold);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-align: right;
+}
+
+.placeholder-banner,
+.perf,
+.status {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  z-index: 4;
+  margin: 0;
+  pointer-events: none;
+  text-shadow: 0 1px 8px #000;
+}
+
+.placeholder-banner {
+  top: calc(62px + var(--safe-top));
+  color: #d4b36a;
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  text-align: center;
+}
+
+.perf {
+  top: calc(78px + var(--safe-top));
+  color: rgba(243, 223, 189, 0.55);
+  font-size: 0.52rem;
+  text-align: right;
+}
+
+.status {
+  bottom: calc(148px + var(--safe-bottom));
+  color: rgba(243, 223, 189, 0.8);
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  text-align: center;
+}
+
+.controls {
+  position: absolute;
+  z-index: 5;
+  left: 0;
+  right: 0;
+  bottom: calc(8px + var(--safe-bottom));
+  display: grid;
+  grid-template-columns: 1fr minmax(0, 1.35fr) 1fr;
+  gap: 8px;
+  align-items: end;
+  padding: 0 12px;
+}
+
+.stick {
+  justify-self: start;
+  width: 118px;
+  height: 118px;
+  border-radius: 50%;
+  border: 2px solid rgba(230, 180, 97, 0.45);
+  background: radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.55));
+}
+
+.stick i {
+  display: block;
+  width: 44px;
+  height: 44px;
+  margin: 37px;
+  border-radius: 50%;
+  border: 2px solid var(--gold);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.hero-card {
+  display: grid;
+  grid-template-columns: 52px 1fr auto;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid rgba(230, 180, 97, 0.28);
+  background: linear-gradient(180deg, rgba(18, 12, 9, 0.92), rgba(8, 6, 5, 0.88));
+}
+
+.portrait {
+  width: 52px;
+  height: 52px;
+  object-fit: cover;
+  border: 1px solid rgba(230, 180, 97, 0.35);
+  background: #1a120d;
+}
+
+.hero-copy strong {
+  display: block;
+  color: var(--gold);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.hero-copy span {
+  color: rgba(243, 223, 189, 0.7);
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+}
+
+.health {
+  height: 6px;
+  margin-top: 6px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.health i {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, #2f8a38, #7dff66);
+}
+
+.hero-copy b {
+  display: block;
+  margin-top: 3px;
+  color: #d8f5c8;
+  font-size: 0.58rem;
+}
+
+.weapon-icons {
+  display: grid;
+  gap: 6px;
+}
+
+.weapon-icons img {
+  width: 22px;
+  height: 22px;
+}
+
+.attack {
+  justify-self: end;
+  width: 92px;
+  height: 92px;
+  border: 2px solid var(--gold);
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #3a2a16, #120e0a);
+}
+
+.attack img {
+  width: 42px;
+  height: 42px;
+}
+
+.pause-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  display: grid;
+  place-items: center;
+  background: rgba(5, 4, 3, 0.72);
+}
+
+.pause-layer[hidden] {
+  display: none !important;
+}
+
+.pause-card {
+  width: min(92vw, 360px);
+  padding: 22px;
+  border: 1px solid rgba(230, 180, 97, 0.35);
+  background: #120e0b;
+  text-align: center;
+}
+
+.pause-card h1 {
+  margin: 0 0 12px;
+  color: var(--gold);
+  letter-spacing: 0.14em;
+}
+
+.pause-card p,
+.pause-card label {
+  margin: 0 0 10px;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+}
+
+.pause-card button,
+.pause-card a {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding: 10px;
+  border: 1px solid rgba(230, 180, 97, 0.4);
+  background: #1c1510;
+  color: var(--gold);
+  text-decoration: none;
+  letter-spacing: 0.08em;
+}
+
+.locale select {
+  margin-left: 8px;
+  background: #1c1510;
+  color: var(--gold);
+  border: 1px solid rgba(230, 180, 97, 0.4);
+}
+
+@media (min-aspect-ratio: 9/16) {
+  .slice-shell {
+    width: calc(100dvh * 9 / 16);
+  }
+}

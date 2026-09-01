@@ -122,6 +122,15 @@ npm run serve
 
 Open `http://localhost:4173`. Keyboard controls are WASD or arrow keys. On a phone, drag anywhere inside the arena to move. The hero attacks automatically while standing still.
 
+A parallel true-3D vertical slice lives at `/arena3d/` and does not replace this Canvas prototype:
+
+```bash
+npm install
+npm run dev:3d
+```
+
+Open `http://localhost:4174/arena3d/`. Touch stick to move, attack button (or Space/J) to swing the katana. Pause → Orbit camera proves the room has real depth. See [True 3D Rootfall slice](docs/ARENA3D_SLICE.md).
+
 Run the repository checks with:
 
 ```bash

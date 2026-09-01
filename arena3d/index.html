@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+    <meta name="theme-color" content="#070605">
+    <meta name="description" content="DOFA ARENA — true 3D Rootfall Jungle vertical slice.">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>DOFA ARENA · Rootfall 08</title>
+    <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+    <link rel="manifest" href="./manifest.webmanifest">
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <main class="slice-shell" aria-label="DOFA ARENA combat">
+      <canvas id="arena3d" width="720" height="1280" aria-label="Rootfall Jungle true 3D arena"></canvas>
+
+      <header class="topbar">
+        <button id="pause-button" class="pause" type="button" aria-label="Pause">
+          <span></span><span></span>
+        </button>
+        <div class="title-block">
+          <strong id="game-name">DOFA ARENA</strong>
+          <span id="tour-line">TOUR 02 · ROOTFALL JUNGLE</span>
+          <div class="progress"><i id="progress-fill"></i></div>
+        </div>
+        <div id="room-counter" class="room">08 / 50</div>
+      </header>
+
+      <p id="placeholder-banner" class="placeholder-banner">PLACEHOLDER HEAD · owner face scan pending</p>
+      <p id="perf-line" class="perf">-- FPS</p>
+      <p id="status-line" class="status">Left stick to move. Attack button to swing the katana.</p>
+
+      <footer class="controls">
+        <div id="move-stick" class="stick" aria-hidden="true"><i id="move-knob"></i></div>
+        <div class="hero-card">
+          <img class="portrait" src="/assets/heroes/portraits/honey-badger-portrait-v1.png" alt="">
+          <div class="hero-copy">
+            <strong id="hero-name">HONEY BADGER</strong>
+            <span id="hero-weapon">KATANA</span>
+            <div class="health"><i id="health-fill"></i></div>
+            <b id="health-text">2450 / 2450</b>
+          </div>
+          <div class="weapon-icons" aria-hidden="true">
+            <img src="/assets/ui/shuriken-v1.png" alt="">
+            <img src="/assets/ui/katana-v1.png" alt="">
+          </div>
+        </div>
+        <button id="attack-button" class="attack" type="button" aria-label="Attack">
+          <img src="/assets/ui/katana-v1.png" alt="">
+        </button>
+      </footer>
+
+      <section id="pause-layer" class="pause-layer" hidden>
+        <div class="pause-card">
+          <h1 id="pause-title">PAUSED</h1>
+          <p id="pause-loot">Local prototype loot. Not claimable. No wallet, mint, or $DOFA wiring.</p>
+          <p id="pause-antagonist">KAPRIZORD waits past room 50.</p>
+          <p id="pause-site">dofa.coffee</p>
+          <label class="locale">
+            Language
+            <select id="locale-select">
+              <option value="ru">Русский</option>
+              <option value="en">English</option>
+            </select>
+          </label>
+          <button id="resume-button" type="button">Resume</button>
+          <button id="orbit-button" type="button">Orbit camera</button>
+          <button id="combat-cam-button" type="button">Combat camera</button>
+          <a id="back-2d-button" href="/">2D prototype</a>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
