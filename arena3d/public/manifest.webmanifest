@@ -1,0 +1,33 @@
+{
+  "id": "/arena3d/",
+  "name": "DOFA ARENA · 3D Slice",
+  "short_name": "DOFA 3D",
+  "description": "DOFA ARENA true-3D Rootfall Jungle room 08 spike. No wallet, mint, or reward authority.",
+  "start_url": "/arena3d/",
+  "scope": "/arena3d/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0a1210",
+  "theme_color": "#0a1210",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {
+      "src": "/assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

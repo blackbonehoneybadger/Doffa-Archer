@@ -11,9 +11,9 @@ const PUBLIC_ROOT_FILES = new Set([
   "/manifest.webmanifest",
   "/service-worker.js",
 ]);
-const PUBLIC_PATH_PREFIXES = ["/assets/", "/src/", "/styles/"];
+const PUBLIC_PATH_PREFIXES = ["/assets/", "/src/", "/styles/", "/arena3d/"];
 const SECURITY_HEADERS = Object.freeze({
-  "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests",
+  "Content-Security-Policy": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; manifest-src 'self'; worker-src 'self' blob:; upgrade-insecure-requests",
   "Referrer-Policy": "no-referrer",
   "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
   "X-Content-Type-Options": "nosniff",
@@ -22,16 +22,20 @@ const SECURITY_HEADERS = Object.freeze({
   "Cross-Origin-Resource-Policy": "same-origin",
 });
 const CONTENT_TYPES = Object.freeze({
+  ".bin": "application/octet-stream",
   ".css": "text/css; charset=utf-8",
+  ".gltf": "model/gltf+json",
   ".html": "text/html; charset=utf-8",
   ".ico": "image/x-icon",
   ".jpeg": "image/jpeg",
   ".jpg": "image/jpeg",
   ".js": "text/javascript; charset=utf-8",
   ".json": "application/json; charset=utf-8",
+  ".map": "application/json; charset=utf-8",
   ".mjs": "text/javascript; charset=utf-8",
   ".png": "image/png",
   ".svg": "image/svg+xml; charset=utf-8",
+  ".wasm": "application/wasm",
   ".webmanifest": "application/manifest+json; charset=utf-8",
 });
 
@@ -58,6 +62,22 @@ function resolveRequestFile(root, requestUrl) {
   if (!PUBLIC_ROOT_FILES.has(publicPath) && !publicPrefix) {
     return { error: 404 };
   }
+
+  // Built Vite bundle lives in arena3d/dist, exposed as /arena3d/*
+  if (publicPath === "/arena3d" || publicPath === "/arena3d/") {
+    const filePath = resolve(root, "arena3d/dist/index.html");
+    return { filePath, pathname: "/arena3d/index.html" };
+  }
+  if (publicPath.startsWith("/arena3d/")) {
+    const relative = publicPath.slice("/arena3d/".length);
+    const filePath = resolve(root, "arena3d/dist", relative);
+    const distRoot = resolve(root, "arena3d/dist");
+    if (filePath !== distRoot && !filePath.startsWith(`${distRoot}${sep}`)) {
+      return { error: 403 };
+    }
+    return { filePath, pathname: publicPath };
+  }
+
   const relativePath = `.${publicPath}`;
   const filePath = resolve(root, relativePath);
   if (filePath !== root && !filePath.startsWith(`${root}${sep}`)) {

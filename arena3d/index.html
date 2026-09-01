@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+    <meta name="theme-color" content="#0a1210">
+    <meta name="description" content="DOFA ARENA — true-3D Rootfall Jungle room 08 slice (Babylon.js spike).">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>DOFA ARENA · Rootfall 08 · 3D Slice</title>
+    <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/assets/icon-192.png" sizes="192x192">
+    <link rel="manifest" href="./manifest.webmanifest">
+    <link rel="stylesheet" href="./src/styles.css">
+  </head>
+  <body>
+    <div id="app" class="arena3d-app">
+      <canvas id="render-canvas" width="720" height="1280" tabindex="0" aria-label="DOFA ARENA true-3D combat"></canvas>
+
+      <header class="hud-top" aria-label="Run status">
+        <button id="btn-pause" class="btn-pause" type="button" aria-label="Pause">
+          <span></span><span></span>
+        </button>
+        <div class="hud-title">
+          <strong data-i18n="brand">DOFA ARENA</strong>
+          <span data-i18n="tourLine">TOUR 02 · ROOTFALL JUNGLE</span>
+          <div class="hud-progress" aria-hidden="true"><i id="hud-progress-fill"></i></div>
+        </div>
+        <div class="hud-room" aria-label="Room progress">
+          <span id="hud-room-text" data-i18n="roomCounter">08 / 50</span>
+        </div>
+      </header>
+
+      <div id="perf-panel" class="perf-panel" aria-live="polite">
+        <span id="perf-fps">FPS —</span>
+        <span id="perf-mem">MEM —</span>
+        <span id="perf-meshes">MESH —</span>
+      </div>
+
+      <div id="pause-overlay" class="pause-overlay" hidden>
+        <h2 data-i18n="paused">PAUSED</h2>
+        <p data-i18n="pauseHint">True-3D Babylon.js spike · 2D prototype remains at home.</p>
+        <button id="btn-resume" type="button" data-i18n="resume">RESUME</button>
+        <button id="btn-orbit" type="button" data-i18n="orbit">ORBIT PROOF (DEPTH)</button>
+        <a id="link-2d" class="link-2d" href="/" data-i18n="back2d">BACK TO 2D PROTOTYPE</a>
+      </div>
+
+      <div id="orbit-chip" class="orbit-chip" hidden>
+        <span data-i18n="orbitLive">ORBIT PROOF · drag to rotate · real depth</span>
+        <button id="btn-exit-orbit" type="button" data-i18n="orbitExit">EXIT ORBIT</button>
+      </div>
+
+      <div id="placeholder-banner" class="placeholder-banner" role="note">
+        <span data-i18n="headNote">PLACEHOLDER HEAD · face scan not invented · STRONG ROOTS locked</span>
+      </div>
+
+      <footer class="hud-bottom" aria-label="Combat controls">
+        <div id="move-stick" class="move-stick" aria-hidden="true"><i id="move-knob"></i></div>
+        <div class="hero-card" aria-label="Hero status">
+          <div class="hero-mark" aria-hidden="true">HB</div>
+          <div class="hero-copy">
+            <strong data-i18n="heroName">HONEY BADGER</strong>
+            <span data-i18n="weaponName">KATANA</span>
+            <div class="health-track"><i id="hud-health-fill"></i></div>
+            <b id="hud-health-text">2450 / 2450</b>
+          </div>
+          <div class="weapon-icons" aria-hidden="true">
+            <span class="wicon">◇</span>
+            <span class="wicon">◇</span>
+            <span class="wicon">◇</span>
+            <span class="wicon swap">↻</span>
+          </div>
+        </div>
+        <button id="btn-attack" class="btn-attack" type="button" aria-label="Attack">
+          <span class="katana-glyph" aria-hidden="true"></span>
+        </button>
+      </footer>
+
+      <div id="lang-bar" class="lang-bar">
+        <button type="button" data-lang="ru" aria-pressed="true">RU</button>
+        <button type="button" data-lang="en" aria-pressed="false">EN</button>
+      </div>
+    </div>
+    <noscript>DOFA ARENA requires JavaScript for the true-3D slice.</noscript>
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>

@@ -1,0 +1,119 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "dofa-arena3d-generate-floor-gltf"
+  },
+  "scenes": [
+    {
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0,
+  "nodes": [
+    {
+      "mesh": 0,
+      "name": "RootfallFloorTile"
+    }
+  ],
+  "meshes": [
+    {
+      "name": "RootfallFloorTile",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1,
+            "TEXCOORD_0": 2
+          },
+          "indices": 3,
+          "material": 0
+        }
+      ]
+    }
+  ],
+  "materials": [
+    {
+      "name": "RootfallStonePBR",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.18,
+          0.2,
+          0.16,
+          1
+        ],
+        "metallicFactor": 0.04,
+        "roughnessFactor": 0.86
+      }
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 8,
+      "type": "VEC3",
+      "max": [
+        0.55,
+        0.16,
+        0.55
+      ],
+      "min": [
+        -0.55,
+        0,
+        -0.55
+      ]
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 8,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 8,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5123,
+      "count": 36,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 96,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 96,
+      "byteLength": 96,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 192,
+      "byteLength": 64,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 256,
+      "byteLength": 72,
+      "target": 34963
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 328,
+      "uri": "rootfall-floor-tile.bin"
+    }
+  ]
+}
