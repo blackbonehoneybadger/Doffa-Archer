@@ -2,10 +2,10 @@ import { VIEWPORT } from "../config/game-config.js";
 import { getRoomArt } from "./room-art.js";
 
 export const PLATE_PLAY_BOUNDS = Object.freeze({
-  left: 36,
-  right: 684,
-  top: 210,
-  bottom: 1210,
+  left: 72,
+  right: 648,
+  top: 300,
+  bottom: 1140,
 });
 
 export function getRoomArtForDefinition(roomDefinition, roomNumber) {
@@ -25,4 +25,8 @@ export function roomHasAuthoredPlate(roomDefinition, roomNumber) {
 
 export function resolvePlayBounds(usesPlateGameplay = false) {
   return usesPlateGameplay ? PLATE_PLAY_BOUNDS : VIEWPORT.arena;
+}
+
+export function getGameplayCollisionObstacles(destructibles = []) {
+  return destructibles.filter((item) => item?.alive);
 }

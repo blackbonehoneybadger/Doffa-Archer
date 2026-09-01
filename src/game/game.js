@@ -98,7 +98,11 @@ import {
 import { getRunXpRequirement, grantRunXp } from "./run-progression.js";
 import { acquireRoomArtLease, getRoomArt, getRoomCompositeIdentity } from "./room-art.js";
 import { ArenaRenderer3D } from "./arena-renderer-3d.js";
-import { resolvePlayBounds, roomHasAuthoredPlate } from "./plate-gameplay.js";
+import {
+  getGameplayCollisionObstacles,
+  resolvePlayBounds,
+  roomHasAuthoredPlate,
+} from "./plate-gameplay.js";
 import {
   getRoomAmbientMote,
   getRoomEffectProfile,
@@ -1253,6 +1257,7 @@ export class DoffaGame {
   }
 
   spawnRoom(roomNumber) {
+    this.room = roomNumber;
     this.enemies = [];
     this.projectiles = [];
     this.combatTexts = [];
@@ -1281,11 +1286,9 @@ export class DoffaGame {
       boss: Boolean(roomDefinition.boss),
     });
     this.syncRoomAssetWindow(roomNumber);
-    this.destructibles = this.usesPlateGameplay
-      ? []
-      : roomDefinition.destructibles.map((placement) => (
-        createRuntimeDestructible(placement, this.nextDestructibleId++)
-      ));
+    this.destructibles = roomDefinition.destructibles.map((placement) => (
+      createRuntimeDestructible(placement, this.nextDestructibleId++)
+    ));
 
     if (roomDefinition.roomType === "rest") {
       this.wave = 0;
@@ -1603,14 +1606,7 @@ export class DoffaGame {
   }
 
   getActiveCollisionObstacles() {
-    if (this.usesPlateGameplay) {
-      return [];
-    }
-    const staticObstacles = this.roomDefinition?.obstacles ?? [];
-    const activeDestructibles = (this.destructibles ?? []).filter((item) => item.alive);
-    return activeDestructibles.length > 0
-      ? [...staticObstacles, ...activeDestructibles]
-      : staticObstacles;
+    return getGameplayCollisionObstacles(this.destructibles ?? []);
   }
 
   updateDestructibles(delta) {
@@ -1951,8 +1947,16 @@ export class DoffaGame {
         this.updateRootfallTyrant(enemy, delta);
       }
 
-      enemy.x = clamp(enemy.x, ARENA.left + enemy.radius, ARENA.right - enemy.radius);
-      enemy.y = clamp(enemy.y, ARENA.top + enemy.radius, ARENA.bottom - enemy.radius);
+      enemy.x = clamp(
+        enemy.x,
+        this.arenaBounds.left + enemy.radius,
+        this.arenaBounds.right - enemy.radius,
+      );
+      enemy.y = clamp(
+        enemy.y,
+        this.arenaBounds.top + enemy.radius,
+        this.arenaBounds.bottom - enemy.radius,
+      );
       this.resolveEntityObstacles(enemy);
 
       const movementX = enemy.x - previousX;
@@ -2204,13 +2208,13 @@ export class DoffaGame {
       if (enemy.stateTimer <= 0) {
         enemy.x = clamp(
           this.player.x - Math.cos(this.player.facing) * 135,
-          ARENA.left + enemy.radius,
-          ARENA.right - enemy.radius,
+          this.arenaBounds.left + enemy.radius,
+          this.arenaBounds.right - enemy.radius,
         );
         enemy.y = clamp(
           this.player.y - Math.sin(this.player.facing) * 135,
-          ARENA.top + enemy.radius,
-          ARENA.bottom - enemy.radius,
+          this.arenaBounds.top + enemy.radius,
+          this.arenaBounds.bottom - enemy.radius,
         );
         enemy.submerged = false;
         enemy.state = "emerge";
@@ -2877,10 +2881,6 @@ export class DoffaGame {
   }
 
   handleProjectileObstacles(projectile) {
-    if (this.usesPlateGameplay) {
-      return;
-    }
-
     for (const destructible of this.destructibles ?? []) {
       if (!destructible.alive) {
         continue;
@@ -2909,6 +2909,10 @@ export class DoffaGame {
           70,
         );
       }
+      return;
+    }
+
+    if (this.usesPlateGameplay) {
       return;
     }
 
@@ -2944,8 +2948,9 @@ export class DoffaGame {
   }
 
   handleFriendlyProjectileWalls(projectile) {
-    const hitHorizontal = projectile.x < ARENA.left || projectile.x > ARENA.right;
-    const hitVertical = projectile.y < ARENA.top || projectile.y > ARENA.bottom;
+    const bounds = this.arenaBounds;
+    const hitHorizontal = projectile.x < bounds.left || projectile.x > bounds.right;
+    const hitVertical = projectile.y < bounds.top || projectile.y > bounds.bottom;
 
     if (!hitHorizontal && !hitVertical) {
       return;
@@ -2954,8 +2959,8 @@ export class DoffaGame {
     if (projectile.wallBounces > 0) {
       if (hitHorizontal) projectile.vx *= -1;
       if (hitVertical) projectile.vy *= -1;
-      projectile.x = clamp(projectile.x, ARENA.left, ARENA.right);
-      projectile.y = clamp(projectile.y, ARENA.top, ARENA.bottom);
+      projectile.x = clamp(projectile.x, bounds.left, bounds.right);
+      projectile.y = clamp(projectile.y, bounds.top, bounds.bottom);
       projectile.wallBounces -= 1;
       this.onAudio?.("ricochet", { visual: projectile.visual });
       this.spawnParticles(projectile.x, projectile.y, projectile.color ?? this.player.accent, 3, 65);
@@ -3901,12 +3906,14 @@ export class DoffaGame {
       this.drawProjectile(context, projectile);
     }
 
+    const palette = ROOM_PALETTES[this.roomDefinition?.environment ?? "ash"] ?? ROOM_PALETTES.ash;
+    this.drawRoomDestructibles(context, palette);
+
     for (const entry of this.combatTexts) {
       this.drawCombatText(context, entry);
     }
 
     context.save();
-    const palette = ROOM_PALETTES[this.roomDefinition?.environment ?? "ash"] ?? ROOM_PALETTES.ash;
     if (this.waveCountdown !== null) {
       context.fillStyle = "rgba(8, 5, 4, 0.78)";
       context.fillRect(VIEWPORT.width / 2 - 112, 556, 224, 112);
@@ -4022,9 +4029,9 @@ export class DoffaGame {
       this.drawRoomAtmosphere(context, environment, palette);
       this.drawRoomHazards(context, palette);
       this.drawRoomObstacles(context, palette);
-      this.drawRoomDestructibles(context, palette);
       this.drawArenaDoor(context, palette);
     }
+    this.drawRoomDestructibles(context, palette);
 
     context.save();
     if (this.waveCountdown !== null) {
