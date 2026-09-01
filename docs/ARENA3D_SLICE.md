@@ -35,7 +35,7 @@ Public names in this shell: **DOFA ARENA**, **KAPRIZORD**, **dofa.coffee**. `$DO
 | RU/EN shell | ready | Slice HUD/pause only. |
 | PWA-capable 3D page | partial | Manifest, portrait standalone, reuses install icons. Not added to the 2D service-worker precache (avoids replacing `/arena3d/` with the 2D shell). |
 | Tests | ready | New slice tests plus existing 2D suite. |
-| In-engine captures | ready | `docs/previews/arena3d-rootfall-08-combat.png` and `...-orbit.png` after `npm run capture:3d`. |
+| In-engine captures | ready | `docs/previews/arena3d-rootfall-08-combat.png` and `...-orbit.png`. Headless SwiftShader FPS in those stills is not a phone measurement. |
 | Mobile Legends visual parity | not started | Quality bar is the attached concept. This spike is real 3D, not that bar. |
 | Token / wallet / mint / claim | not started | Intentionally out of scope. |
 | 250-room 3D game | not started | One room vertical slice. |

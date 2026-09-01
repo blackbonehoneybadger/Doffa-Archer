@@ -57,7 +57,10 @@ export async function bootArena3d(canvas) {
   const scene = new Scene(engine);
   scene.clearColor = new Color4(0.015, 0.02, 0.018, 1);
   scene.environmentTexture = createLocalEnvTexture(scene);
-  scene.environmentIntensity = 0.32;
+  scene.environmentIntensity = 0.7;
+  scene.imageProcessingConfiguration.toneMappingEnabled = true;
+  scene.imageProcessingConfiguration.exposure = 1.55;
+  scene.imageProcessingConfiguration.contrast = 1.12;
 
   const materials = createMaterials(scene);
   const room = createRootfallRoom(scene, materials);
@@ -120,8 +123,10 @@ export async function bootArena3d(canvas) {
 
   if (new URLSearchParams(location.search).get("orbit") === "1") {
     world.cameraMode = "orbit";
+    camera.alpha = Math.PI * 0.28;
+    camera.beta = 0.95;
+    camera.radius = 15;
     enableOrbitProof(camera, canvas);
-    setPaused(true);
   }
 
   let frames = 0;
@@ -157,7 +162,7 @@ export async function bootArena3d(canvas) {
       frames = 0;
       fpsWindow = now;
       const heap = performance.memory ? `${Math.round(performance.memory.usedJSHeapSize / 1048576)} MB` : "n/a";
-      $("perf-line").textContent = `${fps} FPS · ${heap} · ${scene.getActiveMeshes().length} meshes`;
+      $("perf-line").textContent = `${Math.round(engine.getFps())} FPS · ${heap} · ${scene.getActiveMeshes().length} meshes`;
     }
   });
   window.addEventListener("resize", () => engine.resize());
@@ -170,7 +175,7 @@ export async function bootArena3d(canvas) {
     engine,
     scene,
     world,
-    getFps: () => fps,
+    getFps: () => Math.round(engine.getFps()),
   };
   window.__DOFA_SLICE_READY__ = true;
   return window.__DOFA_SLICE__;

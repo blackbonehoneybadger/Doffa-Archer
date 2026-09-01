@@ -26,8 +26,8 @@ export function createHoneyBadger(scene, materials) {
   chestMark.material = materials.chestTattoo;
   chestMark.parent = hips;
 
-  const backMark = MeshBuilder.CreatePlane("hb-strong-roots", { width: 0.36, height: 0.12 }, scene);
-  backMark.position = new Vector3(0, 0.42, -0.2);
+  const backMark = MeshBuilder.CreatePlane("hb-strong-roots", { width: 0.42, height: 0.16 }, scene);
+  backMark.position = new Vector3(0, 0.44, -0.22);
   backMark.rotation.y = Math.PI;
   backMark.material = materials.backTattoo;
   backMark.parent = hips;

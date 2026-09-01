@@ -1,8 +1,9 @@
 import {
   Color3,
-  CubeTexture,
+  Constants,
   DynamicTexture,
   PBRMaterial,
+  RawCubeTexture,
   StandardMaterial,
 } from "@babylonjs/core";
 import { HERO_IDENTITY, paintGlyphRow } from "../identity.js";
@@ -112,7 +113,10 @@ function pbr(scene, name, options) {
   material.roughness = options.roughness ?? 0.7;
   material.emissiveColor = options.emissive ?? Color3.Black();
   material.emissiveIntensity = options.emissiveIntensity ?? 0;
-  material.environmentIntensity = options.environmentIntensity ?? 0.35;
+  material.directIntensity = options.directIntensity ?? 1.8;
+  material.environmentIntensity = options.environmentIntensity ?? 0.55;
+  material.specularIntensity = options.specularIntensity ?? 1;
+  material.ambientColor = options.ambient ?? new Color3(0.35, 0.32, 0.28);
   material.backFaceCulling = options.backFaceCulling ?? true;
   if (options.albedoTexture) {
     material.albedoTexture = options.albedoTexture;
@@ -125,29 +129,20 @@ function pbr(scene, name, options) {
 }
 
 export function createLocalEnvTexture(scene) {
-  const faces = ["px", "nx", "py", "ny", "pz", "nz"].map((face) => {
-    const canvas = document.createElement("canvas");
-    canvas.width = 64;
-    canvas.height = 64;
-    const ctx = canvas.getContext("2d");
-    const gradient = ctx.createLinearGradient(0, 0, 0, 64);
-    if (face === "py") {
-      gradient.addColorStop(0, "#1a140c");
-      gradient.addColorStop(1, "#0b120c");
-    } else if (face === "ny") {
-      gradient.addColorStop(0, "#0a0806");
-      gradient.addColorStop(1, "#050403");
-    } else {
-      gradient.addColorStop(0, "#10160f");
-      gradient.addColorStop(1, "#070605");
+  const size = 16;
+  const faces = [];
+  for (let face = 0; face < 6; face += 1) {
+    const pixels = new Uint8Array(size * size * 4);
+    const sky = face === 2;
+    for (let i = 0; i < pixels.length; i += 4) {
+      pixels[i] = sky ? 58 : 22;
+      pixels[i + 1] = sky ? 64 : 32;
+      pixels[i + 2] = sky ? 42 : 24;
+      pixels[i + 3] = 255;
     }
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, 64, 64);
-    return canvas.toDataURL("image/png");
-  });
-  const texture = CubeTexture.CreateFromImages(faces, scene);
-  texture.rotationY = 0;
-  return texture;
+    faces.push(pixels);
+  }
+  return new RawCubeTexture(scene, faces, size, Constants.TEXTUREFORMAT_RGBA, Constants.TEXTURETYPE_UNSIGNED_BYTE);
 }
 
 export function createMaterials(scene) {
@@ -166,11 +161,11 @@ export function createMaterials(scene) {
   });
 
   return {
-    stone: pbr(scene, "stone", { albedo: new Color3(0.22, 0.19, 0.16), roughness: 0.88, albedoTexture: stoneAlbedo }),
-    moss: pbr(scene, "moss", { albedo: new Color3(0.1, 0.22, 0.08), roughness: 0.82, albedoTexture: mossAlbedo }),
-    wetStone: pbr(scene, "wet-stone", { albedo: new Color3(0.12, 0.13, 0.12), roughness: 0.22, metallic: 0.04 }),
-    bark: pbr(scene, "bark", { albedo: new Color3(0.18, 0.1, 0.05), roughness: 0.92, albedoTexture: barkAlbedo }),
-    leaf: pbr(scene, "leaf", { albedo: new Color3(0.08, 0.28, 0.07), roughness: 0.58 }),
+    stone: pbr(scene, "stone", { albedo: new Color3(0.42, 0.36, 0.3), roughness: 0.82, albedoTexture: stoneAlbedo }),
+    moss: pbr(scene, "moss", { albedo: new Color3(0.18, 0.38, 0.12), roughness: 0.78, albedoTexture: mossAlbedo }),
+    wetStone: pbr(scene, "wet-stone", { albedo: new Color3(0.22, 0.24, 0.22), roughness: 0.22, metallic: 0.04 }),
+    bark: pbr(scene, "bark", { albedo: new Color3(0.32, 0.18, 0.1), roughness: 0.9, albedoTexture: barkAlbedo }),
+    leaf: pbr(scene, "leaf", { albedo: new Color3(0.16, 0.42, 0.12), roughness: 0.55 }),
     ember: pbr(scene, "ember", {
       albedo: new Color3(0.8, 0.35, 0.08),
       roughness: 0.35,
@@ -180,10 +175,10 @@ export function createMaterials(scene) {
     vein: pbr(scene, "vein", {
       albedo: new Color3(0.05, 0.4, 0.12),
       roughness: 0.3,
-      emissive: new Color3(0.15, 1, 0.28),
-      emissiveIntensity: 3.1,
+      emissive: new Color3(0.08, 0.55, 0.16),
+      emissiveIntensity: 1.4,
     }),
-    skin: pbr(scene, "skin", { albedo: new Color3(0.52, 0.36, 0.27), roughness: 0.58, albedoTexture: skinAlbedo }),
+    skin: pbr(scene, "skin", { albedo: new Color3(0.72, 0.5, 0.38), roughness: 0.52, albedoTexture: skinAlbedo, directIntensity: 2.2 }),
     beard: pbr(scene, "beard", { albedo: new Color3(0.03, 0.025, 0.02), roughness: 0.9 }),
     pants: pbr(scene, "pants", { albedo: new Color3(0.07, 0.08, 0.1), roughness: 0.78, metallic: 0.04 }),
     sneaker: pbr(scene, "sneaker", { albedo: new Color3(0.12, 0.12, 0.13), roughness: 0.55, metallic: 0.1 }),
@@ -197,14 +192,18 @@ export function createMaterials(scene) {
       emissiveIntensity: 0.15,
     }),
     backTattoo: pbr(scene, "back-tattoo", {
-      albedo: new Color3(0.45, 0.32, 0.24),
-      roughness: 0.62,
+      albedo: new Color3(0.7, 0.5, 0.38),
+      roughness: 0.55,
       albedoTexture: paintStrongRootsTexture(scene),
+      emissive: new Color3(0.35, 0.28, 0.16),
+      emissiveIntensity: 0.45,
+      directIntensity: 2.2,
     }),
     chestTattoo: pbr(scene, "chest-tattoo", {
-      albedo: new Color3(0.45, 0.32, 0.24),
-      roughness: 0.62,
+      albedo: new Color3(0.7, 0.5, 0.38),
+      roughness: 0.55,
       albedoTexture: paintChestBadgerTexture(scene),
+      directIntensity: 2.2,
     }),
     chitin: pbr(scene, "chitin", { albedo: new Color3(0.16, 0.42, 0.14), roughness: 0.42, metallic: 0.18 }),
     wing: pbr(scene, "wing", {

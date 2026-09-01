@@ -29,8 +29,8 @@ function torch(scene, materials, x, y, z, parent) {
   const light = new PointLight(`torch-light-${x}-${z}`, new Vector3(x, y + 0.9, z), scene);
   light.diffuse = new Color3(1, 0.55, 0.18);
   light.specular = new Color3(1, 0.4, 0.12);
-  light.intensity = 18;
-  light.range = 9;
+  light.intensity = 42;
+  light.range = 11;
   light.parent = parent;
   return { meshes: [pole, bowl, flame], light };
 }
@@ -68,9 +68,9 @@ export function createRootfallRoom(scene, materials) {
 
   for (let ix = -7; ix <= 7; ix += 1) {
     for (let iz = -11; iz <= 11; iz += 1) {
-      if (rng.next() < 0.62) {
-        continue;
-      }
+    if (rng.next() < 0.78) {
+      continue;
+    }
       const moss = MeshBuilder.CreateBox(`moss-${ix}-${iz}`, {
         width: rng.float(0.55, 0.95),
         height: 0.04,
@@ -94,9 +94,10 @@ export function createRootfallRoom(scene, materials) {
 
   const wallSpecs = [
     { w: 14.8, h: 4.4, d: 0.7, x: 0, y: 2.1, z: -11.1 },
-    { w: 14.8, h: 4.4, d: 0.7, x: 0, y: 2.1, z: 11.1 },
     { w: 0.7, h: 4.4, d: 22.8, x: -7.1, y: 2.1, z: 0 },
     { w: 0.7, h: 4.4, d: 22.8, x: 7.1, y: 2.1, z: 0 },
+    { w: 2.2, h: 3.2, d: 0.7, x: -6.2, y: 1.6, z: 11.1 },
+    { w: 2.2, h: 3.2, d: 0.7, x: 6.2, y: 1.6, z: 11.1 },
   ];
   for (const [index, spec] of wallSpecs.entries()) {
     const wall = MeshBuilder.CreateBox(`wall-${index}`, { width: spec.w, height: spec.h, depth: spec.d }, scene);
@@ -122,7 +123,7 @@ export function createRootfallRoom(scene, materials) {
     [new Vector3(-3.8, 0.08, 1.2), new Vector3(-2.1, 0.35, 0.2), new Vector3(-0.6, 0.12, -1.1)],
   ];
   for (const [index, path] of rootCurves.entries()) {
-    const tube = MeshBuilder.CreateTube(`root-${index}`, { path, radius: 0.2 + (index % 3) * 0.05, tessellation: 7, cap: 3 }, scene);
+    const tube = MeshBuilder.CreateTube(`root-${index}`, { path, radius: 0.28 + (index % 3) * 0.07, tessellation: 8, cap: 3 }, scene);
     tube.material = materials.bark;
     tube.parent = root;
     staticMeshes.push(tube);
@@ -153,9 +154,9 @@ export function createRootfallRoom(scene, materials) {
     if (Math.hypot(x, z) < 2.4) {
       continue;
     }
-    const cluster = MeshBuilder.CreateSphere(`leaf-${i}`, { diameter: rng.float(0.7, 1.3), segments: 7 }, scene);
-    cluster.position = new Vector3(x, rng.float(1.1, 2.4), z);
-    cluster.scaling.y = 0.45;
+    const cluster = MeshBuilder.CreateSphere(`leaf-${i}`, { diameter: rng.float(0.9, 1.5), segments: 8 }, scene);
+    cluster.position = new Vector3(x, rng.float(1.3, 2.6), z);
+    cluster.scaling.y = 0.85;
     cluster.material = materials.leaf;
     cluster.parent = root;
     staticMeshes.push(cluster);
@@ -173,36 +174,41 @@ export function createRootfallRoom(scene, materials) {
   flower(scene, materials, -4.8, 6.4, root, 2);
   flower(scene, materials, 4.9, 6.8, root, 3);
 
-  for (let i = 0; i < 9; i += 1) {
+  for (let i = 0; i < 5; i += 1) {
     const path = [
       new Vector3(rng.float(-5, 5), 0.05, rng.float(-9, 8)),
       new Vector3(rng.float(-5, 5), 0.06, rng.float(-9, 8)),
       new Vector3(rng.float(-5, 5), 0.05, rng.float(-9, 8)),
     ];
-    const vein = MeshBuilder.CreateTube(`vein-${i}`, { path, radius: 0.04, tessellation: 5 }, scene);
+    const vein = MeshBuilder.CreateTube(`vein-${i}`, { path, radius: 0.07, tessellation: 6 }, scene);
     vein.material = materials.vein;
     vein.parent = root;
     staticMeshes.push(vein);
   }
 
-  const hemi = new HemisphericLight("jungle-fill", new Vector3(0.15, 1, 0.25), scene);
-  hemi.intensity = 0.22;
-  hemi.diffuse = new Color3(0.35, 0.55, 0.32);
-  hemi.groundColor = new Color3(0.05, 0.04, 0.03);
+  const hemi = new HemisphericLight("jungle-fill", new Vector3(0.2, 1, 0.35), scene);
+  hemi.intensity = 1.15;
+  hemi.diffuse = new Color3(0.55, 0.72, 0.48);
+  hemi.groundColor = new Color3(0.12, 0.1, 0.08);
 
   const moon = new DirectionalLight("canopy-break", new Vector3(-0.35, -1, 0.28), scene);
   moon.position = new Vector3(4, 12, -6);
-  moon.intensity = 0.55;
-  moon.diffuse = new Color3(0.55, 0.72, 0.48);
+  moon.intensity = 2.4;
+  moon.diffuse = new Color3(0.85, 0.92, 0.7);
+
+  const rim = new DirectionalLight("ember-rim", new Vector3(0.55, -0.35, -0.6), scene);
+  rim.position = new Vector3(-6, 8, 8);
+  rim.intensity = 1.1;
+  rim.diffuse = new Color3(1, 0.55, 0.18);
 
   scene.fogMode = 3;
-  scene.fogColor = new Color3(0.03, 0.05, 0.04);
-  scene.fogStart = 8;
-  scene.fogEnd = 24;
-  scene.ambientColor = new Color3(0.04, 0.05, 0.04);
+  scene.fogColor = new Color3(0.05, 0.07, 0.05);
+  scene.fogStart = 14;
+  scene.fogEnd = 32;
+  scene.ambientColor = new Color3(0.18, 0.16, 0.12);
 
-  const glow = new GlowLayer("rootfall-glow", scene, { blurKernelSize: 24 });
-  glow.intensity = 0.65;
+  const glow = new GlowLayer("rootfall-glow", scene, { blurKernelSize: 32 });
+  glow.intensity = 0.42;
 
-  return { root, staticMeshes, lights: [...torchSet.map((item) => item.light), moon, hemi], keyLight: moon };
+  return { root, staticMeshes, lights: [...torchSet.map((item) => item.light), moon, hemi, rim], keyLight: moon };
 }

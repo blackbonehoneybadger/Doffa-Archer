@@ -53,8 +53,8 @@ const previewServer = await preview({
   configFile,
   preview: { host: "127.0.0.1", port: 4174, strictPort: true },
 });
-const origin = previewServer.resolvedUrls?.local?.[0]?.replace(/\/$/, "") || "http://127.0.0.1:4174";
-const sliceUrl = `${origin}/arena3d/`;
+const origin = (previewServer.resolvedUrls?.local?.[0] || "http://127.0.0.1:4174").replace(/\/$/, "");
+const sliceUrl = origin.endsWith("/arena3d") ? `${origin}/` : `${origin}/arena3d/`;
 await waitForReady(sliceUrl);
 
 const chromeArgs = [
@@ -66,7 +66,7 @@ const chromeArgs = [
   "--allow-insecure-localhost",
   "--hide-scrollbars",
   "--window-size=720,1280",
-  "--virtual-time-budget=12000",
+  "--virtual-time-budget=16000",
 ];
 
 try {

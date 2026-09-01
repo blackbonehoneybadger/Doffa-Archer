@@ -139,13 +139,19 @@ export function createRootStalker(scene, materials) {
 }
 
 export function createEnemyActors(scene, materials) {
-  return {
+  const actors = {
     "razor-mantis": createRazorMantis(scene, materials),
     "seed-spitter-west": createSeedSpitter(scene, materials),
     "seed-spitter-east": createSeedSpitter(scene, materials),
     "root-stalker-west": createRootStalker(scene, materials),
     "root-stalker-east": createRootStalker(scene, materials),
   };
+  actors["razor-mantis"].scaling.setAll(1.35);
+  actors["seed-spitter-west"].scaling.setAll(1.2);
+  actors["seed-spitter-east"].scaling.setAll(1.2);
+  actors["root-stalker-west"].scaling.setAll(1.25);
+  actors["root-stalker-east"].scaling.setAll(1.25);
+  return actors;
 }
 
 export function syncEnemies(actors, world) {

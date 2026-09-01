@@ -1,7 +1,7 @@
 import { ArcRotateCamera, Vector3 } from "@babylonjs/core";
 
-const COMBAT_BETA = ((90 - 58) * Math.PI) / 180;
-const COMBAT_RADIUS = 12.4;
+const COMBAT_BETA = 0.82;
+const COMBAT_RADIUS = 13.2;
 
 export function createSliceCamera(scene, canvas) {
   const camera = new ArcRotateCamera(

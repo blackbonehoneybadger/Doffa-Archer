@@ -1,0 +1,13 @@
+{
+  "capturedAt": "2026-09-01T20:58:00.000Z",
+  "urls": [
+    "http://127.0.0.1:4174/arena3d/",
+    "http://127.0.0.1:4174/arena3d/?orbit=1"
+  ],
+  "renderer": "Babylon.js PBR, Chrome headless SwiftShader",
+  "note": "These PNGs are in-engine captures, not the concept JPEG. SwiftShader FPS (1–2) is a software-rasterizer lower bound, not a phone measurement. On-device FPS/memory are shown in the slice HUD. Mesh counts ~140–160 for this room.",
+  "files": [
+    "arena3d-rootfall-08-combat.png",
+    "arena3d-rootfall-08-orbit.png"
+  ]
+}
