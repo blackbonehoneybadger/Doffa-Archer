@@ -59,9 +59,9 @@ The shared vertical-slice foundation retained from `0.15.x` includes:
 - Deterministic collision rectangles, hazards, obstacles, exit state, encounter text, and telegraphs remain separate Canvas overlays so decorative art never changes gameplay geometry.
 - Six environment-specific ambient systems: ash drift, furnace heat/sparks, grinder rotation, smoke plumes, pressure jets/gauges, and Roaster Heart reactor/ring motion.
 - Stable room-identity hashing assigns phase, direction, intensity, and four visual variants without consuming combat RNG or changing simulation state.
-- Locked weapon identities: Honey Badger / katana plus secondary shuriken, BOY / hammer, Mr. Kroo / recurve bow, and Hadida / bat.
-- Honey Badger automatically throws a three-shuriken ricochet volley at distant targets and on every fourth standing attack; the katana remains his primary close-range weapon.
-- Honey Badger's secondary volley selects its own eight-direction release atlas, while katana strikes continue to use the primary attack rows.
+- Locked weapon identities: Honey Badger / katana plus secondary shuriken, BOY / hammer plus gold pistol, Mr. Kroo / dagger plus recurve bow, Hadida / bat plus cigarette butts, and Pata / punch plus pressure coffee rifle.
+- Each melee weapon cycles three distinct attack clips. Each ranged/secondary weapon uses one dedicated release atlas.
+- Honey Badger's secondary volley selects its own eight-direction release atlas, while katana strikes continue to use the primary melee attack rows.
 - Locked visual identities: BOY uses the corrected serious facial reference; Honey Badger and Mr. Kroo remain lean; Honey Badger carries BOY-length dense black facial hair; Hadida keeps a tall black papakha in every state.
 - Shared playable-character scale: all five heroes use one normalized body-height band and the same in-arena render height; only the main boss is intentionally giant.
 - Pata's locked weapon identity: pressure coffee rifle with an espresso chamber and steam-driven long-range rounds.

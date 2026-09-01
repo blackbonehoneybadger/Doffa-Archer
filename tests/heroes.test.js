@@ -44,19 +44,23 @@ test("hero catalog exposes five valid prototype operatives", () => {
       true,
       hero.art.fullMotionSprite,
     );
-    assert.deepEqual(hero.art.fullMotionStateRows, { idle: 0, run: 2, attack: 4 });
-    if (hero.art.secondaryAttackSprite) {
-      assert.equal(
-        existsSync(join(process.cwd(), hero.art.secondaryAttackSprite)),
-        true,
-        hero.art.secondaryAttackSprite,
-      );
-      assert.deepEqual(
-        readPngHeader(join(process.cwd(), hero.art.secondaryAttackSprite)),
-        { width: 1152, height: 672, colorType: 6 },
-        hero.id,
-      );
-    }
+    assert.deepEqual(hero.art.fullMotionStateRows, {
+      idle: 0,
+      run: 2,
+      attack: 4,
+      attack2: 6,
+      attack3: 8,
+    });
+    assert.equal(
+      existsSync(join(process.cwd(), hero.art.secondaryAttackSprite)),
+      true,
+      hero.art.secondaryAttackSprite,
+    );
+    assert.deepEqual(
+      readPngHeader(join(process.cwd(), hero.art.secondaryAttackSprite)),
+      { width: 1152, height: 672, colorType: 6 },
+      hero.id,
+    );
     assert.equal(
       existsSync(join(process.cwd(), hero.art.reactionSprite)),
       true,
@@ -85,7 +89,7 @@ test("hero validation rejects malformed animation-only metadata", () => {
 test("full-direction hero atlases have the normalized RGBA runtime layout", () => {
   for (const hero of HEROES) {
     const header = readPngHeader(join(process.cwd(), hero.art.fullMotionSprite));
-    assert.deepEqual(header, { width: 1152, height: 2016, colorType: 6 }, hero.id);
+    assert.deepEqual(header, { width: 1152, height: 3360, colorType: 6 }, hero.id);
   }
 });
 
@@ -109,13 +113,25 @@ test("owner-approved identity corrections are wired through portraits and reacti
     "/assets/heroes/honey-badger-shuriken-attack-v1.png",
   );
   assert.equal(hadida.art.sprite, "/assets/heroes/hadida-papakha-v3.png");
+  assert.equal(
+    hadida.art.secondaryAttackSprite,
+    "/assets/heroes/hadida-cigarette-attack-v1.png",
+  );
   assert.equal(hadida.art.reactionSprite.endsWith("-reactions-v2.png"), true);
   assert.equal(boya.art.sprite, "/assets/heroes/boy-identity-v3.png");
   assert.equal(boya.art.fullMotionSprite.endsWith("-full-motion-v3.png"), true);
+  assert.equal(
+    boya.art.secondaryAttackSprite,
+    "/assets/heroes/boy-gold-pistol-attack-v1.png",
+  );
   assert.equal(kroo.art.sprite, "/assets/heroes/mr-kroo-bow-v4.png");
   assert.equal(kroo.art.directionalSprite.endsWith("-directions-v4.png"), true);
   assert.equal(kroo.art.motionSprite.endsWith("-motion-v4.png"), true);
   assert.equal(kroo.art.fullMotionSprite.endsWith("-full-motion-v4.png"), true);
+  assert.equal(
+    kroo.art.secondaryAttackSprite,
+    "/assets/heroes/mr-kroo-bow-attack-v1.png",
+  );
   assert.equal(kroo.art.reactionSprite.endsWith("-reactions-v3.png"), true);
 });
 

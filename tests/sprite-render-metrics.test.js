@@ -39,7 +39,7 @@ test("every hero animation state keeps one combat height and ground anchor", () 
     const sheets = [
       ["directional", hero.art.directionalSprite, 4, 2],
       ["motion", hero.art.motionSprite, 4, 2],
-      ["full motion", hero.art.fullMotionSprite, 4, 6],
+      ["full motion", hero.art.fullMotionSprite, 4, 10],
       ["reactions", hero.art.reactionSprite, 4, 4],
     ];
     if (hero.art.secondaryAttackSprite) {

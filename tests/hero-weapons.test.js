@@ -49,9 +49,13 @@ test("Honey Badger keeps katana until the player selects shuriken", () => {
   assert.equal(close.projectiles.length, 0);
   assert.ok(close.enemies[0].hp < 500);
   assert.equal(close.player.lastAttackVisual, "katana");
+  assert.equal(close.player.meleeAttackCount, 3);
+  assert.equal(close.player.meleeAttackVariant, 2);
+  assert.equal(close.player.attackWeaponSlot, "melee");
 
   assert.equal(close.fireAtNearestEnemy(), true);
   assert.equal(close.projectiles.length, 0);
+  assert.equal(close.player.meleeAttackVariant, 0);
 
   const distant = createAttackHarness("honey-badger", 690);
   assert.equal(distant.fireAtNearestEnemy(), false);
@@ -59,6 +63,27 @@ test("Honey Badger keeps katana until the player selects shuriken", () => {
   assert.equal(distant.fireAtNearestEnemy(), true);
   assert.equal(distant.projectiles.length, 3);
   assert.equal(distant.projectiles.every((projectile) => projectile.visual === "shuriken"), true);
+  assert.equal(distant.player.attackWeaponSlot, "ranged");
+  assert.equal(distant.player.lastAttackVisual, "shuriken");
+});
+
+test("every hero routes ranged fire through its dedicated secondary attack identity", () => {
+  const cases = [
+    ["honey-badger", "shuriken", "/assets/heroes/honey-badger-shuriken-attack-v1.png", 650],
+    ["hadida", "cigarette-butt", "/assets/heroes/hadida-cigarette-attack-v1.png", 650],
+    ["boya", "gold-pistol", "/assets/heroes/boy-gold-pistol-attack-v1.png", 650],
+    ["mr-kroo", "bow", "/assets/heroes/mr-kroo-bow-attack-v1.png", 650],
+    ["pata", "coffee-rifle", "/assets/heroes/pata-coffee-rifle-attack-v1.png", 650],
+  ];
+
+  for (const [heroId, visual, sprite, targetX] of cases) {
+    const game = createAttackHarness(heroId, targetX);
+    assert.equal(getHeroDefinition(heroId).art.secondaryAttackSprite, sprite);
+    assert.equal(game.selectWeapon("ranged"), true);
+    assert.equal(game.fireAtNearestEnemy(), true);
+    assert.equal(game.player.attackWeaponSlot, "ranged");
+    assert.equal(game.player.lastAttackVisual, visual);
+  }
 });
 
 test("projectile abilities also upgrade Honey Badger's secondary shuriken", () => {

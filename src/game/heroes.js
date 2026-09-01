@@ -35,7 +35,17 @@ const STANDARD_FULL_MOTION_STATE_ROWS = Object.freeze({
   idle: 0,
   run: 2,
   attack: 4,
+  attack2: 6,
+  attack3: 8,
 });
+const FULL_MOTION_CLIP_STATES = Object.freeze([
+  "idle",
+  "run",
+  "attack",
+  "attack2",
+  "attack3",
+  "rangedAttack",
+]);
 const STANDARD_REACTION_STATE_ROWS = Object.freeze({
   hit: 0,
   defeat: 2,
@@ -180,6 +190,7 @@ export const HEROES = Object.freeze([
       motionDirections: STANDARD_MOTION_DIRECTIONS,
       fullMotionSprite: "/assets/heroes/hadida-full-motion-v3.png",
       fullMotionStateRows: STANDARD_FULL_MOTION_STATE_ROWS,
+      secondaryAttackSprite: "/assets/heroes/hadida-cigarette-attack-v1.png",
       reactionSprite: "/assets/heroes/hadida-reactions-v2.png",
       reactionStateRows: STANDARD_REACTION_STATE_ROWS,
       directionalFrames: STANDARD_DIRECTIONAL_FRAMES,
@@ -237,6 +248,7 @@ export const HEROES = Object.freeze([
       motionDirections: STANDARD_MOTION_DIRECTIONS,
       fullMotionSprite: "/assets/heroes/boy-full-motion-v3.png",
       fullMotionStateRows: STANDARD_FULL_MOTION_STATE_ROWS,
+      secondaryAttackSprite: "/assets/heroes/boy-gold-pistol-attack-v1.png",
       reactionSprite: "/assets/heroes/boy-reactions-v2.png",
       reactionStateRows: STANDARD_REACTION_STATE_ROWS,
       directionalFrames: STANDARD_DIRECTIONAL_FRAMES,
@@ -294,6 +306,7 @@ export const HEROES = Object.freeze([
       motionDirections: STANDARD_MOTION_DIRECTIONS,
       fullMotionSprite: "/assets/heroes/mr-kroo-full-motion-v4.png",
       fullMotionStateRows: STANDARD_FULL_MOTION_STATE_ROWS,
+      secondaryAttackSprite: "/assets/heroes/mr-kroo-bow-attack-v1.png",
       reactionSprite: "/assets/heroes/mr-kroo-reactions-v3.png",
       reactionStateRows: STANDARD_REACTION_STATE_ROWS,
       directionalFrames: STANDARD_DIRECTIONAL_FRAMES,
@@ -351,6 +364,7 @@ export const HEROES = Object.freeze([
       motionDirections: STANDARD_MOTION_DIRECTIONS,
       fullMotionSprite: "/assets/heroes/pata-full-motion-v2.png",
       fullMotionStateRows: STANDARD_FULL_MOTION_STATE_ROWS,
+      secondaryAttackSprite: "/assets/heroes/pata-coffee-rifle-attack-v1.png",
       reactionSprite: "/assets/heroes/pata-reactions-v1.png",
       reactionStateRows: STANDARD_REACTION_STATE_ROWS,
       directionalFrames: {
@@ -512,6 +526,9 @@ export function createHeroCombatProfile(
     meteorTimer: 3.8,
     attackTimer: 0,
     attackSequence: 0,
+    meleeAttackCount: 0,
+    meleeAttackVariant: 0,
+    attackWeaponSlot: "melee",
     invulnerability: 0,
     animationClock: 0,
     animationState: "idle",
@@ -631,14 +648,18 @@ export function validateHeroCatalog(heroes = HEROES) {
         if (
           fullMotionEntries.length === 0
           || fullMotionEntries.some(
-            ([state, row]) => !PLAYER_ANIMATION_STATES.includes(state)
+            ([state, row]) => !FULL_MOTION_CLIP_STATES.includes(state)
               || !Number.isInteger(row)
               || row < 0
-              || row > 4
+              || row > 8
               || row % 2 !== 0,
           )
+          || !Number.isInteger(hero.art.fullMotionStateRows?.attack)
         ) {
           errors.push(`Hero ${hero.id} has invalid full-motion state rows`);
+        }
+        if (hero.combat?.secondaryWeapon && !hero.art.secondaryAttackSprite) {
+          errors.push(`Hero ${hero.id} needs a secondary-attack sprite for its ranged weapon`);
         }
         if (hero.art.fullMotionAnimation) {
           for (const error of validateDirectionalAnimationAtlas(
