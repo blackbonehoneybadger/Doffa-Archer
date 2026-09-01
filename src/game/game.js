@@ -1,4 +1,4 @@
-import { RUN_CONFIG, VIEWPORT } from "../config/game-config.js";
+import { RENDER_PIPELINE, RUN_CONFIG, VIEWPORT } from "../config/game-config.js";
 import {
   calculateWagerPayout,
   canEnterRun,
@@ -97,6 +97,8 @@ import {
 } from "./sprite-render-metrics.js";
 import { getRunXpRequirement, grantRunXp } from "./run-progression.js";
 import { acquireRoomArtLease, getRoomArt, getRoomCompositeIdentity } from "./room-art.js";
+import { ArenaRenderer3D } from "./arena-renderer-3d.js";
+import { resolvePlayBounds, roomHasAuthoredPlate } from "./plate-gameplay.js";
 import {
   getRoomAmbientMote,
   getRoomEffectProfile,
@@ -176,7 +178,28 @@ export class DoffaGame {
     }
 
     this.canvas = canvas;
-    this.context = canvas.getContext("2d", { alpha: false });
+    this.useThreeRenderer = false;
+    this.arenaRenderer3d = null;
+    if (RENDER_PIPELINE === "three") {
+      try {
+        this.arenaRenderer3d = new ArenaRenderer3D({ canvas });
+        this.useThreeRenderer = Boolean(this.arenaRenderer3d?.isSupported);
+      } catch {
+        this.arenaRenderer3d = null;
+        this.useThreeRenderer = false;
+      }
+    }
+    this.overlayCanvas = typeof document?.getElementById === "function"
+      ? document.getElementById("game-overlay")
+      : null;
+    this.context = this.useThreeRenderer
+      ? this.overlayCanvas?.getContext("2d", { alpha: true }) ?? null
+      : canvas.getContext("2d", { alpha: false });
+    if (!this.useThreeRenderer && !this.context) {
+      throw new Error("Unable to create the game canvas context");
+    }
+    this.playBounds = VIEWPORT.arena;
+    this.usesPlateGameplay = false;
     this.profileStore = profileStore;
     this.onHud = onHud;
     this.onProfile = onProfile;
@@ -278,6 +301,15 @@ export class DoffaGame {
     this.loadedHeroId = null;
 
     this.bindInput();
+  }
+
+  get arenaBounds() {
+    return this.playBounds ?? ARENA;
+  }
+
+  syncPlateGameplayMode() {
+    this.usesPlateGameplay = roomHasAuthoredPlate(this.roomDefinition, this.room);
+    this.playBounds = resolvePlayBounds(this.usesPlateGameplay);
   }
 
   requestHeroSprite(hero) {
@@ -1241,6 +1273,7 @@ export class DoffaGame {
     }
 
     this.roomDefinition = roomDefinition;
+    this.syncPlateGameplayMode();
     this.onAudio?.("roomEnter", {
       tourId: this.tour.id,
       roomId: roomDefinition.id,
@@ -1248,9 +1281,11 @@ export class DoffaGame {
       boss: Boolean(roomDefinition.boss),
     });
     this.syncRoomAssetWindow(roomNumber);
-    this.destructibles = roomDefinition.destructibles.map((placement) => (
-      createRuntimeDestructible(placement, this.nextDestructibleId++)
-    ));
+    this.destructibles = this.usesPlateGameplay
+      ? []
+      : roomDefinition.destructibles.map((placement) => (
+        createRuntimeDestructible(placement, this.nextDestructibleId++)
+      ));
 
     if (roomDefinition.roomType === "rest") {
       this.wave = 0;
@@ -1534,8 +1569,16 @@ export class DoffaGame {
       }
     }
 
-    this.player.x = clamp(this.player.x, ARENA.left + this.player.radius, ARENA.right - this.player.radius);
-    this.player.y = clamp(this.player.y, ARENA.top + this.player.radius, ARENA.bottom - this.player.radius);
+    this.player.x = clamp(
+      this.player.x,
+      this.arenaBounds.left + this.player.radius,
+      this.arenaBounds.right - this.player.radius,
+    );
+    this.player.y = clamp(
+      this.player.y,
+      this.arenaBounds.top + this.player.radius,
+      this.arenaBounds.bottom - this.player.radius,
+    );
     this.resolveEntityObstacles(this.player);
   }
 
@@ -1546,12 +1589,23 @@ export class DoffaGame {
     }
 
     const resolved = resolveCircleAgainstRectangles(entity, entity.radius, obstacles);
-    entity.x = clamp(resolved.x, ARENA.left + entity.radius, ARENA.right - entity.radius);
-    entity.y = clamp(resolved.y, ARENA.top + entity.radius, ARENA.bottom - entity.radius);
+    entity.x = clamp(
+      resolved.x,
+      this.arenaBounds.left + entity.radius,
+      this.arenaBounds.right - entity.radius,
+    );
+    entity.y = clamp(
+      resolved.y,
+      this.arenaBounds.top + entity.radius,
+      this.arenaBounds.bottom - entity.radius,
+    );
     return resolved.hit;
   }
 
   getActiveCollisionObstacles() {
+    if (this.usesPlateGameplay) {
+      return [];
+    }
     const staticObstacles = this.roomDefinition?.obstacles ?? [];
     const activeDestructibles = (this.destructibles ?? []).filter((item) => item.alive);
     return activeDestructibles.length > 0
@@ -1572,7 +1626,7 @@ export class DoffaGame {
   }
 
   updateHazards() {
-    if (this.hazardDamageCooldown > 0) {
+    if (this.usesPlateGameplay || this.hazardDamageCooldown > 0) {
       return;
     }
 
@@ -2823,6 +2877,10 @@ export class DoffaGame {
   }
 
   handleProjectileObstacles(projectile) {
+    if (this.usesPlateGameplay) {
+      return;
+    }
+
     for (const destructible of this.destructibles ?? []) {
       if (!destructible.alive) {
         continue;
@@ -3739,6 +3797,23 @@ export class DoffaGame {
 
   draw() {
     this.animationPageUsageFrame += 1;
+    if (this.useThreeRenderer && this.arenaRenderer3d) {
+      this.arenaRenderer3d.renderFrame(this);
+      if (this.context) {
+        this.context.clearRect(0, 0, VIEWPORT.width, VIEWPORT.height);
+        this.drawCombatOverlay(this.context);
+      }
+      const liveMode = this.mode === "running"
+        || this.mode === "exit"
+        || this.mode === "dying";
+      this.releaseUnusedAnimationPageLeases({ all: !liveMode || this.paused });
+      return;
+    }
+
+    if (!this.context) {
+      return;
+    }
+
     const context = this.context;
     context.fillStyle = "#070504";
     context.fillRect(0, 0, VIEWPORT.width, VIEWPORT.height);
@@ -3792,6 +3867,67 @@ export class DoffaGame {
       || this.mode === "exit"
       || this.mode === "dying";
     this.releaseUnusedAnimationPageLeases({ all: !liveMode || this.paused });
+  }
+
+  drawCombatOverlay(context) {
+    context.save();
+    if (this.screenShake > 0) {
+      context.translate(
+        Math.sin(this.visualClock * 83) * this.screenShake,
+        Math.cos(this.visualClock * 67) * this.screenShake * 0.62,
+      );
+    }
+    this.drawPresenceRings(context);
+
+    for (const enemy of this.enemies) {
+      this.drawEnemyTelegraph(context, enemy);
+    }
+
+    for (const particle of this.particles) {
+      context.save();
+      context.globalAlpha = clamp(particle.life / particle.maxLife, 0, 1);
+      context.fillStyle = particle.color;
+      context.beginPath();
+      context.arc(particle.x, particle.y, particle.radius, 0, TAU);
+      context.fill();
+      context.restore();
+    }
+
+    for (const pickup of this.pickups) {
+      this.drawPickup(context, pickup);
+    }
+
+    for (const projectile of this.projectiles) {
+      this.drawProjectile(context, projectile);
+    }
+
+    for (const entry of this.combatTexts) {
+      this.drawCombatText(context, entry);
+    }
+
+    context.save();
+    const palette = ROOM_PALETTES[this.roomDefinition?.environment ?? "ash"] ?? ROOM_PALETTES.ash;
+    if (this.waveCountdown !== null) {
+      context.fillStyle = "rgba(8, 5, 4, 0.78)";
+      context.fillRect(VIEWPORT.width / 2 - 112, 556, 224, 112);
+      context.strokeStyle = palette.accent;
+      context.lineWidth = 2;
+      context.strokeRect(VIEWPORT.width / 2 - 112, 556, 224, 112);
+      context.fillStyle = "rgba(243, 223, 189, 0.72)";
+      context.font = "700 15px Arial Narrow, sans-serif";
+      context.textAlign = "center";
+      context.fillText(`WAVE ${this.wave + 1} IN`, VIEWPORT.width / 2, 589);
+      context.fillStyle = palette.accent;
+      context.font = "900 48px Arial Narrow, sans-serif";
+      context.fillText(String(Math.max(1, Math.ceil(this.waveCountdown))), VIEWPORT.width / 2, 642);
+    } else if (this.roomExitOpen) {
+      context.fillStyle = palette.accent;
+      context.font = "900 20px Arial Narrow, sans-serif";
+      context.textAlign = "center";
+      context.fillText("EXIT OPEN  ↑", VIEWPORT.width / 2, 202);
+    }
+    context.restore();
+    context.restore();
   }
 
   drawArena(context) {

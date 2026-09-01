@@ -16,5 +16,8 @@
     "build:higgsfield-pages": "node scripts/build-higgsfield-multiframe-pages.mjs",
     "check": "node scripts/check-source.mjs && node scripts/validate-images.mjs && node scripts/secret-scan.mjs && node --test",
     "test": "npm run check"
+  },
+  "dependencies": {
+    "three": "^0.170.0"
   }
 }

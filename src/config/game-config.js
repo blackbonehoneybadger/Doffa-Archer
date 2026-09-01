@@ -27,6 +27,8 @@ export const VIEWPORT = Object.freeze({
   }),
 });
 
+export const RENDER_PIPELINE = "three";
+
 export const RUN_CONFIG = Object.freeze({
   abilityChoices: 3,
   playerStartX: 360,

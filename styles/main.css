@@ -1879,6 +1879,19 @@ body.arena-active .noise {
   overflow: hidden;
 }
 
+.dofa-arena-shell canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.game-overlay-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
 .dofa-arena-topbar {
   position: absolute;
   z-index: 5;

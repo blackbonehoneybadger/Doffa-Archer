@@ -66,15 +66,15 @@ test("enemy state rows and facing map to one full-motion atlas cell", () => {
 
   assert.deepEqual(
     getEnemyFullMotionFrame({ facing: 0, state: "idle" }, stateRows),
-    { state: "idle", direction: "east", index: 0 },
+    { state: "idle", direction: "east", index: 0, column: 0, row: 0, columns: 4, rows: 6 },
   );
   assert.deepEqual(
     getEnemyFullMotionFrame({ facing: -Math.PI / 2, moving: true }, stateRows),
-    { state: "move", direction: "north", index: 14 },
+    { state: "move", direction: "north", index: 14, column: 6, row: 2, columns: 4, rows: 6 },
   );
   assert.deepEqual(
     getEnemyFullMotionFrame({ facing: -Math.PI / 4, attackAnimation: 0.1 }, stateRows),
-    { state: "attack", direction: "north-east", index: 23 },
+    { state: "attack", direction: "north-east", index: 23, column: 7, row: 4, columns: 4, rows: 6 },
   );
   assert.equal(getEnemyFullMotionFrame({ facing: 0 }, null), null);
 });
@@ -153,7 +153,7 @@ test("boss special and reaction states select their directional atlas cells", ()
       "phase",
       { secondary: 0, phase: 2 },
     ),
-    { state: "phase", direction: "north-east", index: 15 },
+    { state: "phase", direction: "north-east", index: 15, column: 7, row: 2, columns: 4, rows: 4 },
   );
   assert.equal(
     getEnemyDirectionalStateFrame({ facing: 0 }, "phase", { phase: 1 }),
@@ -196,7 +196,7 @@ test("Rootfall elite secondary attacks select their authored special atlas", () 
       "release",
       { secondary: 0, release: 2 },
     ),
-    { state: "release", direction: "south", index: 10 },
+    { state: "release", direction: "south", index: 10, column: 2, row: 2, columns: 4, rows: 4 },
   );
 });
 

@@ -82,6 +82,19 @@ export function getEnemyAnimationState(enemy = {}) {
   return enemy.moving ? "move" : "idle";
 }
 
+function inferAtlasRows(stateRows = {}, animationAtlas = null) {
+  if (Number.isInteger(animationAtlas?.rows) && animationAtlas.rows > 0) {
+    return animationAtlas.rows;
+  }
+  if (Number.isInteger(stateRows.attack) && stateRows.attack >= 4) {
+    return 6;
+  }
+  if (Number.isInteger(stateRows.move) && stateRows.move >= 2) {
+    return 6;
+  }
+  return 4;
+}
+
 export function getEnemyDirectionalStateFrame(
   enemy = {},
   state,
@@ -111,6 +124,10 @@ export function getEnemyDirectionalStateFrame(
     state,
     direction,
     index: row * 4 + directionIndex,
+    column: directionIndex,
+    row,
+    columns: animationAtlas?.columns ?? 4,
+    rows: inferAtlasRows(stateRows, animationAtlas),
   });
 }
 
