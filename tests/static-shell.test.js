@@ -29,6 +29,11 @@ test("manifest and Vercel configuration are valid JSON", () => {
   assert.equal(manifest.name, "DOFFA Heroes");
   assert.equal(manifest.start_url, "/");
   assert.equal(vercel.headers[0].headers.some((header) => header.key === "Content-Security-Policy"), true);
+  // Custom arena3d build must publish an explicit static output (2D shell + /arena3d).
+  assert.equal(vercel.framework, null);
+  assert.equal(vercel.outputDirectory, "vercel-static");
+  assert.match(vercel.buildCommand, /prepare-vercel-static/);
+  assert.match(vercel.installCommand, /arena3d/);
 });
 
 test("browser shell has no external runtime scripts or styles", () => {

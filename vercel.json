@@ -1,8 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "cleanUrls": true,
+  "framework": null,
   "installCommand": "npm --prefix arena3d ci",
-  "buildCommand": "npm run arena3d:build",
+  "buildCommand": "npm run arena3d:build && node scripts/prepare-vercel-static.mjs",
+  "outputDirectory": "vercel-static",
   "headers": [
     {
       "source": "/(.*)",

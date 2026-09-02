@@ -32,7 +32,8 @@ export default defineConfig({
   build: {
     outDir: "dist",
     emptyOutDir: true,
-    sourcemap: true,
+    // Sourcemaps bloat the Vercel static upload; keep off for deploy builds.
+    sourcemap: false,
     target: "es2022",
     chunkSizeWarningLimit: 1800,
   },

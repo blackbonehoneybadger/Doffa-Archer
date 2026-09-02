@@ -3,7 +3,7 @@ import { extname, join, relative } from "node:path";
 import { spawnSync } from "node:child_process";
 
 const root = process.cwd();
-const ignoredDirectories = new Set([".git", "node_modules", "coverage", "dist"]);
+const ignoredDirectories = new Set([".git", "node_modules", "coverage", "dist", "vercel-static"]);
 const textExtensions = new Set([
   "",
   ".bash",
