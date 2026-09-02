@@ -5,7 +5,9 @@ Thumbs.db
 node_modules/
 coverage/
 dist/
+arena3d/node_modules/
 .vercel/
+vercel-static/
 
 # Local configuration and secrets
 .env
@@ -21,3 +23,4 @@ wallet*.json
 keypair*.json
 secret*.json
 secrets/
+arena3d/dist/

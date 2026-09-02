@@ -792,6 +792,18 @@ h1 span {
   letter-spacing: 0.09em;
   text-align: left;
   clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));
+  color: inherit;
+  text-decoration: none;
+}
+
+a.primary-action.arena3d-entry {
+  margin-top: 14px;
+  background: linear-gradient(105deg, #1f5b3a, #123224);
+  border-color: #6dffa0;
+}
+
+a.primary-action.arena3d-entry small {
+  color: #c9ffe0;
 }
 
 .wager-selector {

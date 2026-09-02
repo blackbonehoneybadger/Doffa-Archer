@@ -14,7 +14,14 @@
     "preview:rootfall-variants": "node scripts/build-rootfall-room-variants-preview.mjs",
     "preview:rootfall-elites": "node scripts/build-rootfall-elite-animation-preview.mjs",
     "build:higgsfield-pages": "node scripts/build-higgsfield-multiframe-pages.mjs",
+    "arena3d:install": "npm --prefix arena3d install",
+    "arena3d:gltf": "npm --prefix arena3d run generate:gltf",
+    "arena3d:dev": "npm --prefix arena3d run dev",
+    "arena3d:build": "npm --prefix arena3d run generate:gltf && npm --prefix arena3d run build",
+    "arena3d:test": "npm --prefix arena3d run generate:gltf && npm --prefix arena3d test",
+    "arena3d:capture": "node arena3d/scripts/capture-proof.mjs",
+    "vercel:prepare": "npm run arena3d:build && node scripts/prepare-vercel-static.mjs",
     "check": "node scripts/check-source.mjs && node scripts/validate-images.mjs && node scripts/secret-scan.mjs && node --test",
-    "test": "npm run check"
+    "test": "npm run check && npm run arena3d:test"
   }
 }

@@ -3,7 +3,7 @@ import { extname, join, relative } from "node:path";
 import { spawnSync } from "node:child_process";
 
 const root = process.cwd();
-const ignored = new Set([".git", "node_modules", "coverage", "dist"]);
+const ignored = new Set([".git", "node_modules", "coverage", "dist", "vercel-static"]);
 const extensions = new Set([".js", ".mjs"]);
 
 function walk(directory) {
