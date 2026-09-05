@@ -143,7 +143,7 @@ export function createStaticServer({ root = PROJECT_ROOT } = {}) {
 async function start() {
   const port = parsePort(process.env.PORT);
   const host = process.env.HOST || "0.0.0.0";
-  const server = createStaticServer();
+  const server = createStaticServer({ root: process.argv.includes("--built") ? resolve(PROJECT_ROOT, "dist") : PROJECT_ROOT });
   await new Promise((resolveListen, rejectListen) => {
     server.once("error", rejectListen);
     server.listen(port, host, resolveListen);

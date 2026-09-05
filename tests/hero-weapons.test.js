@@ -94,3 +94,23 @@ test("a ranged finisher keeps its firing weapon identity after a later switch", 
   game.handleFriendlyProjectileHits(projectile);
   assert.deepEqual(voiceEvents, ["rangedFinisher"]);
 });
+
+test("melee hits the reachable surface of a large chest, even when its center is out of range", () => {
+  const game = createAttackHarness("pata", 900);
+  game.enemies = [];
+  const chest = { x: 180, y: 150, width: 200, height: 100, alive: true, hp: 200 };
+  game.destructibles = [chest];
+  game.damageDestructible = (target, amount) => { target.hp -= amount; };
+  assert.equal(game.fireAtNearestEnemy(), true);
+  assert.ok(chest.hp < 200);
+  chest.x = 400;
+  assert.equal(game.fireAtNearestEnemy(), false);
+});
+
+test("melee reach upgrades are honored during automatic target acquisition", () => {
+  const game = createAttackHarness("honey-badger", 280);
+  assert.equal(game.fireAtNearestEnemy(), false);
+  game.player.meleeRangePct = 0.5;
+  assert.equal(game.fireAtNearestEnemy(), true);
+  assert.ok(game.enemies[0].hp < 500);
+});

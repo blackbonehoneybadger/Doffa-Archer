@@ -21,3 +21,5 @@ wallet*.json
 keypair*.json
 secret*.json
 secrets/
+
+dist/

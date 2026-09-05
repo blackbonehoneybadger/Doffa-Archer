@@ -1,4 +1,4 @@
-export const GAME_VERSION = "0.19.0";
+export const GAME_VERSION = "0.20.0";
 export const DEFAULT_TOUR_ID = "rootfall-jungle";
 export const TOUR_IDS = Object.freeze([
   "rootfall-jungle",

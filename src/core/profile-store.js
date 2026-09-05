@@ -13,7 +13,7 @@ import {
   normalizeHeroProgressMap,
 } from "../game/progression.js";
 import { normalizeActiveRunCheckpoint } from "./active-run-checkpoint.js";
-import { normalizeWager } from "./economy.js";
+import { dailyBeanStatus, normalizeWager } from "./economy.js";
 import { normalizeLocale } from "../i18n/locales.js";
 
 const STORAGE_KEY = "doffa-heroes-profile-v1";
@@ -30,7 +30,8 @@ const defaultHeroProgress = createDefaultHeroProgress();
 const defaultEquipment = createDefaultEquipmentState();
 
 export const DEFAULT_PROFILE = Object.freeze({
-  version: 8,
+  version: 9,
+  dailyBeans: null,
   selectedHeroId: DEFAULT_HERO_ID,
   selectedTourId: DEFAULT_TOUR_ID,
   selectedWager: 25,
@@ -115,6 +116,8 @@ export function normalizeProfile(input = {}) {
   });
   return {
     version: DEFAULT_PROFILE.version,
+    dailyBeans: candidate.dailyBeans && typeof candidate.dailyBeans === "object"
+      ? { day: candidate.dailyBeans.day, claimed: candidate.dailyBeans.claimed } : null,
     selectedHeroId: normalizeHeroId(candidate.selectedHeroId),
     selectedTourId: normalizeTourId(candidate.selectedTourId),
     selectedWager: normalizeWager(candidate.selectedWager),
@@ -163,9 +166,21 @@ export class ProfileStore {
     return this.profile;
   }
 
+  collectDailyBean(now = Date.now()) {
+    const status = dailyBeanStatus(this.profile.dailyBeans, now);
+    if (!status.remaining) return 0;
+    this.update((draft) => {
+      draft.dailyBeans = { day: status.day, claimed: status.claimed + 1 };
+      draft.beans += 1;
+      draft.lifetimeBeans += 1;
+    });
+    return 1;
+  }
+
   update(mutator) {
     const draft = {
       ...this.profile,
+      dailyBeans: this.profile.dailyBeans ? { ...this.profile.dailyBeans } : null,
       tourProgress: Object.fromEntries(
         Object.entries(this.profile.tourProgress).map(([tourId, progress]) => [
           tourId,

@@ -2061,3 +2061,6 @@ h1 span {
     transition-duration: 0.01ms !important;
   }
 }
+
+.daily-beans { margin: 0 0 14px; color: var(--muted, #baa995); font-size: 12px; text-align: center; }
+.roaster-core[aria-disabled="true"] { filter: grayscale(0.7); opacity: 0.6; }

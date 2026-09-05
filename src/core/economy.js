@@ -1,6 +1,7 @@
 export const ECONOMY = Object.freeze({
   version: 2,
   tapBeans: 1,
+  dailyTapLimit: 1_000,
   runEntryBeans: 25,
   minimumWager: 1,
   maximumWager: 1_000_000_000,
@@ -55,4 +56,17 @@ export function calculateRunBeanReward({ roomsCleared, bossDefeated }) {
   const clearReward = roomsCleared * ECONOMY.roomClearBeans;
   const bossReward = bossDefeated ? ECONOMY.bossClearBeans : ECONOMY.defeatRecoveryBeans;
   return clearReward + bossReward;
+}
+
+// Demo clock is UTC. Real rewards must use an authoritative server clock/ledger.
+export function dailyBeanStatus(ledger, now = Date.now()) {
+  if (!Number.isFinite(now) || now < 0 || now > 8.64e15) throw new RangeError("Invalid clock");
+  const today = new Date(now).toISOString().slice(0, 10);
+  const validDay = typeof ledger?.day === "string" && /^\d{4}-\d{2}-\d{2}$/.test(ledger.day);
+  const day = validDay && ledger.day > today ? ledger.day : today;
+  const claimed = validDay && ledger.day >= today
+    ? (Number.isInteger(ledger.claimed) && ledger.claimed >= 0
+      ? Math.min(ECONOMY.dailyTapLimit, ledger.claimed) : ECONOMY.dailyTapLimit)
+    : 0;
+  return { day, claimed, remaining: ECONOMY.dailyTapLimit - claimed };
 }

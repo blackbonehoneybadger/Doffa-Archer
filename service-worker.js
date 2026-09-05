@@ -1,5 +1,5 @@
 const CACHE_PREFIX = "doffa-heroes-";
-const CACHE_NAME = "doffa-heroes-v0.19.0";
+const CACHE_NAME = "doffa-heroes-v0.20.0";
 const APP_SHELL_PATH = "/index.html";
 const APP_NAVIGATION_PATHS = new Set(["/", APP_SHELL_PATH]);
 const CORE_ASSETS = [

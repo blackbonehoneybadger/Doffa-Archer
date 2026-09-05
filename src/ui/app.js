@@ -1,4 +1,4 @@
-import { calculateTapReward, getRunEntryCost, normalizeWager } from "../core/economy.js";
+import { dailyBeanStatus, getRunEntryCost, normalizeWager } from "../core/economy.js";
 import { ProfileStore } from "../core/profile-store.js";
 import { DEFAULT_TOUR_ID } from "../config/game-config.js";
 import { TOURS } from "../game/content.js";
@@ -108,6 +108,7 @@ export function bootstrapApp() {
     tourGrid: requiredElement("tour-grid"),
     closeTourSelect: requiredElement("close-tour-select"),
     tapButton: requiredElement("tap-button"),
+    dailyBeans: requiredElement("daily-beans"),
     tapBurst: requiredElement("tap-burst"),
     tapBeans: requiredElement("tap-beans"),
     startRun: requiredElement("start-run"),
@@ -263,6 +264,11 @@ export function bootstrapApp() {
   };
 
   const renderProfile = (profile) => {
+    const quota = dailyBeanStatus(profile.dailyBeans);
+    elements.dailyBeans.textContent = profile.locale === "ru"
+      ? `Сегодня собрано: ${quota.claimed} / 1000 · обновление в 00:00 UTC`
+      : `Collected today: ${quota.claimed} / 1000 · resets at 00:00 UTC`;
+    elements.tapButton.setAttribute("aria-disabled", String(quota.remaining === 0));
     const tourProgress = profile.tourProgress[selectedTour.id] ?? {
       bestRoom: 0,
       bossesDefeated: 0,
@@ -699,13 +705,10 @@ export function bootstrapApp() {
   elements.wagerAll.addEventListener("click", () => commitWager(profileStore.profile.beans));
 
   elements.tapButton.addEventListener("click", () => {
-    gameAudio.play("beanTap");
-    const reward = calculateTapReward();
-    profileStore.update((draft) => {
-      draft.beans += reward;
-      draft.lifetimeBeans += reward;
-    });
+    const reward = profileStore.collectDailyBean();
     renderProfile(profileStore.profile);
+    if (!reward) return;
+    gameAudio.play("beanTap");
 
     elements.tapButton.classList.add("is-tapped");
     elements.tapBurst.classList.remove("show");

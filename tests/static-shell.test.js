@@ -26,7 +26,7 @@ test("HTML shell references only files that exist", () => {
 test("manifest and Vercel configuration are valid JSON", () => {
   const manifest = JSON.parse(readFileSync(join(root, "manifest.webmanifest"), "utf8"));
   const vercel = JSON.parse(readFileSync(join(root, "vercel.json"), "utf8"));
-  assert.equal(manifest.name, "DOFFA Heroes");
+  assert.equal(manifest.name, "DOFA Archer");
   assert.equal(manifest.start_url, "/");
   assert.equal(vercel.headers[0].headers.some((header) => header.key === "Content-Security-Policy"), true);
 });
@@ -125,7 +125,7 @@ test("offline shell includes the data-driven content and progression catalogs", 
   assert.equal(worker.includes('"/assets/enemies/hollow-roaster-motion-v2.png"'), true);
   assert.equal(worker.includes('"/assets/enemies/hollow-roaster-special-v1.png"'), true);
   assert.equal(worker.includes('"/assets/enemies/hollow-roaster-reactions-v1.png"'), true);
-  assert.equal(worker.includes("doffa-heroes-v0.19.0"), true);
+  assert.equal(worker.includes("doffa-heroes-v0.20.0"), true);
   assert.equal(worker.includes("const TOUR_ASSETS = ["), true);
   assert.equal(worker.includes('"/assets/rooms/rootfall-jungle-canopy-v2.jpg"'), true);
   assert.equal(worker.includes('"/assets/rooms/rootfall-jungle-mire-v2.jpg"'), true);
@@ -217,7 +217,7 @@ test("every offline core and tour asset exists and all build versions agree", ()
     assert.equal(existsSync(join(root, localPath)), true, `Missing offline asset ${asset}`);
   }
 
-  assert.equal(html.includes(`PROTOTYPE ${packageDefinition.version}`), true);
+  assert.equal(html.includes(`DEMO ${packageDefinition.version}`), true);
   assert.equal(config.includes(`GAME_VERSION = "${packageDefinition.version}"`), true);
   assert.equal(worker.includes(`doffa-heroes-v${packageDefinition.version}`), true);
 });

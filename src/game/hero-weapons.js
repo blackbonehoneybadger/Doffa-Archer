@@ -11,14 +11,14 @@ const PAIRS = Object.freeze({
   }),
   boya: Object.freeze({
     melee: Object.freeze({ name: "FOUNDRY HAMMER", icon: `${ICON_ROOT}/hammer-v1.png`, visual: "hammer" }),
-    ranged: Object.freeze({ name: "GOLD PISTOL", icon: `${ICON_ROOT}/gold-pistol-v1.png`, visual: "gold-pistol" }),
+    ranged: Object.freeze({ name: "GOLD DESERT EAGLE", icon: `${ICON_ROOT}/gold-pistol-v1.png`, visual: "gold-pistol" }),
   }),
   "mr-kroo": Object.freeze({
     melee: Object.freeze({ name: "CIRCASSIAN DAGGER", icon: `${ICON_ROOT}/circassian-dagger-v1.png`, visual: "dagger" }),
     ranged: Object.freeze({ name: "BLACK RECURVE BOW", icon: `${ICON_ROOT}/bow-v1.png`, visual: "bow" }),
   }),
   pata: Object.freeze({
-    melee: Object.freeze({ name: "BARISTA PUNCH", icon: `${ICON_ROOT}/punch-v1.png`, visual: "punch" }),
+    melee: Object.freeze({ name: "BRASS KNUCKLES", icon: `${ICON_ROOT}/punch-v1.png`, visual: "punch" }),
     ranged: Object.freeze({ name: "PRESSURE COFFEE RIFLE", icon: `${ICON_ROOT}/coffee-rifle-v1.png`, visual: "coffee-rifle" }),
   }),
 });

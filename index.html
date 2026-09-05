@@ -4,11 +4,11 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
     <meta name="theme-color" content="#100b08">
-    <meta name="description" content="DOFFA Heroes — the first action-roguelite in the DOFFA Games universe.">
+    <meta name="description" content="DOFA Archer — the first action-roguelite in the DOFFA Games universe.">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>DOFFA Heroes</title>
+    <title>DOFA Archer</title>
     <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/assets/icon-192.png" sizes="192x192">
     <link rel="manifest" href="/manifest.webmanifest">
@@ -19,11 +19,11 @@
     <div class="noise" aria-hidden="true"></div>
     <main id="app" class="app-shell">
       <header class="topbar">
-        <a class="brand" href="#" aria-label="DOFFA Heroes home">
+        <a class="brand" href="#" aria-label="DOFA Archer home">
           <img src="/assets/icon.svg" alt="" width="42" height="42">
           <span>
-            <strong>DOFFA</strong>
-            <small>HEROES // PROTOTYPE 0.19.0</small>
+            <strong>DOFA</strong>
+            <small>ARCHER // DEMO 0.20.0</small>
           </span>
         </a>
         <label class="language-control" aria-label="Language">
@@ -45,7 +45,7 @@
       </header>
 
       <section id="home-screen" class="screen home-screen" aria-labelledby="home-title">
-        <div class="eyebrow">DOFFA GAMES // FIRST TITLE</div>
+        <div class="eyebrow">DOFA ARCHER</div>
         <h1 id="home-title" data-i18n="tagline">THE ROAST DOES NOT FORGIVE.</h1>
         <p class="lead" data-i18n="lead">Charge the golden bean. Choose your wager. Survive every chamber and defeat Caprizord.</p>
 
@@ -60,6 +60,8 @@
           <div id="tap-burst" class="tap-burst" aria-hidden="true">+1</div>
           <div id="tap-beans" class="tap-beans" aria-hidden="true"></div>
         </div>
+
+        <p id="daily-beans" class="daily-beans" role="status"></p>
 
         <div class="home-stats" aria-label="Prototype progress">
           <div><span>BEST ROOM</span><strong id="best-room">0 / 50</strong></div>
@@ -144,7 +146,7 @@
               <span aria-hidden="true"></span><span aria-hidden="true"></span>
             </button>
             <div class="dofa-title-block">
-              <strong class="dofa-brand">DOFA ARENA</strong>
+              <strong class="dofa-brand">DOFA ARCHER</strong>
               <span id="hud-tour-line" class="dofa-tour-line">TOUR 02 · ROOTFALL JUNGLE</span>
               <div class="dofa-progress-track" aria-hidden="true"><i id="hud-tour-progress"></i></div>
             </div>
@@ -260,12 +262,12 @@
             <div><dt>Tour</dt><dd id="result-tour">—</dd></div>
             <div><dt>Hero</dt><dd id="result-hero">—</dd></div>
             <div><dt>Run level</dt><dd id="result-run-level">LEVEL 1</dd></div>
-            <div><dt>Beans recovered</dt><dd id="result-beans">0</dd></div>
+            <div><dt>Выигрыш</dt><dd id="result-beans">0</dd></div>
             <div><dt>Hero experience</dt><dd id="result-xp">0 XP</dd></div>
             <div><dt>Hero level</dt><dd id="result-level">LEVEL 1</dd></div>
             <div hidden><dt>Item recovered</dt><dd id="result-drop">NONE</dd></div>
-            <div><dt>Test receipt</dt><dd id="result-receipt">—</dd></div>
-            <div><dt>Token claim</dt><dd>DISABLED</dd></div>
+            <div hidden><dt>Test receipt</dt><dd id="result-receipt">—</dd></div>
+
           </dl>
           <button id="return-home" class="primary-action" type="button"><span>RETURN TO CORE</span></button>
         </div>
@@ -275,7 +277,7 @@
         <div class="modal-card confirm-modal">
           <div class="eyebrow">RUN IN PROGRESS</div>
           <h2 id="confirm-title">END THE RUN?</h2>
-          <p>You will keep only the reward from chambers already cleared.</p>
+          <p>При выходе ставка сгорает. Выигрыш начисляется только за прохождение всех 50 комнат.</p>
           <div class="confirm-actions">
             <button id="continue-run" class="secondary-action" type="button">CONTINUE FIGHTING</button>
             <button id="confirm-abort" class="danger-action" type="button">END RUN</button>
@@ -289,10 +291,10 @@
       </aside>
 
       <footer class="footer">
-        <span>ORIGINAL DOFFA VERTICAL SLICE</span>
+        <span>DOFA ARCHER · DEMO</span>
         <button id="install-app" type="button" hidden>INSTALL APP</button>
       </footer>
     </main>
-    <noscript>DOFFA Heroes requires JavaScript.</noscript>
+    <noscript>DOFA Archer requires JavaScript.</noscript>
   </body>
 </html>

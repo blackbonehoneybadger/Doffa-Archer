@@ -1615,7 +1615,8 @@ export class DoffaGame {
 
   fireAtNearestEnemy() {
     const weapon = getSelectedWeaponProfile(this.player);
-    const maximumRange = weapon?.attackRange ?? this.player.attackRange;
+    const maximumRange = (weapon?.attackRange ?? this.player.attackRange)
+      * (this.player.selectedWeaponSlot === "ranged" ? 1 : 1 + (this.player.meleeRangePct ?? 0));
     let target = null;
     let nearestDistance = Number.POSITIVE_INFINITY;
     for (const enemy of this.enemies) {
@@ -1632,8 +1633,8 @@ export class DoffaGame {
     if (!target) {
       for (const destructible of this.destructibles ?? []) {
         if (!destructible.alive) continue;
-        const x = destructible.x + destructible.width / 2;
-        const y = destructible.y + destructible.height / 2;
+        const x = clamp(this.player.x, destructible.x, destructible.x + destructible.width);
+        const y = clamp(this.player.y, destructible.y, destructible.y + destructible.height);
         const currentDistance = (this.player.x - x) ** 2 + (this.player.y - y) ** 2;
         if (currentDistance <= maximumRange * maximumRange && currentDistance < nearestDistance) {
           nearestDistance = currentDistance;
@@ -1748,8 +1749,8 @@ export class DoffaGame {
         consider(
           "destructible",
           destructible,
-          destructible.x + destructible.width / 2,
-          destructible.y + destructible.height / 2,
+          clamp(this.player.x, destructible.x, destructible.x + destructible.width),
+          clamp(this.player.y, destructible.y, destructible.y + destructible.height),
         );
       }
     }
@@ -5263,10 +5264,9 @@ export class DoffaGame {
       ?? (useSecondaryAttackSprite ? "attack" : null)
       ?? fullMotionFrame?.state
       ?? motionFrame?.state;
-    const renderBob = authoredMotion
-      ? authoredState === "idle" ? pose.bob * 0.35 : authoredState === "run" ? pose.bob : 0
-      : pose.bob;
-    const renderLean = authoredMotion && authoredState !== "run" ? 0 : pose.lean;
+    // Authored frames already contain body motion: keep their ground anchor stable.
+    const renderBob = authoredMotion ? 0 : pose.bob;
+    const renderLean = authoredMotion ? 0 : pose.lean;
     const renderScaleX = authoredMotion ? 1 : pose.scaleX;
     const renderScaleY = authoredMotion ? 1 : pose.scaleY;
 
