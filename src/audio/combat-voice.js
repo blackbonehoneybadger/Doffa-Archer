@@ -30,8 +30,42 @@ export const HERO_VOICE_PROFILES = Object.freeze({
 const DEFAULT_PROFILE = Object.freeze({ rate: 0.94, pitch: 0.72, volume: 0.76, voiceIndex: 0 });
 const URGENT_EVENTS = new Set(["death", "bossVictory"]);
 
-export function getCombatVoiceLine(event, { locale = "ru", sequence = 0 } = {}) {
-  const lines = COMBAT_VOICE_LINES[locale]?.[event];
+export const HERO_VOICE_LINES_RU = Object.freeze({
+  "honey-badger": {
+    hurt: ["Корни держат.", "Не остановишь."], death: ["Корни… глубже."],
+    meleeFinisher: ["Сталь сказала всё."], rangedFinisher: ["Тише падай."],
+    heavy: ["Один точный удар."], bossVictory: ["Оболочка пала. Ты следующий."],
+    roomClear: ["Здесь больше не шепчут."], levelUp: ["Глубже корни. Крепче сталь."],
+  },
+  "mr-kroo": {
+    hurt: ["Плохие манеры.", "Поправка на ветер."], death: ["Не последний… выстрел."],
+    meleeFinisher: ["Непростительная близость."], rangedFinisher: ["С дистанцией всё верно."],
+    heavy: ["Счёт закрыт."], bossVictory: ["Новый костюм тебя не спас."],
+    roomClear: ["Можно пройти. Осторожно."], levelUp: ["Точность — дело привычки."],
+  },
+  boya: {
+    hurt: ["Эй, аккуратнее с золотом!", "Теперь моя очередь."], death: ["Молот… не отдавайте."],
+    meleeFinisher: ["Вот и весь ремонт!"], rangedFinisher: ["Золотой аргумент."],
+    heavy: ["Капитальная переделка!"], bossVictory: ["И эту махину разобрали!"],
+    roomClear: ["Кто заказывал капитальный?"], levelUp: ["Ещё один довод потяжелее."],
+  },
+  pata: {
+    hurt: ["Пережарили.", "Давление держу."], death: ["Смену… не закрывайте."],
+    meleeFinisher: ["Добавка за счёт заведения."], rangedFinisher: ["Давление в норме."],
+    heavy: ["Плотная экстракция."], bossVictory: ["Мистер T, ваш заказ остыл."],
+    roomClear: ["Рабочее место чистое."], levelUp: ["Настроим помол потоньше."],
+  },
+  hadida: {
+    hurt: ["Пепел стряхнул.", "Ну и горечь."], death: ["Огонёк… побереги."],
+    meleeFinisher: ["Без лишнего дыма."], rangedFinisher: ["Бычок маленький. Проблемы большие."],
+    heavy: ["Бита без сдачи."], bossVictory: ["Опять ты. Опять мимо."],
+    roomClear: ["Проветрить бы здесь."], levelUp: ["Ещё тлеет."],
+  },
+});
+
+export function getCombatVoiceLine(event, { locale = "ru", sequence = 0, heroId } = {}) {
+  const lines = (locale === "ru" ? HERO_VOICE_LINES_RU[heroId]?.[event] : null)
+    ?? COMBAT_VOICE_LINES[locale]?.[event];
   if (!Array.isArray(lines) || lines.length === 0) return null;
   const safeSequence = Number.isInteger(sequence) && sequence >= 0 ? sequence : 0;
   return lines[safeSequence % lines.length];
@@ -80,9 +114,6 @@ export class CombatVoice {
       requestedLocale = "ru";
     }
     const locale = Object.hasOwn(COMBAT_VOICE_LINES, requestedLocale) ? requestedLocale : "ru";
-    const line = getCombatVoiceLine(event, { locale, sequence: this.sequence });
-    if (!line || !this.synthesis || typeof this.Utterance !== "function") return false;
-
     let requestedHeroId = details.heroId;
     if (!requestedHeroId) {
       try {
@@ -91,6 +122,8 @@ export class CombatVoice {
         requestedHeroId = null;
       }
     }
+    const line = getCombatVoiceLine(event, { locale, sequence: this.sequence, heroId: requestedHeroId });
+    if (!line || !this.synthesis || typeof this.Utterance !== "function") return false;
     const voiceProfile = HERO_VOICE_PROFILES[requestedHeroId] ?? DEFAULT_PROFILE;
     const utterance = new this.Utterance(line);
     utterance.lang = VOICE_LANGUAGE[locale] ?? "ru-RU";

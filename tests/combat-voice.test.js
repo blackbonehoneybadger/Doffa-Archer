@@ -60,7 +60,7 @@ test("combat speech is localized, rate-limited, urgent, and safely mutable", () 
   });
 
   assert.equal(voice.play("hurt"), true);
-  assert.equal(spoken[0].text, COMBAT_VOICE_LINES.ru.hurt[0]);
+  assert.equal(spoken[0].text, getCombatVoiceLine("hurt", { heroId: "hadida" }));
   assert.equal(spoken[0].lang, "ru-RU");
   assert.equal(spoken[0].pitch, HERO_VOICE_PROFILES.hadida.pitch);
   assert.equal(voice.play("heavy"), false);
@@ -69,7 +69,7 @@ test("combat speech is localized, rate-limited, urgent, and safely mutable", () 
 
   now += 1_100;
   assert.equal(voice.play("hurt"), true);
-  assert.equal(spoken.at(-1).text, COMBAT_VOICE_LINES.ru.hurt[0]);
+  assert.equal(spoken.at(-1).text, getCombatVoiceLine("hurt", { heroId: "hadida" }));
   voice.setMuted(true);
   assert.equal(voice.play("bossVictory"), false);
   assert.equal(cancellations, 2);
@@ -85,4 +85,11 @@ test("missing browser speech APIs and provider errors fail without throwing", ()
     Utterance: FakeUtterance,
   });
   assert.equal(broken.play("hurt"), false);
+});
+
+test("Russian event lines express five different hero identities", () => {
+  for (const event of REQUIRED_EVENTS) {
+    const lines = Object.keys(HERO_VOICE_PROFILES).map(heroId => getCombatVoiceLine(event, { heroId }));
+    assert.equal(new Set(lines).size, 5, event);
+  }
 });
