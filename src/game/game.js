@@ -1512,16 +1512,10 @@ export class DoffaGame {
     this.player.weaponSwitchCooldown = Math.max(0, (this.player.weaponSwitchCooldown ?? 0) - delta);
     const direction = this.getMovementDirection();
     const moving = Math.abs(direction.x) > 0.01 || Math.abs(direction.y) > 0.01;
-    this.player.moving = moving;
-    advancePlayerAnimation(this.player, delta, moving);
+    const previousX = this.player.x;
+    const previousY = this.player.y;
 
     if (moving) {
-      const footstepPhase = Math.floor(this.player.animationClock / Math.PI);
-      if (footstepPhase !== this.player.footstepPhase) {
-        this.player.footstepPhase = footstepPhase;
-        this.spawnParticles(this.player.x, this.player.y + 34, "rgba(222, 188, 135, 0.5)", 2, 28);
-        this.onAudio?.("footstep", { heroId: this.hero.id });
-      }
       this.player.facing = Math.atan2(direction.y, direction.x);
       this.player.x += direction.x * this.player.speed * delta;
       this.player.y += direction.y * this.player.speed * delta;
@@ -1539,6 +1533,19 @@ export class DoffaGame {
     this.player.x = clamp(this.player.x, ARENA.left + this.player.radius, ARENA.right - this.player.radius);
     this.player.y = clamp(this.player.y, ARENA.top + this.player.radius, ARENA.bottom - this.player.radius);
     this.resolveEntityObstacles(this.player);
+    const distance = Math.hypot(this.player.x - previousX, this.player.y - previousY);
+    this.player.moving = moving && distance > 0.001;
+    const travel = this.player.moving ? distance : 0;
+    advancePlayerAnimation(this.player, delta, this.player.moving, travel);
+    if (travel > 0) {
+      const previousTravel = this.player.footstepDistance ?? 0;
+      this.player.footstepDistance = previousTravel + travel;
+      if (Math.floor(this.player.footstepDistance / 48) > Math.floor(previousTravel / 48)) {
+        this.spawnParticles(this.player.x, this.player.y + 34, "rgba(222, 188, 135, 0.5)", 2, 28);
+        this.onAudio?.("footstep", { heroId: this.hero.id });
+      }
+    }
+
   }
 
   resolveEntityObstacles(entity) {

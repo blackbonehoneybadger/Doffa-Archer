@@ -126,20 +126,24 @@ export function getPlayerFullMotionFrame(player = {}, stateRows = {}, animationA
   });
 }
 
-export function advancePlayerAnimation(player, delta, moving = false) {
+export function advancePlayerAnimation(player, delta, moving = false, distance = null) {
   if (!player || !Number.isFinite(delta) || delta < 0) {
     return player;
   }
 
+  // 280 world units/second is the baseline authored run speed.
+  const locomotionDelta = moving && Number.isFinite(distance)
+    ? Math.max(0, distance) / 280
+    : delta;
   player.animationClock = safeTimer(player.animationClock)
-    + delta * (moving ? 9.2 : 2.2);
+    + (moving ? locomotionDelta * 9.2 : delta * 2.2);
   player.attackAnimation = Math.max(0, safeTimer(player.attackAnimation) - delta);
   player.hitAnimation = Math.max(0, safeTimer(player.hitAnimation) - delta);
   player.defeatAnimation = Math.max(0, safeTimer(player.defeatAnimation) - delta);
   advanceAnimationTimeline(
     player,
     getPlayerAnimationState(player),
-    delta,
+    getPlayerAnimationState(player) === "run" ? locomotionDelta : delta,
     getPlayerFacingDirection(player),
   );
   return player;
