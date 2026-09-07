@@ -3842,17 +3842,6 @@ export class DoffaGame {
       context.fillStyle = identityLight;
       context.fillRect(0, 0, VIEWPORT.width, VIEWPORT.height);
       context.globalCompositeOperation = "source-over";
-      context.globalAlpha = .18;
-      context.strokeStyle = palette.accent;
-      context.lineWidth = 2;
-      context.beginPath();
-      context.moveTo(ARENA.left, composite.bandOffset);
-      context.lineTo(ARENA.right, composite.bandOffset + composite.bandSlope * 74);
-      context.stroke();
-      context.globalAlpha = 1;
-      context.strokeStyle = `${palette.line}99`;
-      context.lineWidth = 4;
-      context.strokeRect(ARENA.left, ARENA.top, ARENA.right - ARENA.left, ARENA.bottom - ARENA.top);
       context.restore();
     } else {
       const gradient = context.createLinearGradient(0, 0, 0, VIEWPORT.height);
@@ -3887,12 +3876,12 @@ export class DoffaGame {
       this.drawRoomFixtures(context, environment, palette);
     }
 
-    this.drawRoomIdentityOverlay(context, palette, composite);
+    if (!roomSprite) this.drawRoomIdentityOverlay(context, palette, composite);
     this.drawRoomAtmosphere(context, environment, palette);
     this.drawRoomHazards(context, palette);
     this.drawRoomObstacles(context, palette);
     this.drawRoomDestructibles(context, palette);
-    this.drawArenaDoor(context, palette);
+    if (!roomSprite || this.roomExitOpen) this.drawArenaDoor(context, palette);
 
     context.save();
     context.fillStyle = `${palette.accent}38`;
@@ -4640,8 +4629,8 @@ export class DoffaGame {
       gradient.addColorStop(0.55, organic ? "#252515" : "#2c201a");
       gradient.addColorStop(1, organic ? "#0d130b" : "#100b09");
       context.fillStyle = gradient;
-      context.strokeStyle = palette.accent;
-      context.lineWidth = 3;
+      context.strokeStyle = organic ? "#66563b" : "#74604b";
+      context.lineWidth = 1.5;
       context.beginPath();
       context.roundRect(
         obstacle.x,
