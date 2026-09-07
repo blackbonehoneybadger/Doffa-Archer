@@ -5137,11 +5137,16 @@ export class DoffaGame {
   }
 
   drawPlayerSprite(context, player, pose) {
+    // Legacy hit cells have inconsistent camera/facing. Keep locomotion and
+    // weapon poses intact; damage feedback remains in the combat effects.
+    const spritePlayer = player.hp > 0 && player.hitAnimation > 0
+      ? { ...player, hitAnimation: 0 }
+      : player;
     const directionalSprite = this.heroDirectionalSprite;
     const direction = getPlayerFacingDirection(player);
     let reactionFrame = (this.heroReactionSprite || this.hero.art.reactionAnimation)
       ? getPlayerFullMotionFrame(
-        player,
+        spritePlayer,
         this.hero.art.reactionStateRows,
         this.hero.art.reactionAnimation,
       )
@@ -5151,7 +5156,7 @@ export class DoffaGame {
       : this.heroReactionSprite;
     if (reactionFrame?.page && !reactionRenderSprite && this.heroReactionSprite) {
       reactionFrame = getPlayerFullMotionFrame(
-        player,
+        spritePlayer,
         this.hero.art.reactionStateRows,
       );
       reactionRenderSprite = this.heroReactionSprite;
@@ -5172,7 +5177,7 @@ export class DoffaGame {
       && (this.heroFullMotionSprite || this.hero.art.fullMotionAnimation)
     )
       ? getPlayerFullMotionFrame(
-        player,
+        spritePlayer,
         this.hero.art.fullMotionStateRows,
         this.hero.art.fullMotionAnimation,
       )
@@ -5182,7 +5187,7 @@ export class DoffaGame {
       : this.heroFullMotionSprite;
     if (fullMotionFrame?.page && !fullMotionRenderSprite && this.heroFullMotionSprite) {
       fullMotionFrame = getPlayerFullMotionFrame(
-        player,
+        spritePlayer,
         this.hero.art.fullMotionStateRows,
       );
       fullMotionRenderSprite = this.heroFullMotionSprite;
@@ -5201,7 +5206,7 @@ export class DoffaGame {
       && this.hero.art.motionDirections.includes(direction),
     );
     const motionFrame = useMotionSprite
-      ? getPlayerAnimationFrame(player, this.hero.art.motionFrames)
+      ? getPlayerAnimationFrame(spritePlayer, this.hero.art.motionFrames)
       : null;
     const sprite = useReactionSprite
       ? reactionRenderSprite
@@ -5288,7 +5293,7 @@ export class DoffaGame {
     context.restore();
 
     context.save();
-    context.translate(player.x + pose.hitJitter, player.y + renderBob);
+    context.translate(player.x, player.y + renderBob);
     context.rotate(renderLean);
     context.scale((flipX ? -1 : 1) * renderScaleX, renderScaleY);
     context.imageSmoothingEnabled = false;

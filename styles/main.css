@@ -2066,7 +2066,10 @@ h1 span {
 .roaster-core[aria-disabled="true"] { filter: grayscale(0.7); opacity: 0.6; }
 
 /* Spacious portrait combat: reserve a readable HUD, not three competing circles. */
-body:has(#game-screen:not([hidden])) { overflow: hidden; }
+html:has(#game-screen:not([hidden])),
+body:has(#game-screen:not([hidden])) { overflow: hidden; overscroll-behavior: none; }
+body:has(#game-screen:not([hidden])) { position: fixed; inset: 0; width: 100%; }
+#game-screen { touch-action: none; overscroll-behavior: none; }
 body:has(#game-screen:not([hidden])) > .noise { display: none; }
 body:has(#game-screen:not([hidden])) .app-shell > .topbar,
 body:has(#game-screen:not([hidden])) .app-shell > .footer { display: none; }
