@@ -4872,17 +4872,17 @@ export class DoffaGame {
   }
 
   drawPickup(context, pickup) {
-    const bob = Math.sin(pickup.age * 5 + pickup.id) * 3;
+    const bob = Math.sin(pickup.age * 5 + pickup.id) * 2;
+    const heal = pickup.type === "heal";
     context.save();
     context.translate(pickup.x, pickup.y + bob);
-    context.rotate(pickup.type === "xp" ? pickup.age * 2.4 : 0);
-    context.shadowBlur = this.reducedEffects ? 0 : 20;
-    context.shadowColor = pickup.type === "heal" ? "#74d692" : "#c586ff";
-    context.strokeStyle = pickup.type === "heal" ? "#b9ffd0" : "#f0d0ff";
-    context.fillStyle = pickup.type === "heal" ? "#327c50" : "#7d43a3";
-    context.lineWidth = 2.5;
-
-    if (pickup.type === "heal") {
+    context.rotate(heal ? 0 : Math.sin(pickup.id * 2.4) * 0.65);
+    context.shadowBlur = this.reducedEffects ? 0 : 7;
+    context.shadowColor = heal ? "#74d692" : "rgba(121, 71, 36, 0.4)";
+    context.lineWidth = 2;
+    if (heal) {
+      context.strokeStyle = "#b9ffd0";
+      context.fillStyle = "#327c50";
       context.beginPath();
       context.arc(0, 0, pickup.radius, 0, TAU);
       context.fill();
@@ -4891,18 +4891,24 @@ export class DoffaGame {
       context.fillRect(-3, -8, 6, 16);
       context.fillRect(-8, -3, 16, 6);
     } else {
+      const r = pickup.radius;
+      const roast = context.createLinearGradient(-r, -r, r, r);
+      roast.addColorStop(0, "#bb8552");
+      roast.addColorStop(0.35, "#89532e");
+      roast.addColorStop(1, "#3d2114");
+      context.fillStyle = roast;
+      context.strokeStyle = "#c28c58";
       context.beginPath();
-      context.moveTo(0, -pickup.radius * 1.35);
-      context.lineTo(pickup.radius, 0);
-      context.lineTo(0, pickup.radius * 1.35);
-      context.lineTo(-pickup.radius, 0);
-      context.closePath();
+      context.ellipse(0, 0, r * 0.82, r * 1.2, 0, 0, TAU);
       context.fill();
       context.stroke();
-      context.fillStyle = "rgba(255, 239, 190, 0.72)";
+      context.shadowBlur = 0;
+      context.strokeStyle = "#301a10";
+      context.lineWidth = Math.max(1.5, r * 0.22);
       context.beginPath();
-      context.arc(-2, -3, 2.5, 0, TAU);
-      context.fill();
+      context.moveTo(r * 0.18, -r * 0.94);
+      context.bezierCurveTo(-r * 0.6, -r * 0.35, r * 0.6, r * 0.35, -r * 0.18, r * 0.94);
+      context.stroke();
     }
     context.restore();
   }
