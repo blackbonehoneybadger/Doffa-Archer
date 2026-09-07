@@ -62,3 +62,17 @@ test('attack cooldown elapses during travel and fires shortly after release', ()
   assert.equal(shots, 1);
   assert.equal(game.player.moving, false);
 });
+
+test('upper scenery stays blocked except inside the open doorway', () => {
+  const game = Object.create(DoffaGame.prototype);
+  game.hero = { id: 'honey-badger' };
+  game.getMovementDirection = () => ({ x: 0, y: -1 });
+  game.resolveEntityObstacles = () => {};
+  game.spawnParticles = () => {};
+  for (const [x, open, expected] of [[100, true, 227], [360, false, 227], [360, true, 172]]) {
+    game.player = { x, y: 200, radius: 15, speed: 280, hp: 100, attackTimer: 0.4 };
+    game.roomExitOpen = open;
+    game.updatePlayer(0.1);
+    assert.equal(game.player.y, expected);
+  }
+});

@@ -1536,6 +1536,13 @@ export class DoffaGame {
     this.player.x = clamp(this.player.x, ARENA.left + this.player.radius, ARENA.right - this.player.radius);
     this.player.y = clamp(this.player.y, ARENA.top + this.player.radius, ARENA.bottom - this.player.radius);
     this.resolveEntityObstacles(this.player);
+    // Reserve the upper wall for scenery. Only the opened doorway admits
+    // the hero into that strip, keeping the sprite below the HUD elsewhere.
+    const inOpenDoorway = this.roomExitOpen
+      && Math.abs(this.player.x - VIEWPORT.width / 2) <= 75 - this.player.radius;
+    if (!inOpenDoorway) {
+      this.player.y = Math.max(this.player.y, ARENA.top + 70 + this.player.radius);
+    }
     const distance = Math.hypot(this.player.x - previousX, this.player.y - previousY);
     this.player.moving = moving && distance > 0.001;
     const travel = this.player.moving ? distance : 0;
