@@ -302,13 +302,11 @@ export const ENEMY_CATALOG = Object.freeze({
     xp: 10,
   }),
   seed_spitter: freezeEnemy("seed_spitter", {
-    name: "SEED SPITTER",
+    name: "COFFEE CHERRY SPITTER",
     family: "rootfall_jungle",
     behavior: "seed_spitter",
     art: {
-      sprite: "/assets/enemies/seed-spitter.png",
-      motionSprite: "/assets/enemies/seed-spitter-motion-v1.png",
-      motionStateRows: STANDARD_ENEMY_MOTION_STATE_ROWS,
+      sprite: "/assets/enemies/coffee-cherry-spitter.png",
       backdrop: "transparent",
       renderHeight: 126,
       anchorY: 0.59,

@@ -491,6 +491,9 @@ export function getRoomArtVariantIndex(environment, { roomId = "", roomNumber = 
 }
 
 export function getRoomArt(environment, roomIdentity = {}) {
+  if (roomIdentity.roomId === "rootfall-canopy-01") {
+    return { id: "coffee-greenhouse-01", sprite: "/assets/rooms/coffee-greenhouse-01.png", backdrop: "transparent" };
+  }
   if (roomIdentity.artVariant) {
     for (const entry of Object.values(ROOM_ART_CATALOG)) {
       const authored = [...entry.variants, ...(entry.specials ?? [])]
