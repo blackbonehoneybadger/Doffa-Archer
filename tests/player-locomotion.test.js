@@ -38,7 +38,27 @@ test('movement interrupts attack pose while preserving cooldown and facing trave
   game.updatePlayer(1 / 60);
   assert.equal(game.player.attackAnimation, 0);
   assert.equal(game.player.animationState, 'run');
-  assert.equal(game.player.attackTimer, 0.4);
+  assert.equal(game.player.attackTimer, 0.4 - 1 / 60);
   assert.equal(game.player.facing, -Math.PI / 2);
   assert.ok(game.player.y < 350);
+});
+
+test('attack cooldown elapses during travel and fires shortly after release', () => {
+  const game = Object.create(DoffaGame.prototype);
+  game.player = { x: 250, y: 350, radius: 15, speed: 280, hp: 100, maxHp: 100, attackTimer: 0.4, attackInterval: 0.5 };
+  game.hero = { id: 'honey-badger' };
+  let held = true;
+  let shots = 0;
+  game.getMovementDirection = () => ({ x: held ? 1 : 0, y: 0 });
+  game.resolveEntityObstacles = () => {};
+  game.spawnParticles = () => {};
+  game.hasAttackTargets = () => true;
+  game.fireAtNearestEnemy = () => { shots++; return true; };
+  for (let i = 0; i < 30; i++) game.updatePlayer(1 / 60);
+  assert.equal(shots, 0);
+  assert.equal(game.player.attackTimer, 0.08);
+  held = false;
+  for (let i = 0; i < 5; i++) game.updatePlayer(1 / 60);
+  assert.equal(shots, 1);
+  assert.equal(game.player.moving, false);
 });

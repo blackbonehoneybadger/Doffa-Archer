@@ -1522,7 +1522,7 @@ export class DoffaGame {
       this.player.facing = Math.atan2(direction.y, direction.x);
       this.player.x += direction.x * this.player.speed * delta;
       this.player.y += direction.y * this.player.speed * delta;
-      this.player.attackTimer = Math.max(this.player.attackTimer, 0.08);
+      this.player.attackTimer = Math.max(this.player.attackTimer - delta, 0.08);
     } else {
       this.player.attackTimer -= delta;
       if (this.player.attackTimer <= 0 && this.hasAttackTargets()) {
