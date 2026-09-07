@@ -1132,7 +1132,7 @@ h1 span {
 .modal-layer {
   position: fixed;
   inset: 0;
-  z-index: 10;
+  z-index: 60;
   display: grid;
   place-items: center;
   padding: calc(20px + var(--safe-top)) 18px calc(20px + var(--safe-bottom));

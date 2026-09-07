@@ -251,3 +251,11 @@ test("mobile weapon controls stay compact in the lower-left corner", () => {
   assert.match(buttonRule, /width:\s*50px/);
   assert.match(buttonRule, /min-height:\s*54px/);
 });
+
+test('mandatory choice and confirmation dialogs render above the fixed arena', () => {
+  const css = readFileSync(join(root, 'styles/main.css'), 'utf8');
+  const modal = css.match(/\.modal-layer\s*\{([^}]+)\}/)[1];
+  const arena = css.match(/#game-screen:not\(\[hidden\]\)\s*\{([^}]+)\}/)[1];
+  const z = rule => Number(rule.match(/z-index:\s*(\d+)/)[1]);
+  assert.ok(z(modal) > z(arena), 'a hidden-behind-arena choice freezes player input');
+});

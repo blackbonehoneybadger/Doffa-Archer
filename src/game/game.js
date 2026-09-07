@@ -1516,6 +1516,9 @@ export class DoffaGame {
     const previousY = this.player.y;
 
     if (moving) {
+      // Locomotion interrupts the visual follow-through, not the attack cooldown.
+      // Otherwise the hero slides in a locked attack pose after dragging again.
+      this.player.attackAnimation = 0;
       this.player.facing = Math.atan2(direction.y, direction.x);
       this.player.x += direction.x * this.player.speed * delta;
       this.player.y += direction.y * this.player.speed * delta;
