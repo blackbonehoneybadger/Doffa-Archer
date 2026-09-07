@@ -1,4 +1,5 @@
 import { RUN_CONFIG, VIEWPORT } from "../config/game-config.js";
+import { drawHoneyOverhead } from "./honey-overhead.js";
 import {
   calculateWagerPayout,
   canEnterRun,
@@ -5150,6 +5151,10 @@ export class DoffaGame {
   }
 
   drawPlayerSprite(context, player, pose) {
+    if (this.hero.id === "honey-badger" && drawHoneyOverhead(context, player)) {
+      this.drawPlayerCombatCue(context, player, pose);
+      return true;
+    }
     // Legacy hit cells have inconsistent camera/facing. Keep locomotion and
     // weapon poses intact; damage feedback remains in the combat effects.
     const spritePlayer = player.hp > 0 && player.hitAnimation > 0
