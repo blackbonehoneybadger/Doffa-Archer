@@ -5152,7 +5152,6 @@ export class DoffaGame {
 
   drawPlayerSprite(context, player, pose) {
     if (this.hero.id === "honey-badger" && drawHoneyOverhead(context, player)) {
-      this.drawPlayerCombatCue(context, player, pose);
       return true;
     }
     // Legacy hit cells have inconsistent camera/facing. Keep locomotion and
