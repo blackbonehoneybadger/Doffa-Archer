@@ -755,12 +755,13 @@ export class DoffaGame {
     });
 
     this.canvas.addEventListener("pointerdown", (event) => {
+      if (this.paused || this.pointer || (event.pointerType === "mouse" && event.button !== 0)) return;
       if (this.mode !== "running" && this.mode !== "exit") {
         return;
       }
 
       const point = this.toCanvasPoint(event);
-      if (event.pointerType !== "mouse" && point.x >= VIEWPORT.width / 2) {
+      if (event.pointerType !== "mouse" && point.x < VIEWPORT.width / 2) {
         return;
       }
       this.pointer = {
@@ -793,6 +794,7 @@ export class DoffaGame {
 
     this.canvas.addEventListener("pointerup", releasePointer);
     this.canvas.addEventListener("pointercancel", releasePointer);
+    this.canvas.addEventListener("lostpointercapture", releasePointer);
     this.canvas.addEventListener("contextmenu", (event) => event.preventDefault());
 
     document.addEventListener("visibilitychange", () => {
