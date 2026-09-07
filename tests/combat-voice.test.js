@@ -93,3 +93,30 @@ test("Russian event lines express five different hero identities", () => {
     assert.equal(new Set(lines).size, 5, event);
   }
 });
+
+test("busy speech never queues stale chatter; urgent events interrupt only once", () => {
+  let time = 0;
+  let cancellations = 0;
+  const spoken = [];
+  const synthesis = {
+    speaking: false, pending: false,
+    speak: (line) => spoken.push(line),
+    cancel: () => { cancellations += 1; },
+  };
+  const voice = new CombatVoice({ synthesis, now: () => time, Utterance: class {} });
+  assert.equal(voice.play("hurt"), true);
+  time = 4000;
+  synthesis.speaking = true;
+  assert.equal(voice.play("roomClear"), false);
+  synthesis.speaking = false;
+  synthesis.pending = true;
+  assert.equal(voice.play("levelUp"), false);
+  assert.equal(voice.play("death"), true);
+  assert.equal(voice.play("death"), false);
+  assert.equal(cancellations, 1);
+  assert.equal(spoken.length, 2);
+  voice.stop();
+  assert.equal(cancellations, 2);
+  synthesis.pending = false;
+  assert.equal(voice.play("hurt"), true);
+});

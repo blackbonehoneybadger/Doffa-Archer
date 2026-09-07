@@ -88,25 +88,34 @@ export class CombatVoice {
     this.Utterance = Utterance;
     this.lastAt = Number.NEGATIVE_INFINITY;
     this.sequence = 0;
+    this.lastEvent = null;
     this.muted = false;
   }
 
   setMuted(muted) {
     this.muted = Boolean(muted);
     if (this.muted) {
-      try {
-        this.synthesis?.cancel?.();
-      } catch {
-        // Browser speech support is optional and must never stop gameplay.
-      }
+      this.stop();
     }
+  }
+
+  stop() {
+    try {
+      this.synthesis?.cancel?.();
+    } catch {
+      // Speech support must never prevent returning home or pausing.
+    }
+    this.lastEvent = null;
+    this.lastAt = Number.NEGATIVE_INFINITY;
   }
 
   play(event, details = {}) {
     if (this.muted) return false;
     const now = this.now();
     const urgent = URGENT_EVENTS.has(event);
+    if (urgent && event === this.lastEvent && now - this.lastAt < this.cooldownMs) return false;
     if (!urgent && now - this.lastAt < this.cooldownMs) return false;
+    if (!urgent && (this.synthesis?.speaking || this.synthesis?.pending)) return false;
     let requestedLocale = "ru";
     try {
       requestedLocale = this.locale();
@@ -142,6 +151,7 @@ export class CombatVoice {
     }
     this.sequence += 1;
     this.lastAt = now;
+    this.lastEvent = event;
     return true;
   }
 }

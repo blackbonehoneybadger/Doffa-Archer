@@ -477,6 +477,7 @@ export function bootstrapApp() {
   };
 
   const showHome = () => {
+    combatVoice.stop();
     elements.home.hidden = false;
     elements.game.hidden = true;
     elements.abilityOverlay.hidden = true;
@@ -782,11 +783,13 @@ export function bootstrapApp() {
   });
 
   elements.abortRun.addEventListener("click", () => {
+    combatVoice.stop();
     game.setPaused(true);
     elements.confirmOverlay.hidden = false;
   });
 
   elements.pauseRun.addEventListener("click", () => {
+    combatVoice.stop();
     game.setPaused(true);
     elements.confirmOverlay.hidden = false;
   });
@@ -835,6 +838,9 @@ export function bootstrapApp() {
   });
 
   elements.returnHome.addEventListener("click", showHome);
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) combatVoice.stop();
+  });
 
   window.addEventListener("beforeinstallprompt", (event) => {
     event.preventDefault();
