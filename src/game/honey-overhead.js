@@ -1,4 +1,5 @@
 import { PLAYER_ATTACK_ANIMATION_SECONDS } from './player-animation.js';
+import { getOverheadWeaponSheet } from './overhead-weapons.js';
 
 // Whole-frame authored poses. Root coordinates keep the hips stationary while
 // the limbs change pose; the sprite turns around that same world-space root.
@@ -8,7 +9,7 @@ const frames = [
   { x: 65, y: 620, w: 615, h: 634, rootX: 340, rootY: 950 },
   { x: 690, y: 620, w: 564, h: 634, rootX: 890, rootY: 950 },
 ];
-let sprite;
+const sprites = new Map();
 export function getHoneyAttackMotion(player) {
   if (player.moving || player.hp <= 0 || !(player.attackAnimation > 0)) {
     return { twist: 0, reach: 0, strike: 0 };
@@ -20,10 +21,14 @@ export function getHoneyAttackMotion(player) {
     reach: ranged ? -strike * 2 : strike * 6, strike: ranged ? 0 : strike };
 }
 export function drawHoneyOverhead(context, player) {
-  if (!sprite && typeof Image !== 'undefined') {
-    sprite = new Image();
-    sprite.src = '/assets/heroes/honey-overhead-run-v1.png';
+  for (const slot of ['melee', 'ranged']) {
+    if (!sprites.has(slot) && typeof Image !== 'undefined') {
+      const image = new Image();
+      image.src = getOverheadWeaponSheet('honey-badger', slot);
+      sprites.set(slot, image);
+    }
   }
+  const sprite = sprites.get(player.selectedWeaponSlot === 'ranged' ? 'ranged' : 'melee');
   if (!sprite?.complete || !sprite.naturalWidth) return false;
   const index = player.moving ? Math.floor(player.animationClock) % 4 : 1;
   const f = frames[index];

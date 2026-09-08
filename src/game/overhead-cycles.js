@@ -1,4 +1,5 @@
 import { getHoneyAttackMotion } from './honey-overhead.js';
+import { getOverheadWeaponSheet } from './overhead-weapons.js';
 
 export const HERO_RUN_CYCLES = Object.freeze({
   hadida: { sprite: '/assets/heroes/hadida-overhead-run.png', sequence: [0, 3, 1, 3], roots: [[310,330],[910,350],[310,970],[910,970]] },
@@ -48,7 +49,10 @@ function drawFrame(context, image, cycle, index, height) {
 export function drawHeroRunCycle(context, player, heroId) {
   const cycle = HERO_RUN_CYCLES[heroId];
   if (!cycle) return false;
-  const image = getImage(cycle.sprite);
+  // Warm both slots without resetting the running phase on a weapon change.
+  getImage(getOverheadWeaponSheet(heroId, 'melee'));
+  getImage(getOverheadWeaponSheet(heroId, 'ranged'));
+  const image = getImage(getOverheadWeaponSheet(heroId, player.selectedWeaponSlot));
   if (!image) return false;
   const motion = getHoneyAttackMotion(player);
   context.save();
