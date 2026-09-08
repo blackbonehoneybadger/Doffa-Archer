@@ -1,3 +1,4 @@
+import { drawHeroRunCycle, drawEnemyWalkCycle, advanceWalkDistance } from "./overhead-cycles.js";
 import { RUN_CONFIG, VIEWPORT } from "../config/game-config.js";
 import { drawCoffeeObstacle } from "./coffee-obstacles.js";
 import { drawHoneyOverhead } from "./honey-overhead.js";
@@ -1927,6 +1928,7 @@ export class DoffaGame {
       const movementY = enemy.y - previousY;
       if (length(movementX, movementY) > 0.01) {
         enemy.moving = true;
+        advanceWalkDistance(enemy, length(movementX, movementY));
         enemy.facing = Math.atan2(movementY, movementX);
       }
       if (enemy.state === "channel"
@@ -5156,6 +5158,7 @@ export class DoffaGame {
     if (this.hero.id === "honey-badger" && drawHoneyOverhead(context, player)) {
       return true;
     }
+    if (drawHeroRunCycle(context, player, this.hero.id)) return true;
     // Legacy hit cells have inconsistent camera/facing. Keep locomotion and
     // weapon poses intact; damage feedback remains in the combat effects.
     const spritePlayer = player.hp > 0 && player.hitAnimation > 0
@@ -5844,6 +5847,7 @@ export class DoffaGame {
   ) {
     const definition = getEnemyDefinition(enemy.type);
     const art = definition?.art;
+    if (drawEnemyWalkCycle(context, enemy, art)) return;
     let motionFrame = (motionSprite || art?.motionAnimation)
       ? getEnemyFullMotionFrame(enemy, art?.motionStateRows, art?.motionAnimation)
       : null;

@@ -118,7 +118,7 @@ export function getEnemyFullMotionFrame(enemy = {}, stateRows = {}, animationAtl
   const state = getEnemyAnimationState(enemy);
   if (!animationAtlas && state === "move" && Number.isFinite(enemy.animationClock)) {
     const plantedRow = stateRows?.idle;
-    const stridePhase = Math.floor(safeTimer(enemy.animationClock)) % 4;
+    const stridePhase = Math.floor(safeTimer(enemy.walkClock ?? enemy.animationClock)) % 4;
     if (Number.isInteger(plantedRow) && (stridePhase === 0 || stridePhase === 3)) {
       const direction = getEnemyFacingDirection(enemy);
       const directionIndex = ENEMY_FACING_DIRECTIONS.indexOf(direction);
