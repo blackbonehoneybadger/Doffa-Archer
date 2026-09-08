@@ -5963,8 +5963,13 @@ export class DoffaGame {
       || enemy.state === "boss-dash") {
       context.rotate(Math.atan2(enemy.dashY, enemy.dashX) * 0.08);
     }
-    context.scale(!directionalFrame && facingLeft ? -1 : 1, 1);
-    context.imageSmoothingEnabled = false;
+    if (!directionalFrame && Number.isFinite(art?.topDownFacing)) {
+      context.rotate((enemy.facing ?? art.topDownFacing) - art.topDownFacing);
+    } else {
+      context.scale(!directionalFrame && facingLeft ? -1 : 1, 1);
+    }
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = "high";
     context.shadowBlur = this.reducedEffects ? 0 : enemy.isBoss ? 25 : enemy.isElite ? 19 : 11;
     context.shadowColor = enemy.hitFlash > 0 ? "#fff4d0" : "#a53d25";
     if (enemy.hitFlash > 0 && !this.reducedEffects) {
