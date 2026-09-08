@@ -1,4 +1,5 @@
 import { RUN_CONFIG, VIEWPORT } from "../config/game-config.js";
+import { drawCoffeeObstacle } from "./coffee-obstacles.js";
 import { drawHoneyOverhead } from "./honey-overhead.js";
 import {
   calculateWagerPayout,
@@ -4623,6 +4624,7 @@ export class DoffaGame {
 
   drawRoomObstacles(context, palette) {
     for (const obstacle of this.roomDefinition?.obstacles ?? []) {
+      if (drawCoffeeObstacle(context, obstacle)) continue;
       const pillar = obstacle.kind === "pillar" || obstacle.kind.endsWith("-pillar");
       const organic = ["root", "thorn", "fungal"].some((token) => obstacle.kind.includes(token));
       const fungal = obstacle.kind.includes("fungal");
